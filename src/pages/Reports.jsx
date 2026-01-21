@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Client } from "@/entities/Client";
 import { Meeting } from "@/entities/Meeting";
@@ -21,6 +20,7 @@ import { format, subDays, subMonths } from 'date-fns';
 import { he } from 'date-fns/locale';
 import SalesTrendChart from "../components/reports/SalesTrendChart";
 import LeadsClientsTrendChart from "../components/reports/LeadsClientsTrendChart";
+import WorkspaceAuthGuard from "../components/auth/WorkspaceAuthGuard";
 
 // Enhanced Stat Card Component with consistent styling
 const EnhancedStatCard = ({ title, value, subValue, icon: Icon, color, bgColor, description }) => (
@@ -210,9 +210,16 @@ export default function Reports() {
         const user = await User.me();
         setCurrentUser(user);
         
+        const workspaceId = localStorage.getItem('currentWorkspaceId');
+        if (!workspaceId) {
+          console.error("אין Workspace נבחר");
+          setIsLoading(false);
+          return;
+        }
+        
         const [clientsData, meetingsData] = await Promise.all([
-          Client.filter({ created_by: user.email }),
-          Meeting.filter({ created_by: user.email })
+          Client.filter({ workspace_id: workspaceId }),
+          Meeting.filter({ workspace_id: workspaceId })
         ]);
         setClients(clientsData || []);
         setMeetings(meetingsData || []);
@@ -247,7 +254,8 @@ export default function Reports() {
   }
 
   return (
-    <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 space-y-8 min-h-screen rtl-text">
+    <WorkspaceAuthGuard>
+      <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 space-y-8 min-h-screen rtl-text">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900">דוחות ואנליטיקה</h1>
@@ -287,5 +295,6 @@ export default function Reports() {
         </div>
       </div>
     </div>
+    </WorkspaceAuthGuard>
   );
 }
