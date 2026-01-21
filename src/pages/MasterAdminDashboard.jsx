@@ -17,8 +17,36 @@ import { createPageUrl } from "@/utils";
 export default function MasterAdminDashboard() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newWorkspace, setNewWorkspace] = useState({ name: "", notes: "" });
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await base44.auth.me();
+        const admins = await base44.entities.SystemAdmin.filter({ 
+          user_email: user.email, 
+          is_active: true 
+        });
+        
+        if (admins.length === 0) {
+          navigate(createPageUrl('NoAccess'));
+          return;
+        }
+        
+        setIsAuthorized(true);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        navigate(createPageUrl('NoAccess'));
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
 
   const { data: workspaces = [], isLoading } = useQuery({
     queryKey: ['workspaces'],
@@ -76,6 +104,21 @@ export default function MasterAdminDashboard() {
     }
     createWorkspaceMutation.mutate(newWorkspace);
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">בודק הרשאות...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">

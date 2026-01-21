@@ -12,6 +12,7 @@ import { he } from "date-fns/locale";
 import MeetingForm from "../components/meetings/MeetingForm";
 import MeetingCalendar from "../components/meetings/MeetingCalendar";
 import MeetingList from "../components/meetings/MeetingList";
+import WorkspaceAuthGuard from "../components/auth/WorkspaceAuthGuard";
 
 export default function Meetings() {
   const [meetings, setMeetings] = useState([]);
@@ -181,7 +182,8 @@ export default function Meetings() {
   );
 
   return (
-    <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 space-y-6 min-h-screen rtl-text">
+    <WorkspaceAuthGuard>
+      <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 space-y-6 min-h-screen rtl-text">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
@@ -298,5 +300,6 @@ export default function Meetings() {
         )}
       </div>
     </div>
+    </WorkspaceAuthGuard>
   );
 }

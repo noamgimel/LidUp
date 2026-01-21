@@ -18,7 +18,8 @@ import ClientFilters from "../components/clients/ClientFilters";
 import ClientDetails from "../components/clients/ClientDetails";
 import MeetingForm from "../components/meetings/MeetingForm";
 import ClientStatusTabs from "../components/clients/ClientStatusTabs";
-import SortDropdown from "../components/clients/SortDropdown"; // Import the new component
+import SortDropdown from "../components/clients/SortDropdown";
+import WorkspaceAuthGuard from "../components/auth/WorkspaceAuthGuard";
 
 export default function Clients() {
   const [clients, setClients] = useState([]);
@@ -392,7 +393,8 @@ export default function Clients() {
 
 
   return (
-    <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 space-y-4 min-h-screen transition-all duration-500">
+    <WorkspaceAuthGuard>
+      <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 space-y-4 min-h-screen transition-all duration-500">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -595,5 +597,6 @@ export default function Clients() {
         </Button>
       </div>
     </div>
+    </WorkspaceAuthGuard>
   );
 }

@@ -19,6 +19,8 @@ export default function WorkspaceManagement() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newMember, setNewMember] = useState({ email: "", role: "member" });
   const [isSystemAdmin, setIsSystemAdmin] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -29,18 +31,30 @@ export default function WorkspaceManagement() {
       setWorkspaceId(id);
     }
 
-    const checkAdmin = async () => {
+    const checkAuth = async () => {
       try {
-        const admins = await base44.entities.SystemAdmin.list();
         const user = await base44.auth.me();
-        const isAdmin = admins.some(a => a.user_email === user.email && a.is_active);
-        setIsSystemAdmin(isAdmin);
+        const admins = await base44.entities.SystemAdmin.filter({ 
+          user_email: user.email, 
+          is_active: true 
+        });
+        
+        if (admins.length === 0) {
+          navigate(createPageUrl('NoAccess'));
+          return;
+        }
+        
+        setIsSystemAdmin(true);
+        setIsAuthorized(true);
       } catch (error) {
-        console.error('Error checking admin status:', error);
+        console.error('Auth check failed:', error);
+        navigate(createPageUrl('NoAccess'));
+      } finally {
+        setIsCheckingAuth(false);
       }
     };
-    checkAdmin();
-  }, []);
+    checkAuth();
+  }, [navigate]);
 
   const { data: workspace } = useQuery({
     queryKey: ['workspace', workspaceId],
@@ -122,6 +136,21 @@ export default function WorkspaceManagement() {
       role: newMember.role,
     });
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">בודק הרשאות...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return null;
+  }
 
   if (!workspaceId) {
     return (

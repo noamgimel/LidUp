@@ -22,6 +22,7 @@ import RecentClients from "../components/dashboard/RecentClients";
 import UpcomingMeetings from "../components/dashboard/UpcomingMeetings";
 import LeadsClientsTrendChart from "../components/reports/LeadsClientsTrendChart";
 import ReportsWidget from "../components/dashboard/ReportsWidget";
+import WorkspaceAuthGuard from "../components/auth/WorkspaceAuthGuard";
 
 export default function Dashboard() {
   const [clients, setClients] = useState([]);
@@ -84,7 +85,8 @@ export default function Dashboard() {
   // --- End of Calculations ---
 
   return (
-    <div className="px-3 pt-20 pb-4 sm:px-6 md:p-8 space-y-4 md:space-y-6 min-h-screen rtl-text">
+    <WorkspaceAuthGuard>
+      <div className="px-3 pt-20 pb-4 sm:px-6 md:p-8 space-y-4 md:space-y-6 min-h-screen rtl-text">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col gap-3 md:gap-6 mb-4 md:mb-8">
@@ -154,5 +156,6 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+    </WorkspaceAuthGuard>
   );
 }
