@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Client } from "@/entities/Client";
 import { Meeting } from "@/entities/Meeting";
@@ -40,9 +39,16 @@ export default function Dashboard() {
       const user = await User.me();
       setCurrentUser(user);
 
+      const workspaceId = localStorage.getItem('currentWorkspaceId');
+      if (!workspaceId) {
+        console.error("אין Workspace נבחר");
+        setIsLoading(false);
+        return;
+      }
+
       const [clientsData, meetingsData] = await Promise.all([
-        Client.filter({ created_by: user.email }, "-created_date"),
-        Meeting.filter({ created_by: user.email }, "-date")
+        Client.filter({ workspace_id: workspaceId }, "-created_date"),
+        Meeting.filter({ workspace_id: workspaceId }, "-date")
       ]);
       setClients(clientsData);
       setMeetings(meetingsData);

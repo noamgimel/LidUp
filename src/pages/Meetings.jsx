@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Meeting } from "@/entities/Meeting";
 import { Client } from "@/entities/Client";
@@ -37,17 +36,21 @@ export default function Meetings() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // קבלת המשתמש הנוכחי
       const user = await User.me();
       setCurrentUser(user);
       
-      // טעינת נתונים רק של המשתמש הנוכחי
+      const workspaceId = localStorage.getItem('currentWorkspaceId');
+      if (!workspaceId) {
+        console.error("אין Workspace נבחר");
+        setIsLoading(false);
+        return;
+      }
+      
       const [meetingsData, clientsData] = await Promise.all([
-        Meeting.filter({ created_by: user.email }),
-        Client.filter({ created_by: user.email })
+        Meeting.filter({ workspace_id: workspaceId }),
+        Client.filter({ workspace_id: workspaceId })
       ]);
       
-      // עדכון אוטומטי של סטטוס פגישות שעברו
       const updatedMeetings = await updatePastMeetingsStatus(meetingsData);
       setMeetings(updatedMeetings);
       setClients(clientsData);
@@ -65,14 +68,9 @@ export default function Meetings() {
       const meetingDateTime = new Date(`${meeting.date}T${meeting.time}`);
       
       if (meetingDateTime < now && meeting.status === 'scheduled') {
-        // עדכון הפגישה לסטטוס "הושלם" אם עבר הזמן - רק אם המשתמש הוא הבעלים
         try {
-          if (meeting.created_by === currentUser?.email) {
-            await Meeting.update(meeting.id, { ...meeting, status: 'completed' });
-            updatedMeetings.push({ ...meeting, status: 'completed' });
-          } else {
-            updatedMeetings.push(meeting); // If not owner, keep original status and add
-          }
+          await Meeting.update(meeting.id, { ...meeting, status: 'completed' });
+          updatedMeetings.push({ ...meeting, status: 'completed' });
         } catch (error) {
           console.error("שגיאה בעדכון סטטוס פגישה:", error);
           updatedMeetings.push(meeting);
@@ -126,34 +124,31 @@ export default function Meetings() {
 
   const handleSubmit = async (meetingData) => {
     try {
-      // וודא שכתובת המייל של הלקוח מועברת, ע"י מציאת הלקוח מהרשימה
+      const workspaceId = localStorage.getItem('currentWorkspaceId');
+      if (!workspaceId) {
+        alert("שגיאה: אין Workspace נבחר");
+        return;
+      }
+
       const selectedClient = clients.find(c => c.id === meetingData.client_id);
       const dataToSave = {
         ...meetingData,
         client_email: selectedClient?.email || meetingData.client_email || "",
-        created_by_email: currentUser?.email || ""
+        created_by_email: currentUser?.email || "",
+        workspace_id: workspaceId
       };
 
       if (editingMeeting) {
-        // וידוא שרק הבעלים יכול לערוך
-        if (editingMeeting.created_by === currentUser?.email) {
-          await Meeting.update(editingMeeting.id, dataToSave);
-        } else {
-          alert("אין לך הרשאה לערוך פגישה זו");
-          return;
-        }
+        await Meeting.update(editingMeeting.id, dataToSave);
       } else {
-        // יצירת פגישה חדשה - המשתמש יהיה הבעלים אוטומטית
         await Meeting.create(dataToSave);
         
-        // אם המשתמש מחובר ליומן Google, צור גם שם פגישה
         if (currentUser?.google_calendar_connected) {
           try {
             const { createCalendarEvent } = await import('@/functions/createCalendarEvent');
             await createCalendarEvent(dataToSave);
           } catch (calendarError) {
             console.error('Error creating Google Calendar event:', calendarError);
-            // אל תעצור את הפעולה אם יש בעיה עם Google Calendar
           }
         }
       }
@@ -166,24 +161,11 @@ export default function Meetings() {
   };
 
   const handleEdit = (meeting) => {
-    // וידוא שרק הבעלים יכול לערוך
-    if (meeting.created_by === currentUser?.email) {
-      setEditingMeeting(meeting);
-      setShowForm(true);
-    } else {
-      alert("אין לך הרשאה לערוך פגישה זו");
-    }
+    setEditingMeeting(meeting);
+    setShowForm(true);
   };
 
   const handleDelete = async (meetingId) => {
-    const meetingToDelete = meetings.find(m => m.id === meetingId);
-    
-    // וידוא שרק הבעלים יכול למחוק
-    if (meetingToDelete?.created_by !== currentUser?.email) {
-      alert("אין לך הרשאה למחוק פגישה זו");
-      return;
-    }
-
     if (confirm("האם אתה בטוח שברצונך למחוק פגישה זו?")) {
       try {
         await Meeting.delete(meetingId);

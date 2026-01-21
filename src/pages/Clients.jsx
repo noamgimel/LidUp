@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Client } from "@/entities/Client";
 import { Meeting } from "@/entities/Meeting";
@@ -71,9 +70,16 @@ export default function Clients() {
       const user = await User.me();
       setCurrentUser(user);
       
+      const workspaceId = localStorage.getItem('currentWorkspaceId');
+      if (!workspaceId) {
+        console.error("אין Workspace נבחר");
+        setIsLoading(false);
+        return;
+      }
+      
       const [clientsData, meetingsData] = await Promise.all([
-        Client.filter({ created_by: user.email }, "-created_date"),
-        Meeting.filter({ created_by: user.email })
+        Client.filter({ workspace_id: workspaceId }, "-created_date"),
+        Meeting.filter({ workspace_id: workspaceId })
       ]);
       
       setClients(clientsData || []);
@@ -178,15 +184,16 @@ export default function Clients() {
 
   const handleSubmit = async (clientData) => {
     try {
+      const workspaceId = localStorage.getItem('currentWorkspaceId');
+      if (!workspaceId) {
+        alert("שגיאה: אין Workspace נבחר");
+        return;
+      }
+
       if (editingClient) {
-        if (editingClient.created_by === currentUser.email) {
-          await Client.update(editingClient.id, clientData);
-        } else {
-          alert("אין לך הרשאה לערוך לקוח זה");
-          return;
-        }
+        await Client.update(editingClient.id, clientData);
       } else {
-        await Client.create(clientData);
+        await Client.create({ ...clientData, workspace_id: workspaceId });
       }
       setShowForm(false);
       setEditingClient(null);
@@ -198,16 +205,21 @@ export default function Clients() {
 
   const handleMeetingSubmit = async (meetingData) => {
     try {
-      // קבלת המשתמש הנוכחי
       const user = await User.me();
+      const workspaceId = localStorage.getItem('currentWorkspaceId');
       
-      // וודא שכתובת המייל של הלקוח מועברת
+      if (!workspaceId) {
+        alert("שגיאה: אין Workspace נבחר");
+        return;
+      }
+      
       const finalMeetingData = {
         ...meetingData,
         client_id: selectedClientForMeeting.id,
         client_name: selectedClientForMeeting.name,
         client_email: selectedClientForMeeting.email || "",
-        created_by_email: user?.email || ""
+        created_by_email: user?.email || "",
+        workspace_id: workspaceId
       };
       
       await Meeting.create(finalMeetingData);
@@ -264,13 +276,6 @@ export default function Clients() {
   };
 
   const handleDelete = async (clientId) => {
-    const clientToDelete = clients.find(c => c.id === clientId);
-    
-    if (clientToDelete?.created_by !== currentUser?.email) {
-      alert("אין לך הרשאה למחוק לקוח זה");
-      return;
-    }
-
     if (confirm("האם אתה בטוח שברצונך למחוק לקוח זה?")) {
       try {
         await Client.delete(clientId);
@@ -340,7 +345,18 @@ export default function Clients() {
     if (confirm("אזהרה: האם אתה בטוח שברצונך למחוק את כל הלקוחות והלידים? פעולה זו אינה הפיכה!")) {
         setIsLoading(true);
         try {
-            const clientsToDelete = await Client.filter({ created_by: currentUser.email });
+            const workspaceId = localStorage.getItem('currentWorkspaceId');
+            if (!workspaceId) {
+                toast({
+                    title: "שגיאה",
+                    description: "אין Workspace נבחר",
+                    variant: "destructive",
+                });
+                setIsLoading(false);
+                return;
+            }
+
+            const clientsToDelete = await Client.filter({ workspace_id: workspaceId });
 
             if (clientsToDelete.length === 0) {
                 toast({
