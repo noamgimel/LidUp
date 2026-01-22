@@ -59,9 +59,9 @@ export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState(null);
 
-  // דפים שלא צריכים סיידבר
-  const pagesWithoutSidebar = ['NoAccess', 'SelectWorkspace', 'MasterAdminDashboard', 'WorkspaceManagement', 'Home'];
-  const shouldShowSidebar = !pagesWithoutSidebar.includes(currentPageName);
+  // בדיקה אם אנחנו בדף שלא צריך סיידבר
+  const pathsWithoutSidebar = ['/NoAccess', '/SelectWorkspace', '/MasterAdminDashboard', '/WorkspaceManagement', '/Home'];
+  const shouldShowSidebar = !pathsWithoutSidebar.some(path => location.pathname.includes(path));
 
   useEffect(() => {
     const fetchUser = async () => {
