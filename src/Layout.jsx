@@ -48,7 +48,7 @@ const navigationItems = [
     icon: BarChart,
   },
   {
-    title: "אינטגרציות (בטא)", // Changed title here
+    title: "אינטגרציות",
     url: createPageUrl("Integrations"),
     icon: TrendingUp,
   },

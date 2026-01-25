@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { User } from "@/entities/User";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -99,11 +98,24 @@ export default function Integrations() {
   
   const integrations = [
     {
+      id: "website-forms",
+      name: "חיבור האתר",
+      description: "חיבור טפסים מהאתר לקליטה אוטומטית של לידים למערכת, בזמן אמת.",
+      icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/233c624f0_.png",
+      status: "premium",
+      features: [
+        "קליטת לידים אוטומטית מטפסים באתר",
+        "שמירת מקור הפנייה ושדות הטופס",
+        "התחלת עבודה מיידית בלי איבוד לידים"
+      ],
+      color: "blue"
+    },
+    {
       id: "google-calendar",
       name: "Google Calendar",
       description: "סנכרן את כל הפגישות שלך עם יומן Google באופן אוטומטי",
       icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/379e7a253_Google_Calendar_icon_2020svg.png",
-      status: "coming_soon", // Changed from checking user connection to always show coming soon
+      status: "premium",
       features: [
         "יצירת פגישות אוטומטית ביומן Google",
         "שליחת זימונים אוטומטית ללקוחות", 
@@ -117,7 +129,7 @@ export default function Integrations() {
       name: "WhatsApp Business",
       description: "שלח הודעות ועדכונים ללקוחות דרך WhatsApp",
       icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/afb871e56_whatsapp-icon.png",
-      status: "coming_soon",
+      status: "premium",
       features: [
         "הודעות אוטומטיות ללקוחות חדשים",
         "תזכורות לפגישות", 
@@ -134,15 +146,25 @@ export default function Integrations() {
         return <Badge className="bg-green-100 text-green-800 border-green-200"><CheckCircle2 className="w-3 h-3 mr-1" />מחובר</Badge>;
       case "available":
         return <Badge className="bg-blue-100 text-blue-800 border-blue-200"><Plug className="w-3 h-3 mr-1" />זמין לחיבור</Badge>;
-      case "coming_soon":
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200"><AlertCircle className="w-3 h-3 mr-1" />בפיתוח</Badge>;
+      case "premium":
+        return <Badge className="bg-purple-100 text-purple-800 border-purple-200"><Zap className="w-3 h-3 mr-1" />פרימיום</Badge>;
       default:
         return null;
     }
   };
 
   const getActionButton = (integration) => {
-    // All integrations now show "בפיתוח" status
+    if (integration.status === "premium") {
+      return (
+        <div className="flex flex-col items-end gap-1">
+          <Button variant="outline" size="sm" disabled className="opacity-60">
+            <Zap className="w-3 h-3 mr-1" />
+            התחבר
+          </Button>
+          <span className="text-xs text-purple-600">זמין למשתמשי פרימיום</span>
+        </div>
+      );
+    }
     return (
       <Button variant="outline" size="sm" disabled>
         בפיתוח
@@ -167,6 +189,28 @@ export default function Integrations() {
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">אינטגרציות</h1>
           <p className="text-slate-600">חבר את לידUp לכלים האהובים עליך והפוך את העבודה לאוטומטית</p>
         </div>
+
+        {/* Premium Notice */}
+        <Card className="mb-8 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <Zap className="w-6 h-6 text-purple-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-purple-900 mb-2">האינטגרציות זמינות למשתמשי פרימיום</h3>
+                <p className="text-purple-800 mb-3">רוצים להתחבר? דברו איתי במייל:</p>
+                <a 
+                  href="mailto:noam.gamliel@gmail.com" 
+                  className="inline-flex items-center gap-2 text-purple-700 hover:text-purple-900 font-medium transition-colors"
+                >
+                  <span>noam.gamliel@gmail.com</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Integration Cards */}
         <div className="grid gap-6 md:gap-8">
