@@ -15,8 +15,11 @@ export default function WorkspaceAuthGuard({ children }) {
         const user = await base44.auth.me();
         
         // בדיקה אם זה SystemAdmin
-        const admins = await base44.entities.SystemAdmin.list();
-        const isSystemAdmin = admins.some(a => a.user_email === user.email && a.is_active);
+        const admins = await base44.entities.SystemAdmin.filter({
+          user_email: user.email,
+          is_active: true
+        });
+        const isSystemAdmin = admins.length > 0;
         
         if (isSystemAdmin) {
           // אם זה SystemAdmin ולא במסך Master Admin Dashboard, נווט אליו
