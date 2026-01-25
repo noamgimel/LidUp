@@ -1,6 +1,5 @@
 import React from "react";
 import WorkStageManager from "../components/clients/WorkStageManager";
-import WorkspaceAuthGuard from "../components/auth/WorkspaceAuthGuard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -9,7 +8,6 @@ import { Info, Settings as SettingsIcon, ClipboardList } from "lucide-react";
 
 export default function Settings() {
   return (
-    <WorkspaceAuthGuard>
     <div className="px-3 pt-20 pb-4 sm:px-6 md:p-8 space-y-4 md:space-y-6 min-h-screen rtl-text">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -58,6 +56,5 @@ export default function Settings() {
         </div>
       </div>
     </div>
-    </WorkspaceAuthGuard>
   );
 }
