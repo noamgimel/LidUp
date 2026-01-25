@@ -22,7 +22,6 @@ import RecentClients from "../components/dashboard/RecentClients";
 import UpcomingMeetings from "../components/dashboard/UpcomingMeetings";
 import LeadsClientsTrendChart from "../components/reports/LeadsClientsTrendChart";
 import ReportsWidget from "../components/dashboard/ReportsWidget";
-import WorkspaceAuthGuard from "../components/auth/WorkspaceAuthGuard";
 
 export default function Dashboard() {
   const [clients, setClients] = useState([]);
@@ -40,16 +39,9 @@ export default function Dashboard() {
       const user = await User.me();
       setCurrentUser(user);
 
-      const workspaceId = localStorage.getItem('currentWorkspaceId');
-      if (!workspaceId) {
-        console.error("אין Workspace נבחר");
-        setIsLoading(false);
-        return;
-      }
-
       const [clientsData, meetingsData] = await Promise.all([
-        Client.filter({ workspace_id: workspaceId }, "-created_date"),
-        Meeting.filter({ workspace_id: workspaceId }, "-date")
+        Client.list("-created_date"),
+        Meeting.list("-date")
       ]);
       setClients(clientsData);
       setMeetings(meetingsData);
@@ -85,8 +77,7 @@ export default function Dashboard() {
   // --- End of Calculations ---
 
   return (
-    <WorkspaceAuthGuard>
-      <div className="px-3 pt-20 pb-4 sm:px-6 md:p-8 space-y-4 md:space-y-6 min-h-screen rtl-text">
+    <div className="px-3 pt-20 pb-4 sm:px-6 md:p-8 space-y-4 md:space-y-6 min-h-screen rtl-text">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col gap-3 md:gap-6 mb-4 md:mb-8">
@@ -156,6 +147,5 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
-    </WorkspaceAuthGuard>
   );
 }

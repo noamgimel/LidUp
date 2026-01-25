@@ -12,7 +12,6 @@ import { he } from "date-fns/locale";
 import MeetingForm from "../components/meetings/MeetingForm";
 import MeetingCalendar from "../components/meetings/MeetingCalendar";
 import MeetingList from "../components/meetings/MeetingList";
-import WorkspaceAuthGuard from "../components/auth/WorkspaceAuthGuard";
 
 export default function Meetings() {
   const [meetings, setMeetings] = useState([]);
@@ -40,16 +39,9 @@ export default function Meetings() {
       const user = await User.me();
       setCurrentUser(user);
       
-      const workspaceId = localStorage.getItem('currentWorkspaceId');
-      if (!workspaceId) {
-        console.error("אין Workspace נבחר");
-        setIsLoading(false);
-        return;
-      }
-      
       const [meetingsData, clientsData] = await Promise.all([
-        Meeting.filter({ workspace_id: workspaceId }),
-        Client.filter({ workspace_id: workspaceId })
+        Meeting.list(),
+        Client.list()
       ]);
       
       const updatedMeetings = await updatePastMeetingsStatus(meetingsData);
@@ -125,18 +117,11 @@ export default function Meetings() {
 
   const handleSubmit = async (meetingData) => {
     try {
-      const workspaceId = localStorage.getItem('currentWorkspaceId');
-      if (!workspaceId) {
-        alert("שגיאה: אין Workspace נבחר");
-        return;
-      }
-
       const selectedClient = clients.find(c => c.id === meetingData.client_id);
       const dataToSave = {
         ...meetingData,
         client_email: selectedClient?.email || meetingData.client_email || "",
-        created_by_email: currentUser?.email || "",
-        workspace_id: workspaceId
+        created_by_email: currentUser?.email || ""
       };
 
       if (editingMeeting) {
@@ -182,8 +167,7 @@ export default function Meetings() {
   );
 
   return (
-    <WorkspaceAuthGuard>
-      <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 space-y-6 min-h-screen rtl-text">
+    <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 space-y-6 min-h-screen rtl-text">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
@@ -300,6 +284,5 @@ export default function Meetings() {
         )}
       </div>
     </div>
-    </WorkspaceAuthGuard>
   );
 }

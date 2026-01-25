@@ -19,7 +19,6 @@ import ClientDetails from "../components/clients/ClientDetails";
 import MeetingForm from "../components/meetings/MeetingForm";
 import ClientStatusTabs from "../components/clients/ClientStatusTabs";
 import SortDropdown from "../components/clients/SortDropdown";
-import WorkspaceAuthGuard from "../components/auth/WorkspaceAuthGuard";
 
 export default function Clients() {
   const [clients, setClients] = useState([]);
@@ -71,16 +70,9 @@ export default function Clients() {
       const user = await User.me();
       setCurrentUser(user);
       
-      const workspaceId = localStorage.getItem('currentWorkspaceId');
-      if (!workspaceId) {
-        console.error("אין Workspace נבחר");
-        setIsLoading(false);
-        return;
-      }
-      
       const [clientsData, meetingsData] = await Promise.all([
-        Client.filter({ workspace_id: workspaceId }, "-created_date"),
-        Meeting.filter({ workspace_id: workspaceId })
+        Client.list("-created_date"),
+        Meeting.list()
       ]);
       
       setClients(clientsData || []);
@@ -185,16 +177,10 @@ export default function Clients() {
 
   const handleSubmit = async (clientData) => {
     try {
-      const workspaceId = localStorage.getItem('currentWorkspaceId');
-      if (!workspaceId) {
-        alert("שגיאה: אין Workspace נבחר");
-        return;
-      }
-
       if (editingClient) {
         await Client.update(editingClient.id, clientData);
       } else {
-        await Client.create({ ...clientData, workspace_id: workspaceId });
+        await Client.create(clientData);
       }
       setShowForm(false);
       setEditingClient(null);
@@ -207,20 +193,13 @@ export default function Clients() {
   const handleMeetingSubmit = async (meetingData) => {
     try {
       const user = await User.me();
-      const workspaceId = localStorage.getItem('currentWorkspaceId');
-      
-      if (!workspaceId) {
-        alert("שגיאה: אין Workspace נבחר");
-        return;
-      }
       
       const finalMeetingData = {
         ...meetingData,
         client_id: selectedClientForMeeting.id,
         client_name: selectedClientForMeeting.name,
         client_email: selectedClientForMeeting.email || "",
-        created_by_email: user?.email || "",
-        workspace_id: workspaceId
+        created_by_email: user?.email || ""
       };
       
       await Meeting.create(finalMeetingData);
@@ -346,18 +325,7 @@ export default function Clients() {
     if (confirm("אזהרה: האם אתה בטוח שברצונך למחוק את כל הלקוחות והלידים? פעולה זו אינה הפיכה!")) {
         setIsLoading(true);
         try {
-            const workspaceId = localStorage.getItem('currentWorkspaceId');
-            if (!workspaceId) {
-                toast({
-                    title: "שגיאה",
-                    description: "אין Workspace נבחר",
-                    variant: "destructive",
-                });
-                setIsLoading(false);
-                return;
-            }
-
-            const clientsToDelete = await Client.filter({ workspace_id: workspaceId });
+            const clientsToDelete = await Client.list();
 
             if (clientsToDelete.length === 0) {
                 toast({
@@ -393,8 +361,7 @@ export default function Clients() {
 
 
   return (
-    <WorkspaceAuthGuard>
-      <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 space-y-4 min-h-screen transition-all duration-500">
+    <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 space-y-4 min-h-screen transition-all duration-500">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -597,6 +564,5 @@ export default function Clients() {
         </Button>
       </div>
     </div>
-    </WorkspaceAuthGuard>
   );
 }
