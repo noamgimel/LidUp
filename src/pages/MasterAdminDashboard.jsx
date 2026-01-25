@@ -26,12 +26,14 @@ export default function MasterAdminDashboard() {
     const checkAuth = async () => {
       try {
         const user = await base44.auth.me();
-        const admins = await base44.entities.SystemAdmin.filter({ 
-          user_email: user.email, 
-          is_active: true 
-        });
+        const userEmail = user.email.trim().toLowerCase();
         
-        if (admins.length === 0) {
+        const allAdmins = await base44.entities.SystemAdmin.filter({ is_active: true });
+        const isAdmin = allAdmins.some(admin => 
+          admin.user_email.trim().toLowerCase() === userEmail
+        );
+        
+        if (!isAdmin) {
           navigate(createPageUrl('NoAccess'));
           return;
         }
