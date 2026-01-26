@@ -30,20 +30,8 @@ Deno.serve(async (req) => {
             }, { status: 400 });
         }
 
-        // מציאת המשתמש לפי email - User entity לא תומך ב-filter, צריך list
-        const allUsers = await base44.asServiceRole.entities.User.list();
-        const users = allUsers.filter(u => u.email === user_email);
-
-        if (!users || users.length === 0) {
-            return Response.json({ 
-                error: 'User not found' 
-            }, { status: 404 });
-        }
-
-        const targetUser = users[0];
-
-        // עדכון plan_type
-        await base44.asServiceRole.entities.User.update(targetUser.id, {
+        // עדכון plan_type - User entity uses special method
+        await base44.asServiceRole.users.update(user_email, {
             plan_type: plan_type
         });
 
