@@ -8,6 +8,7 @@ import Meetings from './pages/Meetings';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import WorkStageSettings from './pages/WorkStageSettings';
+import FormConnections from './pages/FormConnections';
 import __Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "Reports": Reports,
     "Settings": Settings,
     "WorkStageSettings": WorkStageSettings,
+    "FormConnections": FormConnections,
 }
 
 export const pagesConfig = {

@@ -43,14 +43,14 @@ const navigationItems = [
     icon: Calendar,
   },
   {
+    title: "חיבורי טפסים",
+    url: createPageUrl("FormConnections"),
+    icon: TrendingUp,
+  },
+  {
     title: "דוחות ואנליטיקה",
     url: createPageUrl("Reports"),
     icon: BarChart,
-  },
-  {
-    title: "אינטגרציות",
-    url: createPageUrl("Integrations"),
-    icon: TrendingUp,
   },
 ];
 
