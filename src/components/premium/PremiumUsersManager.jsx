@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { updateUserPlanType } from "@/functions/updateUserPlanType";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, X, Crown, UserCircle } from "lucide-react";
@@ -57,24 +58,30 @@ export default function PremiumUsersManager() {
     const newPlanType = user.plan_type === 'PREMIUM' ? 'FREE' : 'PREMIUM';
     
     try {
-      await base44.auth.updateMe({ plan_type: newPlanType });
-      
-      // If updating another user (as admin), we would need a backend function
-      // For now, this updates the current user only
-      
-      toast({
-        title: "עודכן בהצלחה!",
-        description: `המשתמש ${user.email} שונה ל-${newPlanType === 'PREMIUM' ? 'פרימיום' : 'חינמי'}`,
-        className: "bg-green-100 text-green-900 border-green-200",
+      const response = await updateUserPlanType({
+        user_email: user.email,
+        plan_type: newPlanType
       });
       
-      await loadUsers();
+      if (response.data.success) {
+        toast({
+          title: "עודכן בהצלחה!",
+          description: `המשתמש ${user.email} שונה ל-${newPlanType === 'PREMIUM' ? 'פרימיום' : 'חינמי'}`,
+          className: "bg-green-100 text-green-900 border-green-200",
+          duration: 3000,
+        });
+        
+        await loadUsers();
+      } else {
+        throw new Error(response.data.error || 'שגיאה בעדכון');
+      }
     } catch (error) {
       console.error("שגיאה בעדכון סטטוס:", error);
       toast({
         title: "שגיאה",
-        description: error.message || "לא ניתן לעדכן את סטטוס המשתמש",
+        description: error.response?.data?.error || error.message || "לא ניתן לעדכן את סטטוס המשתמש",
         variant: "destructive",
+        duration: 5000,
       });
     }
   };

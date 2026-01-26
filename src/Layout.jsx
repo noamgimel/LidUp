@@ -45,6 +45,11 @@ const getNavigationItems = (userEmail) => {
       icon: Calendar,
     },
     {
+      title: "אינטגרציות",
+      url: createPageUrl("Integrations"),
+      icon: TrendingUp,
+    },
+    {
       title: "דוחות ואנליטיקה",
       url: createPageUrl("Reports"),
       icon: BarChart,
@@ -53,10 +58,10 @@ const getNavigationItems = (userEmail) => {
 
   // רק Admin יכול לראות ניהול משתמשי פרימיום
   if (userEmail === 'noam.gamliel@gmail.com') {
-    baseItems.splice(3, 0, {
+    baseItems.splice(4, 0, {
       title: "ניהול משתמשי פרימיום",
       url: createPageUrl("PremiumManagement"),
-      icon: TrendingUp,
+      icon: Crown,
     });
   }
 
