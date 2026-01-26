@@ -207,16 +207,20 @@ export default function PremiumUsersManager() {
                       {new Date(user.created_date).toLocaleDateString('he-IL')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={user.plan_type === 'PREMIUM'}
-                          onCheckedChange={() => handleTogglePremium(user)}
-                          disabled={user.email === 'noam.gamliel@gmail.com'}
-                        />
-                        <Label className="text-xs text-slate-600">
-                          {user.plan_type === 'PREMIUM' ? 'הפוך לחינמי' : 'שדרג לפרימיום'}
-                        </Label>
-                      </div>
+                      {user.email === 'noam.gamliel@gmail.com' ? (
+                        <Badge className="bg-red-100 text-red-800 border-red-300">
+                          Admin
+                        </Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant={user.plan_type === 'PREMIUM' ? 'outline' : 'default'}
+                          onClick={() => handleTogglePremium(user)}
+                          className={user.plan_type === 'PREMIUM' ? '' : 'bg-purple-600 hover:bg-purple-700'}
+                        >
+                          {user.plan_type === 'PREMIUM' ? 'הורד לחינמי' : 'שדרג לפרימיום'}
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}

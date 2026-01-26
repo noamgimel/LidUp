@@ -224,7 +224,11 @@ export default function Layout({ children, currentPageName }) {
             <div className="border-t p-4 border-slate-200">
               {user && (
                 <div className="mb-3">
-                  {user.plan_type === 'PREMIUM' ? (
+                  {user.email === 'noam.gamliel@gmail.com' ? (
+                    <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-red-100 to-red-50 border border-red-300 rounded-lg py-2 px-3">
+                      <span className="text-sm font-semibold text-red-700">Admin</span>
+                    </div>
+                  ) : user.plan_type === 'PREMIUM' ? (
                     <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-100 to-purple-50 border border-purple-300 rounded-lg py-2 px-3">
                       <Crown className="w-4 h-4 text-purple-600" />
                       <span className="text-sm font-semibold text-purple-700">חשבון פרימיום</span>
