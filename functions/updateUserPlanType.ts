@@ -30,10 +30,9 @@ Deno.serve(async (req) => {
             }, { status: 400 });
         }
 
-        // מציאת המשתמש לפי email
-        const users = await base44.asServiceRole.entities.User.filter({
-            email: user_email
-        });
+        // מציאת המשתמש לפי email - User entity לא תומך ב-filter, צריך list
+        const allUsers = await base44.asServiceRole.entities.User.list();
+        const users = allUsers.filter(u => u.email === user_email);
 
         if (!users || users.length === 0) {
             return Response.json({ 
