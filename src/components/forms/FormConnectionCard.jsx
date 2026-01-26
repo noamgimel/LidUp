@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Edit, Trash2, ExternalLink, Code, MoreVertical } from "lucide-react";
+import { Copy, Edit, Trash2, ExternalLink, Code, MoreVertical, Eye, EyeOff } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
@@ -10,12 +10,86 @@ import { useToast } from "@/components/ui/use-toast";
 export default function FormConnectionCard({ formConnection, onEdit, onDelete, onToggle }) {
   const [showWebhookDialog, setShowWebhookDialog] = useState(false);
   const [showCodeDialog, setShowCodeDialog] = useState(false);
+  const [showSecretKey, setShowSecretKey] = useState(false);
   const { toast } = useToast();
 
-  const webhookUrl = `${window.location.origin}/api/functions/receiveWebsiteLead?secret_key=YOUR_SECRET_KEY&form_id=${formConnection.form_id}`;
+  const webhookUrl = formConnection.webhook_url || `${window.location.origin}/api/functions/receiveWebsiteLead`;
+  const secretKey = formConnection.secret_key || '';
+  const formId = formConnection.form_id || '';
 
-  const htmlCode = `<form id="leadForm">
-  <input type="hidden" name="form_id" value="${formConnection.form_id}" />
+  const getInstructionsByPlatform = () => {
+    switch (formConnection.platform_type) {
+      case 'WIX':
+        return {
+          title: "הנחיות חיבור ל-Wix",
+          content: `
+**שלב 1: צור Automation ב-Wix**
+1. היכנס ל-Dashboard של Wix
+2. עבור ל-Automations
+3. צור Automation חדש עם Trigger: "Form is submitted"
+
+**שלב 2: הוסף HTTP Request Action**
+1. בחר Action: "Send HTTP Request"
+2. הגדר את הפרטים הבאים:
+
+**URL:**
+${webhookUrl}
+
+**Method:** POST
+
+**Headers:**
+Content-Type: application/json
+
+**Body (JSON):**
+{
+  "form_id": "${formId}",
+  "secret_key": "${secretKey}",
+  "name": "{{name}}",
+  "email": "{{email}}",
+  "phone": "{{phone}}",
+  "company": "{{company}}",
+  "notes": "{{message}}",
+  "page_url": "{{page_url}}"
+}
+
+**הערה:** התאם את שמות השדות לשמות השדות בטופס שלך ב-Wix.
+          `
+        };
+      case 'WORDPRESS':
+        return {
+          title: "הנחיות חיבור ל-WordPress",
+          content: `
+**אופציה 1: Contact Form 7 + Webhook**
+1. התקן את התוסף "CF7 Webhook"
+2. בהגדרות הטופס, הוסף Webhook:
+
+**URL:**
+${webhookUrl}
+
+**Payload:**
+{
+  "form_id": "${formId}",
+  "secret_key": "${secretKey}",
+  "name": "[your-name]",
+  "email": "[your-email]",
+  "phone": "[your-phone]",
+  "company": "[your-company]",
+  "notes": "[your-message]",
+  "page_url": "[_url]"
+}
+
+**אופציה 2: WPForms + Zapier/Webhooks**
+השתמש בתוסף של WPForms לשליחת Webhooks והגדר את אותם פרמטרים.
+
+**אופציה 3: Code Snippet**
+הוסף את הקוד שמופיע בלשונית "קוד שילוב" לדף שלך.
+          `
+        };
+      case 'HTML_CODE':
+        return {
+          title: "קוד HTML לשילוב",
+          content: `
+<form id="leadForm_${formId}">
   <input type="text" name="name" placeholder="שם מלא" required />
   <input type="email" name="email" placeholder="אימייל" required />
   <input type="tel" name="phone" placeholder="טלפון" />
@@ -25,17 +99,21 @@ export default function FormConnectionCard({ formConnection, onEdit, onDelete, o
 </form>
 
 <script>
-document.getElementById('leadForm').addEventListener('submit', async (e) => {
+document.getElementById('leadForm_${formId}').addEventListener('submit', async (e) => {
   e.preventDefault();
   const formData = new FormData(e.target);
   const data = Object.fromEntries(formData);
+  
+  // הוספת מזהים ופרמטרים
+  data.form_id = '${formId}';
+  data.secret_key = '${secretKey}';
+  data.page_url = window.location.href;
   
   // הוספת פרמטרי UTM אם קיימים
   const urlParams = new URLSearchParams(window.location.search);
   data.utm_source = urlParams.get('utm_source') || '';
   data.utm_medium = urlParams.get('utm_medium') || '';
   data.utm_campaign = urlParams.get('utm_campaign') || '';
-  data.page_url = window.location.href;
   
   try {
     const response = await fetch('${webhookUrl}', {
@@ -48,13 +126,42 @@ document.getElementById('leadForm').addEventListener('submit', async (e) => {
       alert('הטופס נשלח בהצלחה!');
       e.target.reset();
     } else {
-      alert('שגיאה בשליחת הטופס');
+      const error = await response.json();
+      alert('שגיאה: ' + (error.error || 'לא ניתן לשלוח'));
     }
   } catch (error) {
     alert('שגיאה בשליחת הטופס');
   }
 });
-</script>`;
+</script>
+          `
+        };
+      default:
+        return {
+          title: "הנחיות כלליות",
+          content: `
+שלח בקשת POST ל:
+${webhookUrl}
+
+עם JSON בפורמט:
+{
+  "form_id": "${formId}",
+  "secret_key": "${secretKey}",
+  "name": "שם הלקוח",
+  "email": "email@example.com",
+  "phone": "050-1234567",
+  "company": "שם החברה",
+  "notes": "הודעה",
+  "page_url": "https://example.com/page"
+}
+
+שדות חובה: form_id, secret_key, name, email
+          `
+        };
+    }
+  };
+
+  const instructions = getInstructionsByPlatform();
 
   const copyToClipboard = (text, label) => {
     navigator.clipboard.writeText(text);
@@ -65,6 +172,8 @@ document.getElementById('leadForm').addEventListener('submit', async (e) => {
     });
   };
 
+  const maskedSecretKey = secretKey ? `${secretKey.substring(0, 8)}...${secretKey.substring(secretKey.length - 4)}` : '';
+
   return (
     <>
       <Card className="hover:shadow-lg transition-shadow">
@@ -72,6 +181,7 @@ document.getElementById('leadForm').addEventListener('submit', async (e) => {
           <div className="flex-1">
             <CardTitle className="text-lg font-bold">{formConnection.form_name}</CardTitle>
             <p className="text-sm text-slate-500 mt-1">{formConnection.client_name || 'ללא לקוח משויך'}</p>
+            <Badge variant="outline" className="mt-2">{formConnection.platform_type}</Badge>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant={formConnection.is_active ? "default" : "secondary"}>
@@ -106,27 +216,52 @@ document.getElementById('leadForm').addEventListener('submit', async (e) => {
             <div>
               <p className="text-slate-500 mb-1">מזהה טופס</p>
               <div className="flex items-center gap-2">
-                <code className="bg-slate-100 px-2 py-1 rounded text-xs">{formConnection.form_id}</code>
+                <code className="bg-slate-100 px-2 py-1 rounded text-xs truncate">{formId}</code>
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-6 w-6"
-                  onClick={() => copyToClipboard(formConnection.form_id, "מזהה הטופס")}
+                  className="h-6 w-6 flex-shrink-0"
+                  onClick={() => copyToClipboard(formId, "מזהה הטופס")}
                 >
                   <Copy className="h-3 w-3" />
                 </Button>
               </div>
             </div>
             <div>
-              <p className="text-slate-500 mb-1">לידים שהתקבלו</p>
-              <p className="font-bold text-lg">{formConnection.leads_received || 0}</p>
+              <p className="text-slate-500 mb-1">שליחות שהתקבלו</p>
+              <p className="font-bold text-lg">{formConnection.submissions_count || 0}</p>
             </div>
           </div>
 
-          {formConnection.last_lead_date && (
+          <div>
+            <p className="text-slate-500 mb-1 text-sm">מפתח סודי</p>
+            <div className="flex items-center gap-2">
+              <code className="bg-slate-100 px-2 py-1 rounded text-xs flex-1 truncate">
+                {showSecretKey ? secretKey : maskedSecretKey}
+              </code>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6 flex-shrink-0"
+                onClick={() => setShowSecretKey(!showSecretKey)}
+              >
+                {showSecretKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6 flex-shrink-0"
+                onClick={() => copyToClipboard(secretKey, "המפתח הסודי")}
+              >
+                <Copy className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+
+          {formConnection.last_submission_at && (
             <div className="text-sm">
-              <p className="text-slate-500">ליד אחרון התקבל ב:</p>
-              <p className="font-medium">{new Date(formConnection.last_lead_date).toLocaleString('he-IL')}</p>
+              <p className="text-slate-500">שליחה אחרונה:</p>
+              <p className="font-medium">{new Date(formConnection.last_submission_at).toLocaleString('he-IL')}</p>
             </div>
           )}
 
@@ -144,7 +279,7 @@ document.getElementById('leadForm').addEventListener('submit', async (e) => {
               className="flex-1"
             >
               <ExternalLink className="ml-2 h-4 w-4" />
-              כתובת Webhook
+              Webhook
             </Button>
             <Button 
               variant="outline" 
@@ -153,7 +288,7 @@ document.getElementById('leadForm').addEventListener('submit', async (e) => {
               className="flex-1"
             >
               <Code className="ml-2 h-4 w-4" />
-              קוד שילוב
+              הנחיות חיבור
             </Button>
           </div>
         </CardContent>
@@ -164,7 +299,7 @@ document.getElementById('leadForm').addEventListener('submit', async (e) => {
           <DialogHeader>
             <DialogTitle>כתובת Webhook</DialogTitle>
             <DialogDescription>
-              העתק את הכתובת הזו והשתמש בה בהגדרות הטופס שלך
+              העתק את הכתובת הזו והשתמש בה בהגדרות הטופס
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -178,11 +313,6 @@ document.getElementById('leadForm').addEventListener('submit', async (e) => {
               <Copy className="ml-2 h-4 w-4" />
               העתק כתובת
             </Button>
-            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-              <p className="text-sm text-yellow-800">
-                <strong>חשוב:</strong> החלף את YOUR_SECRET_KEY במפתח הסודי שלך מההגדרות.
-              </p>
-            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -190,21 +320,21 @@ document.getElementById('leadForm').addEventListener('submit', async (e) => {
       <Dialog open={showCodeDialog} onOpenChange={setShowCodeDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
-            <DialogTitle>קוד HTML לשילוב</DialogTitle>
+            <DialogTitle>{instructions.title}</DialogTitle>
             <DialogDescription>
-              העתק את הקוד הזו והדבק אותו באתר שלך
+              הנחיות מותאמות לפלטפורמה {formConnection.platform_type}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="bg-slate-900 p-4 rounded-lg overflow-x-auto">
-              <pre className="text-sm text-slate-100">{htmlCode}</pre>
+              <pre className="text-sm text-slate-100 whitespace-pre-wrap">{instructions.content}</pre>
             </div>
             <Button 
-              onClick={() => copyToClipboard(htmlCode, "קוד ה-HTML")}
+              onClick={() => copyToClipboard(instructions.content, "ההנחיות")}
               className="w-full"
             >
               <Copy className="ml-2 h-4 w-4" />
-              העתק קוד
+              העתק הנחיות
             </Button>
           </div>
         </DialogContent>

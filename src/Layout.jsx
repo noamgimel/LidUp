@@ -26,33 +26,41 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/toaster";
 
 
-const navigationItems = [
-  {
-    title: "דשבורד",
-    url: createPageUrl("Dashboard"),
-    icon: LayoutDashboard,
-  },
-  {
-    title: "לקוחות",
-    url: createPageUrl("Clients"),
-    icon: Users,
-  },
-  {
-    title: "פגישות",
-    url: createPageUrl("Meetings"),
-    icon: Calendar,
-  },
-  {
-    title: "חיבורי טפסים",
-    url: createPageUrl("FormConnections"),
-    icon: TrendingUp,
-  },
-  {
-    title: "דוחות ואנליטיקה",
-    url: createPageUrl("Reports"),
-    icon: BarChart,
-  },
-];
+const getNavigationItems = (userEmail) => {
+  const baseItems = [
+    {
+      title: "דשבורד",
+      url: createPageUrl("Dashboard"),
+      icon: LayoutDashboard,
+    },
+    {
+      title: "לקוחות",
+      url: createPageUrl("Clients"),
+      icon: Users,
+    },
+    {
+      title: "פגישות",
+      url: createPageUrl("Meetings"),
+      icon: Calendar,
+    },
+    {
+      title: "דוחות ואנליטיקה",
+      url: createPageUrl("Reports"),
+      icon: BarChart,
+    },
+  ];
+
+  // רק Admin יכול לראות חיבורי טפסים
+  if (userEmail === 'noam.gamliel@gmail.com') {
+    baseItems.splice(3, 0, {
+      title: "חיבורי טפסים",
+      url: createPageUrl("FormConnections"),
+      icon: TrendingUp,
+    });
+  }
+
+  return baseItems;
+};
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -188,7 +196,7 @@ export default function Layout({ children, currentPageName }) {
                   ניווט ראשי
                 </h3>
                 <nav className="space-y-2">
-                  {navigationItems.map((item) => (
+                  {getNavigationItems(user?.email).map((item) => (
                     <Link
                       key={item.title}
                       to={item.url}

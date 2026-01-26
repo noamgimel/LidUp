@@ -2,43 +2,32 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
     try {
-        // בדיקת אבטחה - secret_key
-        const url = new URL(req.url);
-        const secretKey = url.searchParams.get('secret_key');
-        const expectedSecret = Deno.env.get('WEBHOOK_SECRET_KEY');
-
-        if (!expectedSecret) {
-            return Response.json({ 
-                error: 'Server configuration error: WEBHOOK_SECRET_KEY not set' 
-            }, { status: 500 });
-        }
-
-        if (!secretKey || secretKey !== expectedSecret) {
-            return Response.json({ 
-                error: 'Unauthorized: Invalid or missing secret_key' 
-            }, { status: 401 });
-        }
-
         // קריאת הנתונים מהבקשה
         const payload = await req.json();
 
         // בדיקת שדות חובה
-        if (!payload.name || !payload.email) {
-            return Response.json({ 
-                error: 'Missing required fields: name and email are required' 
-            }, { status: 400 });
-        }
-
         if (!payload.form_id) {
             return Response.json({ 
                 error: 'Missing required field: form_id is required' 
             }, { status: 400 });
         }
 
+        if (!payload.secret_key) {
+            return Response.json({ 
+                error: 'Missing required field: secret_key is required' 
+            }, { status: 400 });
+        }
+
+        if (!payload.name || !payload.email) {
+            return Response.json({ 
+                error: 'Missing required fields: name and email are required' 
+            }, { status: 400 });
+        }
+
         // יצירת client מהבקשה עם service role
         const base44 = createClientFromRequest(req);
 
-        // חיפוש הטופס במערכת לפי form_id כדי למצוא את המשתמש הנכון
+        // חיפוש הטופס במערכת לפי form_id
         const formConnections = await base44.asServiceRole.entities.FormConnection.filter({
             form_id: payload.form_id,
             is_active: true
@@ -51,9 +40,24 @@ Deno.serve(async (req) => {
         }
 
         const formConnection = formConnections[0];
-        const targetUserEmail = formConnection.user_email;
 
-        // הכנת נתוני הליד
+        // אימות secret_key של החיבור הספציפי
+        if (payload.secret_key !== formConnection.secret_key) {
+            return Response.json({ 
+                error: 'Unauthorized: Invalid secret_key for this form' 
+            }, { status: 401 });
+        }
+
+        // קבלת מידע על הלקוח
+        const client = await base44.asServiceRole.entities.Client.get(formConnection.client_id);
+        
+        if (!client) {
+            return Response.json({ 
+                error: 'Client not found for this form' 
+            }, { status: 404 });
+        }
+
+        // הכנת נתוני הליד - ייווצר תחת created_by של הלקוח
         const leadData = {
             name: payload.name,
             email: payload.email,
@@ -61,7 +65,7 @@ Deno.serve(async (req) => {
             company: payload.company || '',
             notes: payload.notes || payload.message || '',
             status: 'lead',
-            source: 'Website Form',
+            source: `Website Form - ${formConnection.form_name}`,
             form_id: payload.form_id,
             page_url: payload.page_url || '',
             raw_payload: payload,
@@ -75,17 +79,16 @@ Deno.serve(async (req) => {
             ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || ''
         };
 
-        // יצירת הליד תחת המשתמש הנכון באמצעות created_by
-        // נשתמש ב-service role כדי ליצור את הליד עבור המשתמש
+        // יצירת הליד תחת created_by של הלקוח (מי שיצר את הלקוח במערכת)
         const newLead = await base44.asServiceRole.entities.Client.create({
             ...leadData,
-            created_by: targetUserEmail
+            created_by: client.created_by
         });
 
-        // עדכון מונה הלידים בטופס
+        // עדכון מונה השליחות בטופס
         await base44.asServiceRole.entities.FormConnection.update(formConnection.id, {
-            leads_received: (formConnection.leads_received || 0) + 1,
-            last_lead_date: new Date().toISOString()
+            submissions_count: (formConnection.submissions_count || 0) + 1,
+            last_submission_at: new Date().toISOString()
         });
 
         return Response.json({ 

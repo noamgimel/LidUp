@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export default function FormConnectionForm({ formConnection, onSubmit, onCancel }) {
+export default function FormConnectionForm({ formConnection, clients, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     form_name: "",
+    client_id: "",
     client_name: "",
+    platform_type: "HTML_CODE",
     notes: "",
   });
 
@@ -16,14 +19,29 @@ export default function FormConnectionForm({ formConnection, onSubmit, onCancel 
     if (formConnection) {
       setFormData({
         form_name: formConnection.form_name || "",
+        client_id: formConnection.client_id || "",
         client_name: formConnection.client_name || "",
+        platform_type: formConnection.platform_type || "HTML_CODE",
         notes: formConnection.notes || "",
       });
     }
   }, [formConnection]);
 
+  const handleClientChange = (clientId) => {
+    const selectedClient = clients.find(c => c.id === clientId);
+    setFormData({
+      ...formData, 
+      client_id: clientId,
+      client_name: selectedClient ? selectedClient.name : ""
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.client_id) {
+      alert("יש לבחור לקוח");
+      return;
+    }
     onSubmit(formData);
   };
 
@@ -38,6 +56,29 @@ export default function FormConnectionForm({ formConnection, onSubmit, onCancel 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
             <div>
+              <Label htmlFor="client_id">בחר לקוח *</Label>
+              <Select 
+                value={formData.client_id} 
+                onValueChange={handleClientChange}
+                disabled={!!formConnection}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="בחר לקוח מהרשימה" />
+                </SelectTrigger>
+                <SelectContent dir="rtl">
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name} {client.company ? `(${client.company})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-500 mt-1">
+                {formConnection ? "לא ניתן לשנות לקוח בחיבור קיים" : "הלקוח שהטופס מיועד עבורו"}
+              </p>
+            </div>
+
+            <div>
               <Label htmlFor="form_name">שם הטופס *</Label>
               <Input
                 id="form_name"
@@ -49,18 +90,25 @@ export default function FormConnectionForm({ formConnection, onSubmit, onCancel 
               />
               <p className="text-xs text-slate-500 mt-1">שם לזיהוי הטופס במערכת</p>
             </div>
+          </div>
 
-            <div>
-              <Label htmlFor="client_name">שם הלקוח</Label>
-              <Input
-                id="client_name"
-                value={formData.client_name}
-                onChange={(e) => setFormData({...formData, client_name: e.target.value})}
-                placeholder="למשל: חברת ABC"
-                className="mt-2"
-              />
-              <p className="text-xs text-slate-500 mt-1">הלקוח שהטופס מיועד עבורו</p>
-            </div>
+          <div>
+            <Label htmlFor="platform_type">סוג האתר *</Label>
+            <Select 
+              value={formData.platform_type} 
+              onValueChange={(value) => setFormData({...formData, platform_type: value})}
+            >
+              <SelectTrigger className="mt-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="WIX">Wix</SelectItem>
+                <SelectItem value="WORDPRESS">WordPress</SelectItem>
+                <SelectItem value="HTML_CODE">קוד HTML מותאם</SelectItem>
+                <SelectItem value="OTHER">אחר</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-slate-500 mt-1">הפלטפורמה שבה הטופס מוטמע</p>
           </div>
 
           <div>

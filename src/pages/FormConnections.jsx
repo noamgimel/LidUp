@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, X, Link as LinkIcon } from "lucide-react";
+import { Plus, Search, X, Link as LinkIcon, ShieldAlert } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useToast } from "@/components/ui/use-toast";
 import FormConnectionCard from "../components/forms/FormConnectionCard";
@@ -10,30 +10,52 @@ import FormConnectionForm from "../components/forms/FormConnectionForm";
 
 export default function FormConnections() {
   const [connections, setConnections] = useState([]);
+  const [clients, setClients] = useState([]);
   const [filteredConnections, setFilteredConnections] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingConnection, setEditingConnection] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadData();
+    checkAuthAndLoadData();
   }, []);
 
   useEffect(() => {
     filterConnections();
   }, [connections, searchTerm]);
 
-  const loadData = async () => {
+  const checkAuthAndLoadData = async () => {
     setIsLoading(true);
     try {
       const user = await base44.auth.me();
       setCurrentUser(user);
       
-      const connectionsData = await base44.entities.FormConnection.list("-created_date");
+      // בדיקת הרשאות Admin
+      if (user.email !== 'noam.gamliel@gmail.com') {
+        setIsAuthorized(false);
+        setIsLoading(false);
+        toast({
+          title: "גישה נדחתה",
+          description: "אין לך הרשאה לצפות בעמוד זה",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setIsAuthorized(true);
+      
+      // טעינת נתונים
+      const [connectionsData, clientsData] = await Promise.all([
+        base44.entities.FormConnection.list("-created_date"),
+        base44.entities.Client.list()
+      ]);
+      
       setConnections(connectionsData || []);
+      setClients(clientsData || []);
     } catch (error) {
       console.error("שגיאה בטעינת נתונים:", error);
       toast({
@@ -63,6 +85,10 @@ export default function FormConnections() {
     return 'form_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
   };
 
+  const generateSecretKey = () => {
+    return 'sk_' + Math.random().toString(36).substr(2, 16) + Math.random().toString(36).substr(2, 16);
+  };
+
   const handleSubmit = async (formData) => {
     try {
       if (editingConnection) {
@@ -73,13 +99,20 @@ export default function FormConnections() {
           className: "bg-green-100 text-green-900 border-green-200",
         });
       } else {
+        const formId = generateFormId();
+        const secretKey = generateSecretKey();
+        const webhookUrl = `${window.location.origin}/api/functions/receiveWebsiteLead`;
+        
         const newConnection = {
           ...formData,
-          form_id: generateFormId(),
-          user_email: currentUser.email,
+          form_id: formId,
+          secret_key: secretKey,
+          webhook_url: webhookUrl,
           is_active: true,
-          leads_received: 0,
+          submissions_count: 0,
+          created_by: currentUser.email
         };
+        
         await base44.entities.FormConnection.create(newConnection);
         toast({
           title: "נוצר בהצלחה!",
@@ -89,12 +122,12 @@ export default function FormConnections() {
       }
       setShowForm(false);
       setEditingConnection(null);
-      loadData();
+      await checkAuthAndLoadData();
     } catch (error) {
       console.error("שגיאה בשמירת חיבור:", error);
       toast({
         title: "שגיאה",
-        description: "לא ניתן לשמור את החיבור",
+        description: error.message || "לא ניתן לשמור את החיבור",
         variant: "destructive",
       });
     }
@@ -114,7 +147,7 @@ export default function FormConnections() {
           description: "החיבור נמחק מהמערכת",
           className: "bg-green-100 text-green-900 border-green-200",
         });
-        loadData();
+        await checkAuthAndLoadData();
       } catch (error) {
         console.error("שגיאה במחיקת חיבור:", error);
         toast({
@@ -136,11 +169,31 @@ export default function FormConnections() {
         description: `הטופס ${connection.is_active ? 'הושבת' : 'הופעל'}`,
         className: "bg-green-100 text-green-900 border-green-200",
       });
-      loadData();
+      await checkAuthAndLoadData();
     } catch (error) {
       console.error("שגיאה בעדכון סטטוס:", error);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 min-h-screen flex items-center justify-center">
+        <p className="text-slate-500">טוען...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <ShieldAlert className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">גישה נדחתה</h2>
+          <p className="text-slate-600">אין לך הרשאה לצפות בעמוד זה. עמוד זה מיועד למנהלי המערכת בלבד.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 space-y-4 min-h-screen">
@@ -169,7 +222,7 @@ export default function FormConnections() {
             <LinkIcon className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-900">
               <p className="font-semibold mb-1">איך זה עובד?</p>
-              <p>כל חיבור טופס מקבל מזהה ייחודי (form_id). כשתשלב את הקוד באתר הלקוח, כל ליד שיגיע יופיע אוטומטית במערכת שלך תחת החשבון המתאים.</p>
+              <p>כל חיבור טופס מקבל מזהה ייחודי (form_id) ומפתח סודי (secret_key). כשתשלב את הקוד באתר הלקוח, כל ליד שיגיע יופיע אוטומטית במערכת תחת הלקוח המתאים.</p>
             </div>
           </div>
         </div>
@@ -204,6 +257,7 @@ export default function FormConnections() {
             >
               <FormConnectionForm
                 formConnection={editingConnection}
+                clients={clients}
                 onSubmit={handleSubmit}
                 onCancel={() => {
                   setShowForm(false);
@@ -215,11 +269,7 @@ export default function FormConnections() {
         </AnimatePresence>
 
         {/* Connections Grid */}
-        {isLoading ? (
-          <div className="text-center py-12">
-            <p className="text-slate-500">טוען חיבורים...</p>
-          </div>
-        ) : filteredConnections.length === 0 ? (
+        {filteredConnections.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg border border-slate-200">
             <LinkIcon className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <p className="text-slate-500 mb-2">
