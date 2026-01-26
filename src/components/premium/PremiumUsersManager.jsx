@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { updateUserPlanType } from "@/functions/updateUserPlanType";
+import { setUserPlan } from "@/functions/setUserPlan";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, X, Crown, UserCircle } from "lucide-react";
@@ -58,8 +58,8 @@ export default function PremiumUsersManager() {
     const newPlanType = user.plan_type === 'PREMIUM' ? 'FREE' : 'PREMIUM';
     
     try {
-      const response = await updateUserPlanType({
-        user_email: user.email,
+      const response = await setUserPlan({
+        target_user_email: user.email,
         plan_type: newPlanType
       });
       
@@ -73,13 +73,17 @@ export default function PremiumUsersManager() {
         
         await loadUsers();
       } else {
-        throw new Error(response.data.error || 'שגיאה בעדכון');
+        throw new Error(response.data.message || response.data.error || 'שגיאה בעדכון');
       }
     } catch (error) {
       console.error("שגיאה בעדכון סטטוס:", error);
+      const errorData = error.response?.data;
+      const errorMessage = errorData?.message || errorData?.error || error.message || "לא ניתן לעדכן את סטטוס המשתמש";
+      const whereFailedInfo = errorData?.where_failed ? ` (${errorData.where_failed})` : '';
+      
       toast({
         title: "שגיאה",
-        description: error.response?.data?.error || error.message || "לא ניתן לעדכן את סטטוס המשתמש",
+        description: errorMessage + whereFailedInfo,
         variant: "destructive",
         duration: 5000,
       });
