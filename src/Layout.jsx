@@ -13,6 +13,7 @@ import {
   LogOut,
   UserCircle,
   Settings,
+  Crown,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -50,11 +51,11 @@ const getNavigationItems = (userEmail) => {
     },
   ];
 
-  // רק Admin יכול לראות חיבורי טפסים
+  // רק Admin יכול לראות ניהול משתמשי פרימיום
   if (userEmail === 'noam.gamliel@gmail.com') {
     baseItems.splice(3, 0, {
-      title: "חיבורי טפסים",
-      url: createPageUrl("FormConnections"),
+      title: "ניהול משתמשי פרימיום",
+      url: createPageUrl("PremiumManagement"),
       icon: TrendingUp,
     });
   }
@@ -216,6 +217,20 @@ export default function Layout({ children, currentPageName }) {
             </div>
 
             <div className="border-t p-4 border-slate-200">
+              {user && (
+                <div className="mb-3">
+                  {user.plan_type === 'PREMIUM' ? (
+                    <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-100 to-purple-50 border border-purple-300 rounded-lg py-2 px-3">
+                      <Crown className="w-4 h-4 text-purple-600" />
+                      <span className="text-sm font-semibold text-purple-700">חשבון פרימיום</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2 bg-gradient-to-r from-green-100 to-green-50 border border-green-300 rounded-lg py-2 px-3">
+                      <span className="text-sm font-semibold text-green-700">מסלול חינמי</span>
+                    </div>
+                  )}
+                </div>
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger className="w-full">
                   {user ? (
