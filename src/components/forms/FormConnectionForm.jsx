@@ -7,12 +7,24 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function FormConnectionForm({ formConnection, clients, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState({
-    form_name: "",
-    client_id: "",
-    client_name: "",
-    platform_type: "HTML_CODE",
-    notes: "",
+  const [formData, setFormData] = useState(() => {
+    // אתחול ראשוני - אם יש רק לקוח אחד, נבחר אותו
+    if (clients.length === 1) {
+      return {
+        form_name: "",
+        client_id: clients[0].id,
+        client_name: clients[0].name,
+        platform_type: "HTML_CODE",
+        notes: "",
+      };
+    }
+    return {
+      form_name: "",
+      client_id: "",
+      client_name: "",
+      platform_type: "HTML_CODE",
+      notes: "",
+    };
   });
 
   useEffect(() => {
@@ -24,15 +36,8 @@ export default function FormConnectionForm({ formConnection, clients, onSubmit, 
         platform_type: formConnection.platform_type || "HTML_CODE",
         notes: formConnection.notes || "",
       });
-    } else if (clients.length === 1) {
-      // אם יש רק לקוח אחד, נבחר אותו אוטומטית
-      setFormData({
-        ...formData,
-        client_id: clients[0].id,
-        client_name: clients[0].name
-      });
     }
-  }, [formConnection, clients]);
+  }, [formConnection]);
 
   const handleClientChange = (clientId) => {
     const selectedClient = clients.find(c => c.id === clientId);
