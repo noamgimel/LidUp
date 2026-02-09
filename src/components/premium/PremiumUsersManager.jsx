@@ -102,6 +102,10 @@ export default function PremiumUsersManager() {
 
   const handleCreateFormConnection = async (userEmail, formData) => {
     try {
+      console.log("=== התחלת יצירת חיבור טופס ===");
+      console.log("userEmail:", userEmail);
+      console.log("formData:", formData);
+      
       const formId = generateFormId();
       const secretKey = generateSecretKey();
       const webhookUrl = `${window.location.origin}/api/functions/receiveWebsiteLead`;
@@ -116,7 +120,10 @@ export default function PremiumUsersManager() {
         created_by: userEmail
       };
       
-      await base44.asServiceRole.entities.FormConnection.create(newConnection);
+      console.log("newConnection לפני יצירה:", newConnection);
+      
+      const result = await base44.asServiceRole.entities.FormConnection.create(newConnection);
+      console.log("התוצאה מהיצירה:", result);
       
       toast({
         title: "נוצר בהצלחה!",
@@ -127,10 +134,15 @@ export default function PremiumUsersManager() {
       setShowFormConnectionForm(false);
       await loadUsers();
     } catch (error) {
-      console.error("שגיאה ביצירת חיבור:", error);
+      console.error("=== שגיאה מפורטת ביצירת חיבור ===");
+      console.error("סוג השגיאה:", error.constructor.name);
+      console.error("הודעת השגיאה:", error.message);
+      console.error("אובייקט השגיאה המלא:", error);
+      console.error("Stack trace:", error.stack);
+      
       toast({
-        title: "שגיאה",
-        description: "לא ניתן ליצור חיבור טופס",
+        title: "שגיאה ביצירת חיבור",
+        description: error.message || "לא ניתן ליצור חיבור טופס - פתח Console לפרטים",
         variant: "destructive",
       });
     }
