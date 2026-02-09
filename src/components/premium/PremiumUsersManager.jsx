@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { setUserPlan } from "@/functions/setUserPlan";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, X, Crown, UserCircle } from "lucide-react";
@@ -58,32 +57,21 @@ export default function PremiumUsersManager() {
     const newPlanType = user.plan_type === 'PREMIUM' ? 'FREE' : 'PREMIUM';
     
     try {
-      const response = await setUserPlan({
-        target_user_email: user.email,
-        plan_type: newPlanType
-      });
-      
-      if (response.data.success) {
-        toast({
-          title: "עודכן בהצלחה!",
-          description: `המשתמש ${user.email} שונה ל-${newPlanType === 'PREMIUM' ? 'פרימיום' : 'חינמי'}`,
-          className: "bg-green-100 text-green-900 border-green-200",
-          duration: 3000,
-        });
-        
-        await loadUsers();
-      } else {
-        throw new Error(response.data.message || response.data.error || 'שגיאה בעדכון');
-      }
-    } catch (error) {
-      console.error("שגיאה בעדכון סטטוס:", error);
-      const errorData = error.response?.data;
-      const errorMessage = errorData?.message || errorData?.error || error.message || "לא ניתן לעדכן את סטטוס המשתמש";
-      const whereFailedInfo = errorData?.where_failed ? ` (${errorData.where_failed})` : '';
+      await base44.entities.User.update(user.id, { plan_type: newPlanType });
       
       toast({
+        title: "עודכן בהצלחה!",
+        description: `המשתמש ${user.email} שונה ל-${newPlanType === 'PREMIUM' ? 'פרימיום' : 'חינמי'}`,
+        className: "bg-green-100 text-green-900 border-green-200",
+        duration: 3000,
+      });
+      
+      await loadUsers();
+    } catch (error) {
+      console.error("שגיאה בעדכון סטטוס:", error);
+      toast({
         title: "שגיאה",
-        description: errorMessage + whereFailedInfo,
+        description: error.message || "לא ניתן לעדכן את סטטוס המשתמש",
         variant: "destructive",
         duration: 5000,
       });
