@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function FormConnectionForm({ formConnection, clients, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     form_name: "",
-    client_id: "",
-    client_name: "",
+    client_id: clients.length === 1 ? clients[0].id : "",
+    client_name: clients.length === 1 ? clients[0].name : "",
     platform_type: "HTML_CODE",
     notes: "",
   });
@@ -24,8 +24,8 @@ export default function FormConnectionForm({ formConnection, clients, onSubmit, 
         platform_type: formConnection.platform_type || "HTML_CODE",
         notes: formConnection.notes || "",
       });
-    } else if (clients.length === 1 && !formData.client_id) {
-      // אם יש רק לקוח אחד ועוד לא נבחר, נבחר אותו אוטומטית
+    } else if (clients.length === 1) {
+      // אם יש רק לקוח אחד, נבחר אותו אוטומטית
       setFormData(prev => ({
         ...prev,
         client_id: clients[0].id,
@@ -45,7 +45,7 @@ export default function FormConnectionForm({ formConnection, clients, onSubmit, 
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.client_id) {
+    if (!formData.client_id && clients.length > 0) {
       alert("יש לבחור לקוח");
       return;
     }
