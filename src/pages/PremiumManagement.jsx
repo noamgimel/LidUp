@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, X, ShieldAlert, Crown, Users as UsersIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PremiumUsersManager from "../components/premium/PremiumUsersManager";
-import FormConnectionsManager from "../components/premium/FormConnectionsManager";
 
 export default function PremiumManagement() {
   const [isLoading, setIsLoading] = useState(true);
@@ -90,27 +88,10 @@ export default function PremiumManagement() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="users" dir="rtl">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="users" className="gap-2">
-              <UsersIcon className="w-4 h-4" />
-              משתמשים
-            </TabsTrigger>
-            <TabsTrigger value="forms" className="gap-2">
-              <Crown className="w-4 h-4" />
-              חיבורי טפסים
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="users" className="mt-6">
-            <PremiumUsersManager />
-          </TabsContent>
-
-          <TabsContent value="forms" className="mt-6">
-            <FormConnectionsManager />
-          </TabsContent>
-        </Tabs>
+        {/* Users Management */}
+        <div className="mt-6">
+          <PremiumUsersManager />
+        </div>
       </div>
     </div>
   );
