@@ -102,28 +102,27 @@ export default function PremiumUsersManager() {
 
   const handleCreateFormConnection = async (userEmail, formData) => {
     try {
-      console.log("=== התחלת יצירת חיבור טופס ===");
-      console.log("userEmail:", userEmail);
-      console.log("formData:", formData);
-      
       const formId = generateFormId();
       const secretKey = generateSecretKey();
       const webhookUrl = `${window.location.origin}/api/functions/receiveWebsiteLead`;
       
-      const newConnection = {
+      const newConnectionData = {
         ...formData,
         form_id: formId,
         secret_key: secretKey,
         webhook_url: webhookUrl,
         is_active: true,
-        submissions_count: 0,
-        created_by: userEmail
+        submissions_count: 0
       };
       
-      console.log("newConnection לפני יצירה:", newConnection);
+      const response = await base44.functions.invoke('createFormConnectionForUser', {
+        userEmail,
+        formData: newConnectionData
+      });
       
-      const result = await base44.asServiceRole.entities.FormConnection.create(newConnection);
-      console.log("התוצאה מהיצירה:", result);
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
       
       toast({
         title: "נוצר בהצלחה!",
@@ -134,15 +133,11 @@ export default function PremiumUsersManager() {
       setShowFormConnectionForm(false);
       await loadUsers();
     } catch (error) {
-      console.error("=== שגיאה מפורטת ביצירת חיבור ===");
-      console.error("סוג השגיאה:", error.constructor.name);
-      console.error("הודעת השגיאה:", error.message);
-      console.error("אובייקט השגיאה המלא:", error);
-      console.error("Stack trace:", error.stack);
+      console.error("שגיאה ביצירת חיבור:", error);
       
       toast({
         title: "שגיאה ביצירת חיבור",
-        description: error.message || "לא ניתן ליצור חיבור טופס - פתח Console לפרטים",
+        description: error.message || "לא ניתן ליצור חיבור טופס",
         variant: "destructive",
       });
     }
