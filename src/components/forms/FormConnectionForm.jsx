@@ -24,8 +24,15 @@ export default function FormConnectionForm({ formConnection, clients, onSubmit, 
         platform_type: formConnection.platform_type || "HTML_CODE",
         notes: formConnection.notes || "",
       });
+    } else if (clients.length === 1) {
+      // אם יש רק לקוח אחד, נבחר אותו אוטומטית
+      setFormData({
+        ...formData,
+        client_id: clients[0].id,
+        client_name: clients[0].name
+      });
     }
-  }, [formConnection]);
+  }, [formConnection, clients]);
 
   const handleClientChange = (clientId) => {
     const selectedClient = clients.find(c => c.id === clientId);
@@ -55,28 +62,30 @@ export default function FormConnectionForm({ formConnection, clients, onSubmit, 
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
-            <div>
-              <Label htmlFor="client_id">בחר לקוח *</Label>
-              <Select 
-                value={formData.client_id} 
-                onValueChange={handleClientChange}
-                disabled={!!formConnection}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="בחר לקוח מהרשימה" />
-                </SelectTrigger>
-                <SelectContent dir="rtl">
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name} {client.company ? `(${client.company})` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-slate-500 mt-1">
-                {formConnection ? "לא ניתן לשנות לקוח בחיבור קיים" : "הלקוח שהטופס מיועד עבורו"}
-              </p>
-            </div>
+            {clients.length > 1 && (
+              <div>
+                <Label htmlFor="client_id">בחר לקוח *</Label>
+                <Select 
+                  value={formData.client_id} 
+                  onValueChange={handleClientChange}
+                  disabled={!!formConnection}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="בחר לקוח מהרשימה" />
+                  </SelectTrigger>
+                  <SelectContent dir="rtl">
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name} {client.company ? `(${client.company})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-500 mt-1">
+                  {formConnection ? "לא ניתן לשנות לקוח בחיבור קיים" : "הלקוח שהטופס מיועד עבורו"}
+                </p>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="form_name">שם הטופס *</Label>
