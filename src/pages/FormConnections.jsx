@@ -48,24 +48,14 @@ export default function FormConnections() {
       
       setIsAuthorized(true);
       
-      // טעינת נתונים - Admin רואה הכל
-      const [connectionsData, allUsers, clientsData] = await Promise.all([
+      // טעינת נתונים - Admin רואה את כל הלקוחות
+      const [connectionsData, clientsData] = await Promise.all([
         base44.entities.FormConnection.list("-created_date"),
-        base44.entities.User.list(),
         base44.entities.Client.list()
       ]);
       
-      // סינון לקוחות רק של משתמשי פרימיום (או Admin)
-      const premiumUserEmails = allUsers
-        .filter(u => u.plan_type === 'PREMIUM' || u.email === 'noam.gamliel@gmail.com')
-        .map(u => u.email);
-      
-      const premiumClients = clientsData.filter(c => 
-        premiumUserEmails.includes(c.created_by)
-      );
-      
       setConnections(connectionsData || []);
-      setClients(premiumClients || []);
+      setClients(clientsData || []);
     } catch (error) {
       console.error("שגיאה בטעינת נתונים:", error);
       toast({
