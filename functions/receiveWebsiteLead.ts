@@ -7,8 +7,12 @@ Deno.serve(async (req) => {
         console.log('=== Webhook Received ===');
         console.log('Full Payload:', JSON.stringify(payload, null, 2));
 
+        // אם הנתונים תחת data object, נשתמש בזה (תמיכה במבני JSON שונים)
+        const data = payload.data || payload;
+        console.log('Working with data:', JSON.stringify(data, null, 2));
+
         // בדיקת שדות חובה
-        if (!payload.form_id) {
+        if (!data.form_id) {
             console.log('ERROR: Missing form_id');
             return Response.json({ 
                 error: 'Missing required field: form_id is required' 
