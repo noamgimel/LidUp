@@ -104,7 +104,8 @@ Deno.serve(async (req) => {
             utm_term: payload.utm_term || '',
             consent_marketing: payload.consent_marketing || false,
             submission_date: new Date().toISOString(),
-            ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || ''
+            ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '',
+            owner_email: formConnection.owner_email  // שמירת בעל הליד
         };
 
         // יצירת הליד תחת owner_email של חיבור הטופס
