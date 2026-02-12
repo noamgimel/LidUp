@@ -84,18 +84,18 @@ Deno.serve(async (req) => {
         }
         console.log('✓ Secret key validated');
 
-        // הכנת נתוני הליד - ייווצר תחת owner_email של חיבור הטופס
+        // הכנת נתוני הליד
         const leadData = {
             name: payload.name,
             email: payload.email,
-            phone: payload.phone || '',
+            phone: mappedPhone,
             company: payload.company || '',
-            notes: payload.notes || payload.message || '',
+            notes: mappedNotes,
             status: 'lead',
             source: `Website Form - ${formConnection.form_name}`,
             form_id: payload.form_id,
             page_url: payload.page_url || '',
-            raw_payload: raw,  // שמירת הPayload המקורי לדיבוג
+            raw_payload: raw,
             utm_source: payload.utm_source || '',
             utm_medium: payload.utm_medium || '',
             utm_campaign: payload.utm_campaign || '',
@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
             consent_marketing: payload.consent_marketing || false,
             submission_date: new Date().toISOString(),
             ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '',
-            owner_email: formConnection.owner_email  // שמירת בעל הליד
+            owner_email: formConnection.owner_email
         };
 
         // יצירת הליד תחת owner_email של חיבור הטופס
