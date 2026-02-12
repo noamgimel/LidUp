@@ -4,6 +4,8 @@ Deno.serve(async (req) => {
     try {
         // קריאת הנתונים מהבקשה
         const payload = await req.json();
+        console.log('=== Webhook Received ===');
+        console.log('Full Payload:', JSON.stringify(payload, null, 2));
 
         // בדיקת שדות חובה
         if (!payload.form_id) {
