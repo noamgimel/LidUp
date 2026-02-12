@@ -52,11 +52,14 @@ Deno.serve(async (req) => {
         console.log('✓ Form found:', formConnection.form_name, 'Owner:', formConnection.owner_email);
 
         // אימות secret_key של החיבור הספציפי
+        console.log('Validating secret_key...');
         if (payload.secret_key !== formConnection.secret_key) {
+            console.log('ERROR: Invalid secret_key. Expected:', formConnection.secret_key, 'Got:', payload.secret_key);
             return Response.json({ 
                 error: 'Unauthorized: Invalid secret_key for this form' 
             }, { status: 401 });
         }
+        console.log('✓ Secret key validated');
 
         // הכנת נתוני הליד - ייווצר תחת owner_email של חיבור הטופס
         const leadData = {
