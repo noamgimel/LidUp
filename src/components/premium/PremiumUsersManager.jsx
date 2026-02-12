@@ -67,28 +67,49 @@ export default function PremiumUsersManager() {
     const newPlanType = user.plan_type === 'PREMIUM' ? 'FREE' : 'PREMIUM';
     
     try {
+      console.log("=== UI: התחלת עדכון מסלול ===");
+      console.log("User:", user.email);
+      console.log("New Plan Type:", newPlanType);
+      
       const response = await base44.functions.invoke('updateUserPlanType', {
         user_email: user.email,
         plan_type: newPlanType
       });
       
-      if (response.data.error) {
-        throw new Error(response.data.error);
+      console.log("=== תגובת השרת ===", response.data);
+      
+      // בדיקת תגובה
+      if (!response.data.ok) {
+        const errorMsg = response.data.message || "שגיאה לא ידועה";
+        const errorDetails = response.data.details ? 
+          `\n\nפרטים:\n${JSON.stringify(response.data.details, null, 2)}` : "";
+        
+        console.error("Server returned error:", {
+          code: response.data.error_code,
+          message: errorMsg,
+          details: response.data.details
+        });
+        
+        throw new Error(`${errorMsg}${errorDetails}`);
       }
       
+      console.log("✅ המסלול עודכן בהצלחה!");
+      
       toast({
-        title: "עודכן בהצלחה!",
-        description: `המשתמש ${user.full_name} שודרג ל${newPlanType === 'PREMIUM' ? 'פרימיום' : 'חינמי'}`,
+        title: "✅ עודכן בהצלחה!",
+        description: `המשתמש ${user.full_name} עבר ל${newPlanType === 'PREMIUM' ? 'פרימיום' : 'חינמי'}`,
         className: "bg-green-100 text-green-900 border-green-200",
       });
       
       await loadUsers();
     } catch (error) {
-      console.error("שגיאה בעדכון מסלול:", error);
+      console.error("❌ UI Error:", error);
+      
       toast({
         title: "שגיאה בעדכון מסלול",
-        description: error.message || "לא ניתן לעדכן את המסלול",
+        description: error.message || "שגיאה לא ידועה - פתח Console",
         variant: "destructive",
+        duration: 10000,
       });
     }
   };
@@ -98,33 +119,18 @@ export default function PremiumUsersManager() {
     user.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const generateFormId = () => {
-    return 'form_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
-  };
-
-  const generateSecretKey = () => {
-    return 'sk_' + Math.random().toString(36).substr(2, 16) + Math.random().toString(36).substr(2, 16);
-  };
-
   const handleCreateFormConnection = async (userEmail, formData) => {
     try {
       console.log("=== UI: התחלת יצירת חיבור ===");
       console.log("Target User Email:", userEmail);
       console.log("Form Data from UI:", formData);
       
-      const formId = generateFormId();
-      const secretKey = generateSecretKey();
-      const webhookUrl = `${window.location.origin}/api/functions/receiveWebsiteLead`;
-      
-      const newConnectionData = {
+      // שליחת נתונים מינימליים בלבד - השרת יצור form_id, secret_key, webhook_url
+      const payload = {
+        userEmail: userEmail,
         form_name: formData.form_name,
         platform_type: formData.platform_type,
         notes: formData.notes || "",
-        form_id: formId,
-        secret_key: secretKey,
-        webhook_url: webhookUrl,
-        is_active: true,
-        submissions_count: 0,
         // client_id ו-client_name רק אם קיימים
         ...(formData.client_id && { 
           client_id: formData.client_id,
@@ -132,15 +138,9 @@ export default function PremiumUsersManager() {
         })
       };
       
-      console.log("=== Payload נשלח לשרת ===", JSON.stringify({
-        userEmail,
-        formData: newConnectionData
-      }, null, 2));
+      console.log("=== Payload נשלח לשרת ===", JSON.stringify(payload, null, 2));
       
-      const response = await base44.functions.invoke('createFormConnectionForUser', {
-        userEmail,
-        formData: newConnectionData
-      });
+      const response = await base44.functions.invoke('createFormConnectionForUser', payload);
       
       console.log("=== תגובת השרת ===", response.data);
       

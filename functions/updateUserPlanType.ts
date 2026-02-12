@@ -1,54 +1,156 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
+    let payload = null;
+    let adminUser = null;
+    let authState = "not_attempted";
+
     try {
         const base44 = createClientFromRequest(req);
         
-        // אימות שהמשתמש הוא admin
-        const user = await base44.auth.me();
-        
-        if (!user || user.email !== 'noam.gamliel@gmail.com') {
+        // שלב 1: אימות אדמין
+        try {
+            adminUser = await base44.auth.me();
+            authState = adminUser ? "authenticated" : "no_user";
+            console.log("✓ Admin authenticated:", adminUser?.email);
+        } catch (authError) {
+            authState = "auth_error";
+            console.error("✗ Auth failed:", {
+                message: authError.message,
+                stack: authError.stack
+            });
             return Response.json({ 
-                error: 'Forbidden: Admin access required' 
+                ok: false,
+                error_code: "AUTH_FAILED",
+                message: "כשל באימות משתמש - אין סשן פעיל",
+                details: { 
+                    error: authError.message,
+                    stack: authError.stack,
+                    auth_state: authState
+                }
+            }, { status: 401 });
+        }
+        
+        if (!adminUser || adminUser.email !== 'noam.gamliel@gmail.com') {
+            console.error("✗ Not admin:", adminUser?.email);
+            return Response.json({ 
+                ok: false,
+                error_code: "FORBIDDEN",
+                message: "רק אדמין מורשה יכול לעדכן מסלולים",
+                details: { 
+                    current_user: adminUser?.email,
+                    auth_state: authState
+                }
             }, { status: 403 });
         }
 
-        // קריאת הנתונים מהבקשה
-        const { user_email, plan_type } = await req.json();
-
-        // בדיקת שדות חובה
-        if (!user_email || !plan_type) {
+        // שלב 2: קריאת הנתונים
+        try {
+            payload = await req.json();
+            console.log("✓ Payload received:", JSON.stringify(payload, null, 2));
+        } catch (parseError) {
+            console.error("✗ JSON parse failed:", parseError.message);
             return Response.json({ 
-                error: 'Missing required fields: user_email and plan_type are required' 
+                ok: false,
+                error_code: "INVALID_JSON",
+                message: "נתונים לא תקינים",
+                details: { 
+                    error: parseError.message,
+                    admin_user: adminUser?.email
+                }
             }, { status: 400 });
         }
 
-        // בדיקת ערכים תקינים
-        if (!['FREE', 'PREMIUM'].includes(plan_type)) {
+        const { user_email, plan_type } = payload;
+
+        // שלב 3: בדיקת שדות חובה
+        const validationErrors = [];
+        
+        if (!user_email) {
+            validationErrors.push("user_email חסר");
+        }
+        if (!plan_type) {
+            validationErrors.push("plan_type חסר");
+        }
+        if (plan_type && !['FREE', 'PREMIUM'].includes(plan_type)) {
+            validationErrors.push(`plan_type לא תקין: ${plan_type}. חייב להיות FREE או PREMIUM`);
+        }
+
+        if (validationErrors.length > 0) {
+            console.error("✗ Validation failed:", validationErrors);
             return Response.json({ 
-                error: 'Invalid plan_type. Must be FREE or PREMIUM' 
+                ok: false,
+                error_code: "VALIDATION_FAILED",
+                message: "שדות חובה חסרים או לא תקינים",
+                details: { 
+                    errors: validationErrors,
+                    received_payload: payload,
+                    admin_user: adminUser?.email
+                }
             }, { status: 400 });
         }
 
-        // עדכון plan_type - User entity uses special method
-        await base44.asServiceRole.users.update(user_email, {
-            plan_type: plan_type
-        });
+        console.log("✓ Validation passed");
+
+        // שלב 4: עדכון plan_type
+        try {
+            await base44.asServiceRole.users.update(user_email, {
+                plan_type: plan_type
+            });
+            console.log(`✓ User ${user_email} updated to ${plan_type}`);
+        } catch (updateError) {
+            console.error("✗ Update failed:", {
+                message: updateError.message,
+                stack: updateError.stack,
+                user_email,
+                plan_type
+            });
+            return Response.json({ 
+                ok: false,
+                error_code: "UPDATE_FAILED",
+                message: "כשל בעדכון המשתמש",
+                details: { 
+                    error: updateError.message,
+                    error_type: updateError.name,
+                    stack: updateError.stack,
+                    user_email,
+                    plan_type,
+                    admin_user: adminUser?.email
+                }
+            }, { status: 500 });
+        }
 
         return Response.json({ 
-            success: true,
-            message: `User ${user_email} updated to ${plan_type}`,
+            ok: true,
+            message: `המשתמש ${user_email} עודכן ל-${plan_type}`,
             user: {
                 email: user_email,
                 plan_type: plan_type
             }
-        }, { status: 200 });
+        });
 
     } catch (error) {
-        console.error('Error in updateUserPlanType:', error);
+        console.error("✗ UNEXPECTED ERROR:", {
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+            payload,
+            admin: adminUser?.email,
+            auth_state: authState
+        });
+        
         return Response.json({ 
-            error: 'Internal server error',
-            details: error.message 
+            ok: false,
+            error_code: "INTERNAL_ERROR",
+            message: "שגיאה לא צפויה בשרת",
+            details: { 
+                error: error.message,
+                error_type: error.name,
+                stack: error.stack,
+                payload_received: payload,
+                admin_user: adminUser?.email || "none",
+                auth_state: authState
+            }
         }, { status: 500 });
     }
 });

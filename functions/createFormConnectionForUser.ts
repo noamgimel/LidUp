@@ -1,9 +1,19 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// פונקציות עזר ליצירת IDs ייחודיים
+const generateFormId = () => {
+    return 'form_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
+};
+
+const generateSecretKey = () => {
+    return 'sk_' + Math.random().toString(36).substr(2, 16) + Math.random().toString(36).substr(2, 16);
+};
+
 Deno.serve(async (req) => {
     const startTime = Date.now();
     let payload = null;
     let adminUser = null;
+    let authState = "not_attempted";
     
     try {
         const base44 = createClientFromRequest(req);
@@ -11,14 +21,24 @@ Deno.serve(async (req) => {
         // שלב 1: אימות אדמין
         try {
             adminUser = await base44.auth.me();
+            authState = adminUser ? "authenticated" : "no_user";
             console.log("✓ Admin authenticated:", adminUser?.email);
         } catch (authError) {
-            console.error("✗ Auth failed:", authError.message);
+            authState = "auth_error";
+            console.error("✗ Auth failed:", {
+                message: authError.message,
+                stack: authError.stack,
+                headers: Object.fromEntries(req.headers.entries())
+            });
             return Response.json({ 
                 ok: false,
                 error_code: "AUTH_FAILED",
-                message: "כשל באימות משתמש",
-                details: { error: authError.message }
+                message: "כשל באימות משתמש - אין סשן פעיל",
+                details: { 
+                    error: authError.message,
+                    auth_state: authState,
+                    hint: "ייתכן שהבעיה היא cross-origin או חוסר credentials"
+                }
             }, { status: 401 });
         }
 
@@ -28,7 +48,10 @@ Deno.serve(async (req) => {
                 ok: false,
                 error_code: "FORBIDDEN",
                 message: "רק אדמין מורשה יכול ליצור חיבורים",
-                details: { current_user: adminUser?.email }
+                details: { 
+                    current_user: adminUser?.email,
+                    auth_state: authState
+                }
             }, { status: 403 });
         }
 
@@ -42,31 +65,32 @@ Deno.serve(async (req) => {
                 ok: false,
                 error_code: "INVALID_JSON",
                 message: "נתונים לא תקינים",
-                details: { error: parseError.message }
+                details: { 
+                    error: parseError.message,
+                    admin_user: adminUser?.email
+                }
             }, { status: 400 });
         }
 
-        const { userEmail, formData } = payload;
+        const { userEmail, form_name, platform_type, notes, client_id, client_name } = payload;
 
-        // שלב 3: בדיקות תקינות
+        // שלב 3: בדיקות תקינות - רק השדות שה-UI צריך לשלוח
         const validationErrors = [];
         
         if (!userEmail) {
             validationErrors.push("userEmail חסר");
         }
-        if (!formData) {
-            validationErrors.push("formData חסר");
-        } else {
-            if (!formData.form_name) validationErrors.push("form_name חסר");
-            if (!formData.form_id) validationErrors.push("form_id חסר");
-            if (!formData.secret_key) validationErrors.push("secret_key חסר");
-            if (!formData.platform_type) validationErrors.push("platform_type חסר");
-            
-            // בדיקת enum
-            const validPlatforms = ['WIX', 'WORDPRESS', 'HTML_CODE', 'OTHER'];
-            if (formData.platform_type && !validPlatforms.includes(formData.platform_type)) {
-                validationErrors.push(`platform_type לא תקין: ${formData.platform_type}. חייב להיות אחד מ: ${validPlatforms.join(', ')}`);
-            }
+        if (!form_name) {
+            validationErrors.push("form_name חסר");
+        }
+        if (!platform_type) {
+            validationErrors.push("platform_type חסר");
+        }
+        
+        // בדיקת enum
+        const validPlatforms = ['WIX', 'WORDPRESS', 'HTML_CODE', 'OTHER'];
+        if (platform_type && !validPlatforms.includes(platform_type)) {
+            validationErrors.push(`platform_type לא תקין: ${platform_type}. חייב להיות אחד מ: ${validPlatforms.join(', ')}`);
         }
 
         if (validationErrors.length > 0) {
@@ -77,35 +101,42 @@ Deno.serve(async (req) => {
                 message: "שדות חובה חסרים או לא תקינים",
                 details: { 
                     errors: validationErrors,
-                    received_payload: payload
+                    received_payload: payload,
+                    admin_user: adminUser?.email
                 }
             }, { status: 400 });
         }
 
         console.log("✓ Validation passed");
 
-        // שלב 4: הכנת נתוני החיבור
+        // שלב 4: יצירת IDs ומפתחות בשרת (לא סומכים על UI)
+        const formId = generateFormId();
+        const secretKey = generateSecretKey();
+        const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://lidup.co.il';
+        const webhookUrl = `${origin}/api/functions/receiveWebsiteLead`;
+
+        // שלב 5: הכנת נתוני החיבור
         const connectionData = {
-            form_id: formData.form_id,
-            form_name: formData.form_name,
+            form_id: formId,
+            form_name: form_name,
             owner_email: userEmail,
-            platform_type: formData.platform_type,
-            secret_key: formData.secret_key,
-            webhook_url: formData.webhook_url,
-            is_active: formData.is_active ?? true,
-            submissions_count: formData.submissions_count ?? 0,
-            notes: formData.notes || ""
+            platform_type: platform_type,
+            secret_key: secretKey,
+            webhook_url: webhookUrl,
+            is_active: true,
+            submissions_count: 0,
+            notes: notes || ""
         };
 
         // client_id אופציונלי - רק אם קיים
-        if (formData.client_id) {
-            connectionData.client_id = formData.client_id;
-            connectionData.client_name = formData.client_name || "";
+        if (client_id) {
+            connectionData.client_id = client_id;
+            connectionData.client_name = client_name || "";
         }
 
         console.log("✓ Connection data prepared:", JSON.stringify(connectionData, null, 2));
 
-        // שלב 5: יצירה ב-DB
+        // שלב 6: יצירה ב-DB
         let result;
         try {
             result = await base44.asServiceRole.entities.FormConnection.create(connectionData);
@@ -125,7 +156,9 @@ Deno.serve(async (req) => {
                 details: { 
                     error: dbError.message,
                     error_type: dbError.name,
-                    data_sent: connectionData
+                    stack: dbError.stack,
+                    data_sent: connectionData,
+                    admin_user: adminUser?.email
                 }
             }, { status: 500 });
         }
@@ -147,6 +180,7 @@ Deno.serve(async (req) => {
             name: error.name,
             payload,
             admin: adminUser?.email,
+            auth_state: authState,
             duration_ms: duration
         });
         
@@ -157,8 +191,10 @@ Deno.serve(async (req) => {
             details: { 
                 error: error.message,
                 error_type: error.name,
+                stack: error.stack,
                 payload_received: payload,
-                stack: error.stack
+                admin_user: adminUser?.email || "none",
+                auth_state: authState
             }
         }, { status: 500 });
     }
