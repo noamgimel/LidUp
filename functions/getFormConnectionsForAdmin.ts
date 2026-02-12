@@ -16,11 +16,15 @@ Deno.serve(async (req) => {
         }
 
         // קריאה עם service role - עוקף RLS
+        console.log("=== Attempting to read all FormConnections ===");
         const allConnections = await base44.asServiceRole.entities.FormConnection.list();
+        console.log("=== Found connections:", allConnections.length);
+        console.log("=== Connections data:", JSON.stringify(allConnections, null, 2));
 
         return Response.json({ 
             ok: true,
-            connections: allConnections
+            connections: allConnections,
+            count: allConnections.length
         });
 
     } catch (error) {
