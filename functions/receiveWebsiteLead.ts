@@ -3,33 +3,52 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
     try {
         // קריאת הנתונים מהבקשה
-        const payload = await req.json();
+        const raw = await req.json();
         console.log('=== Webhook Received ===');
-        console.log('Full Payload:', JSON.stringify(payload, null, 2));
+        console.log('Raw Payload:', JSON.stringify(raw, null, 2));
 
-        // אם הנתונים תחת data object, נשתמש בזה (תמיכה במבני JSON שונים)
-        const data = payload.data || payload;
-        console.log('Working with data:', JSON.stringify(data, null, 2));
+        // תמיכה במבני JSON שונים - Wix עוטף תחת data
+        const payload = raw?.data ?? raw;
+        console.log('Extracted Payload:', JSON.stringify(payload, null, 2));
+
+        // מיפוי שדות - אם יש body_message ואין notes
+        if (payload.body_message && !payload.notes) {
+            payload.notes = payload.body_message;
+        }
 
         // בדיקת שדות חובה
-        if (!data.form_id) {
+        const receivedKeys = Object.keys(payload);
+        console.log('Received keys:', receivedKeys);
+
+        if (!payload.form_id) {
             console.log('ERROR: Missing form_id');
             return Response.json({ 
-                error: 'Missing required field: form_id is required' 
+                error: 'Missing required field: form_id',
+                received_keys: receivedKeys
             }, { status: 400 });
         }
 
         if (!payload.secret_key) {
             console.log('ERROR: Missing secret_key');
             return Response.json({ 
-                error: 'Missing required field: secret_key is required' 
+                error: 'Missing required field: secret_key',
+                received_keys: receivedKeys
             }, { status: 400 });
         }
 
-        if (!payload.name || !payload.email) {
-            console.log('ERROR: Missing name or email', { name: payload.name, email: payload.email });
+        if (!payload.name) {
+            console.log('ERROR: Missing name');
             return Response.json({ 
-                error: 'Missing required fields: name and email are required' 
+                error: 'Missing required field: name',
+                received_keys: receivedKeys
+            }, { status: 400 });
+        }
+
+        if (!payload.email) {
+            console.log('ERROR: Missing email');
+            return Response.json({ 
+                error: 'Missing required field: email',
+                received_keys: receivedKeys
             }, { status: 400 });
         }
         
@@ -48,7 +67,8 @@ Deno.serve(async (req) => {
         if (!formConnections || formConnections.length === 0) {
             console.log('ERROR: Form not found or inactive for form_id:', payload.form_id);
             return Response.json({ 
-                error: 'Form not found or inactive' 
+                error: 'Form not found or inactive',
+                form_id: payload.form_id
             }, { status: 404 });
         }
 
@@ -60,7 +80,7 @@ Deno.serve(async (req) => {
         if (payload.secret_key !== formConnection.secret_key) {
             console.log('ERROR: Invalid secret_key. Expected:', formConnection.secret_key, 'Got:', payload.secret_key);
             return Response.json({ 
-                error: 'Unauthorized: Invalid secret_key for this form' 
+                error: 'Unauthorized: Invalid secret_key for this form'
             }, { status: 401 });
         }
         console.log('✓ Secret key validated');
@@ -71,12 +91,12 @@ Deno.serve(async (req) => {
             email: payload.email,
             phone: payload.phone || '',
             company: payload.company || '',
-            notes: payload.notes || payload.message || payload.body_message || '',
+            notes: payload.notes || payload.message || '',
             status: 'lead',
             source: `Website Form - ${formConnection.form_name}`,
             form_id: payload.form_id,
             page_url: payload.page_url || '',
-            raw_payload: payload,
+            raw_payload: raw,  // שמירת הPayload המקורי לדיבוג
             utm_source: payload.utm_source || '',
             utm_medium: payload.utm_medium || '',
             utm_campaign: payload.utm_campaign || '',
