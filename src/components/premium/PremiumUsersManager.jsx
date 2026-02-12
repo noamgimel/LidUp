@@ -67,9 +67,14 @@ export default function PremiumUsersManager() {
     const newPlanType = user.plan_type === 'PREMIUM' ? 'FREE' : 'PREMIUM';
     
     try {
-      await base44.asServiceRole.entities.User.update(user.id, {
+      const response = await base44.functions.invoke('updateUserPlanType', {
+        user_email: user.email,
         plan_type: newPlanType
       });
+      
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
       
       toast({
         title: "עודכן בהצלחה!",
@@ -81,8 +86,8 @@ export default function PremiumUsersManager() {
     } catch (error) {
       console.error("שגיאה בעדכון מסלול:", error);
       toast({
-        title: "שגיאה",
-        description: "לא ניתן לעדכן את המסלול",
+        title: "שגיאה בעדכון מסלול",
+        description: error.message || "לא ניתן לעדכן את המסלול",
         variant: "destructive",
       });
     }
