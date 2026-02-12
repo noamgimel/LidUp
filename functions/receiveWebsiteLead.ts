@@ -9,22 +9,27 @@ Deno.serve(async (req) => {
 
         // בדיקת שדות חובה
         if (!payload.form_id) {
+            console.log('ERROR: Missing form_id');
             return Response.json({ 
                 error: 'Missing required field: form_id is required' 
             }, { status: 400 });
         }
 
         if (!payload.secret_key) {
+            console.log('ERROR: Missing secret_key');
             return Response.json({ 
                 error: 'Missing required field: secret_key is required' 
             }, { status: 400 });
         }
 
         if (!payload.name || !payload.email) {
+            console.log('ERROR: Missing name or email', { name: payload.name, email: payload.email });
             return Response.json({ 
                 error: 'Missing required fields: name and email are required' 
             }, { status: 400 });
         }
+        
+        console.log('✓ All required fields present');
 
         // יצירת client מהבקשה עם service role
         const base44 = createClientFromRequest(req);
