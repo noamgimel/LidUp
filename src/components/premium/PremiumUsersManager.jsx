@@ -108,9 +108,9 @@ export default function PremiumUsersManager() {
 
   const handleCreateFormConnection = async (userEmail, formData) => {
     try {
-      console.log("=== התחלת יצירת חיבור ===");
-      console.log("User Email:", userEmail);
-      console.log("Form Data:", formData);
+      console.log("=== UI: התחלת יצירת חיבור ===");
+      console.log("Target User Email:", userEmail);
+      console.log("Form Data from UI:", formData);
       
       const formId = generateFormId();
       const secretKey = generateSecretKey();
@@ -132,18 +132,34 @@ export default function PremiumUsersManager() {
         })
       };
       
-      console.log("Sending to backend:", { userEmail, formData: newConnectionData });
+      console.log("=== Payload נשלח לשרת ===", JSON.stringify({
+        userEmail,
+        formData: newConnectionData
+      }, null, 2));
       
       const response = await base44.functions.invoke('createFormConnectionForUser', {
         userEmail,
         formData: newConnectionData
       });
       
-      console.log("Backend Response:", response.data);
+      console.log("=== תגובת השרת ===", response.data);
       
-      if (response.data.error) {
-        throw new Error(response.data.error);
+      // בדיקת תגובה
+      if (!response.data.ok) {
+        const errorMsg = response.data.message || "שגיאה לא ידועה";
+        const errorDetails = response.data.details ? 
+          `\n\nפרטים:\n${JSON.stringify(response.data.details, null, 2)}` : "";
+        
+        console.error("Server returned error:", {
+          code: response.data.error_code,
+          message: errorMsg,
+          details: response.data.details
+        });
+        
+        throw new Error(`${errorMsg}${errorDetails}`);
       }
+      
+      console.log("✅ החיבור נוצר בהצלחה!");
       
       toast({
         title: "✅ נוצר בהצלחה!",
@@ -154,12 +170,13 @@ export default function PremiumUsersManager() {
       setShowFormConnectionForm(false);
       await loadUsers();
     } catch (error) {
-      console.error("❌ שגיאה ביצירת חיבור:", error);
+      console.error("❌ UI Error:", error);
       
       toast({
         title: "שגיאה ביצירת חיבור",
-        description: error.message || "לא ניתן ליצור חיבור טופס - ראה Console",
+        description: error.message || "שגיאה לא ידועה - פתח Console",
         variant: "destructive",
+        duration: 10000,
       });
     }
   };
