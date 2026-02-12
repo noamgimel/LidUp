@@ -143,6 +143,21 @@ export default function PremiumUsersManager() {
 
   const handleCreateFormConnection = async (userEmail, formData) => {
     try {
+      // בדיקה אם כבר קיים טופס עם אותו השם עבור המשתמש
+      const existingConnections = userConnections[userEmail] || [];
+      const duplicateName = existingConnections.find(conn => 
+        conn.form_name.toLowerCase() === formData.form_name.toLowerCase()
+      );
+      
+      if (duplicateName) {
+        toast({
+          title: "שם טופס קיים כבר",
+          description: `כבר קיים טופס בשם "${formData.form_name}" עבור משתמש זה`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
       console.log("=== UI: התחלת יצירת חיבור ===");
       console.log("Target User Email:", userEmail);
       console.log("Form Data from UI:", formData);
@@ -236,6 +251,22 @@ export default function PremiumUsersManager() {
 
   const handleEditConnection = async (userEmail, formData) => {
     try {
+      // בדיקה אם כבר קיים טופס אחר עם אותו השם עבור המשתמש
+      const existingConnections = userConnections[userEmail] || [];
+      const duplicateName = existingConnections.find(conn => 
+        conn.id !== editingConnection.id && 
+        conn.form_name.toLowerCase() === formData.form_name.toLowerCase()
+      );
+      
+      if (duplicateName) {
+        toast({
+          title: "שם טופס קיים כבר",
+          description: `כבר קיים טופס אחר בשם "${formData.form_name}" עבור משתמש זה`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
       await base44.entities.FormConnection.update(editingConnection.id, formData);
       toast({
         title: "✅ עודכן בהצלחה!",
@@ -451,7 +482,9 @@ export default function PremiumUsersManager() {
                                         <div className="flex items-start justify-between gap-3">
                                           <div className="flex-grow">
                                             <p className="font-medium text-slate-900">{conn.form_name}</p>
-                                            <p className="text-sm text-slate-500">{conn.client_name || "ללא לקוח"}</p>
+                                            {conn.client_name && (
+                                              <p className="text-sm text-slate-500">{conn.client_name}</p>
+                                            )}
                                           </div>
                                           <div className="flex items-center gap-2">
                                             <Badge 
