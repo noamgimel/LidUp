@@ -41,13 +41,14 @@ export default function PremiumUsersManager() {
       setUsers(sortedUsers);
       setClients(allClients);
       
-      // ארגון חיבורים לפי created_by
+      // ארגון חיבורים לפי owner_email
       const connectionsByUser = {};
       allConnections.forEach(conn => {
-        if (!connectionsByUser[conn.created_by]) {
-          connectionsByUser[conn.created_by] = [];
+        const ownerEmail = conn.owner_email || conn.created_by; // תמיכה גם במבנה הישן
+        if (!connectionsByUser[ownerEmail]) {
+          connectionsByUser[ownerEmail] = [];
         }
-        connectionsByUser[conn.created_by].push(conn);
+        connectionsByUser[ownerEmail].push(conn);
       });
       setUserConnections(connectionsByUser);
       
@@ -102,42 +103,57 @@ export default function PremiumUsersManager() {
 
   const handleCreateFormConnection = async (userEmail, formData) => {
     try {
+      console.log("=== התחלת יצירת חיבור ===");
+      console.log("User Email:", userEmail);
+      console.log("Form Data:", formData);
+      
       const formId = generateFormId();
       const secretKey = generateSecretKey();
       const webhookUrl = `${window.location.origin}/api/functions/receiveWebsiteLead`;
       
       const newConnectionData = {
-        ...formData,
+        form_name: formData.form_name,
+        platform_type: formData.platform_type,
+        notes: formData.notes || "",
         form_id: formId,
         secret_key: secretKey,
         webhook_url: webhookUrl,
         is_active: true,
-        submissions_count: 0
+        submissions_count: 0,
+        // client_id ו-client_name רק אם קיימים
+        ...(formData.client_id && { 
+          client_id: formData.client_id,
+          client_name: formData.client_name 
+        })
       };
+      
+      console.log("Sending to backend:", { userEmail, formData: newConnectionData });
       
       const response = await base44.functions.invoke('createFormConnectionForUser', {
         userEmail,
         formData: newConnectionData
       });
       
+      console.log("Backend Response:", response.data);
+      
       if (response.data.error) {
         throw new Error(response.data.error);
       }
       
       toast({
-        title: "נוצר בהצלחה!",
-        description: "חיבור הטופס נוצר במערכת",
+        title: "✅ נוצר בהצלחה!",
+        description: `חיבור "${formData.form_name}" נוצר עבור ${userEmail}`,
         className: "bg-green-100 text-green-900 border-green-200",
       });
       
       setShowFormConnectionForm(false);
       await loadUsers();
     } catch (error) {
-      console.error("שגיאה ביצירת חיבור:", error);
+      console.error("❌ שגיאה ביצירת חיבור:", error);
       
       toast({
         title: "שגיאה ביצירת חיבור",
-        description: error.message || "לא ניתן ליצור חיבור טופס",
+        description: error.message || "לא ניתן ליצור חיבור טופס - ראה Console",
         variant: "destructive",
       });
     }

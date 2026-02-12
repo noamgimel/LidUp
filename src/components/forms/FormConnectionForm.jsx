@@ -45,10 +45,13 @@ export default function FormConnectionForm({ formConnection, clients, onSubmit, 
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.client_id && clients.length > 0) {
+    
+    // אם יש לקוחות זמינים ויותר מאחד, חובה לבחור
+    if (clients.length > 1 && !formData.client_id) {
       alert("יש לבחור לקוח");
       return;
     }
+    
     onSubmit(formData);
   };
 

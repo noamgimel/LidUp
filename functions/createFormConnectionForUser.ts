@@ -8,31 +8,43 @@ Deno.serve(async (req) => {
         // בדיקה שהמשתמש המבקש הוא אדמין
         if (!adminUser || adminUser.email !== 'noam.gamliel@gmail.com') {
             return Response.json({ 
-                error: 'Forbidden: Admin access required' 
+                error: 'Forbidden: רק אדמין יכול ליצור חיבורים עבור משתמשים אחרים' 
             }, { status: 403 });
         }
 
         const payload = await req.json();
         const { userEmail, formData } = payload;
 
-        if (!userEmail || !formData) {
+        console.log("=== בקשה ליצירת חיבור טופס ===");
+        console.log("Admin:", adminUser.email);
+        console.log("Target User Email:", userEmail);
+        console.log("Form Data Received:", JSON.stringify(formData, null, 2));
+
+        // בדיקת שדות חובה
+        if (!userEmail) {
             return Response.json({ 
-                error: 'Missing required fields: userEmail, formData' 
+                error: 'חסר שדה חובה: userEmail' 
             }, { status: 400 });
         }
 
-        console.log("=== יצירת חיבור טופס ===");
-        console.log("Admin:", adminUser.email);
-        console.log("Target User:", userEmail);
-        console.log("Form Data:", formData);
+        if (!formData || !formData.form_name || !formData.form_id) {
+            return Response.json({ 
+                error: 'חסרים שדות חובה בנתוני הטופס: form_name, form_id' 
+            }, { status: 400 });
+        }
 
-        // יצירת החיבור עם service role
-        const result = await base44.asServiceRole.entities.FormConnection.create({
+        // הכנת הנתונים ליצירה - הוספת owner_email במקום created_by
+        const connectionData = {
             ...formData,
-            created_by: userEmail
-        });
+            owner_email: userEmail
+        };
 
-        console.log("תוצאת היצירה:", result);
+        console.log("Connection Data to Create:", JSON.stringify(connectionData, null, 2));
+
+        // יצירת החיבור עם service role (עוקף RLS)
+        const result = await base44.asServiceRole.entities.FormConnection.create(connectionData);
+
+        console.log("✅ החיבור נוצר בהצלחה:", result.id);
 
         return Response.json({ 
             success: true, 
@@ -40,12 +52,14 @@ Deno.serve(async (req) => {
         });
 
     } catch (error) {
-        console.error("=== שגיאה ביצירת חיבור טופס ===");
-        console.error("Error:", error.message);
+        console.error("❌ שגיאה ביצירת חיבור טופס");
+        console.error("Error Type:", error.constructor.name);
+        console.error("Error Message:", error.message);
         console.error("Stack:", error.stack);
         
         return Response.json({ 
-            error: error.message || 'Failed to create form connection' 
+            error: error.message || 'Failed to create form connection',
+            details: error.toString()
         }, { status: 500 });
     }
 });
