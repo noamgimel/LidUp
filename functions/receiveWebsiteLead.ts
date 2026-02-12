@@ -48,22 +48,13 @@ Deno.serve(async (req) => {
             }, { status: 401 });
         }
 
-        // קבלת מידע על הלקוח
-        const client = await base44.asServiceRole.entities.Client.get(formConnection.client_id);
-        
-        if (!client) {
-            return Response.json({ 
-                error: 'Client not found for this form' 
-            }, { status: 404 });
-        }
-
-        // הכנת נתוני הליד - ייווצר תחת created_by של הלקוח
+        // הכנת נתוני הליד - ייווצר תחת owner_email של חיבור הטופס
         const leadData = {
             name: payload.name,
             email: payload.email,
             phone: payload.phone || '',
             company: payload.company || '',
-            notes: payload.notes || payload.message || '',
+            notes: payload.notes || payload.message || payload.body_message || '',
             status: 'lead',
             source: `Website Form - ${formConnection.form_name}`,
             form_id: payload.form_id,
@@ -79,10 +70,10 @@ Deno.serve(async (req) => {
             ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || ''
         };
 
-        // יצירת הליד תחת created_by של הלקוח (מי שיצר את הלקוח במערכת)
+        // יצירת הליד תחת owner_email של חיבור הטופס
         const newLead = await base44.asServiceRole.entities.Client.create({
             ...leadData,
-            created_by: client.created_by
+            created_by: formConnection.owner_email
         });
 
         // עדכון מונה השליחות בטופס
