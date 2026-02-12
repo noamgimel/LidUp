@@ -25,10 +25,13 @@ export default function PremiumUsersManager() {
   const loadUsers = async () => {
     setIsLoading(true);
     try {
-      const [allUsers, allClients, allConnections] = await Promise.all([
+      // קריאה לפונקציה שמביאה את כל החיבורים דרך service role
+      const connectionsResponse = await base44.functions.invoke('getFormConnectionsForAdmin');
+      const allConnections = connectionsResponse.data?.ok ? connectionsResponse.data.connections : [];
+      
+      const [allUsers, allClients] = await Promise.all([
         base44.entities.User.list(),
-        base44.entities.Client.list(),
-        base44.entities.FormConnection.list()
+        base44.entities.Client.list()
       ]);
       
       // מיון: פרימיום ראשון, אחר כך חינמי
