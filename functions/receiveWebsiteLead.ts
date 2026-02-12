@@ -11,10 +11,9 @@ Deno.serve(async (req) => {
         const payload = raw?.data ?? raw;
         console.log('Extracted Payload:', JSON.stringify(payload, null, 2));
 
-        // מיפוי שדות - אם יש body_message ואין notes
-        if (payload.body_message && !payload.notes) {
-            payload.notes = payload.body_message;
-        }
+        // מיפוי שדות מטפסי Wix/אחרים
+        const mappedNotes = payload.notes || payload.message || payload.body_message || '';
+        const mappedPhone = payload.phone || '';
 
         // בדיקת שדות חובה
         const receivedKeys = Object.keys(payload);
