@@ -85,11 +85,13 @@ Deno.serve(async (req) => {
 
         // יצירת הליד תחת owner_email של חיבור הטופס
         console.log('Creating lead for user:', formConnection.owner_email);
+        console.log('Lead data to create:', { name: leadData.name, email: leadData.email, phone: leadData.phone });
         const newLead = await base44.asServiceRole.entities.Client.create({
             ...leadData,
             created_by: formConnection.owner_email
         });
-        console.log('✓ Lead created successfully. ID:', newLead.id);
+        console.log('✅✅✅ SUCCESS! Lead created for user:', formConnection.owner_email);
+        console.log('Lead ID:', newLead.id, '| Name:', newLead.name, '| Email:', newLead.email);
 
         // עדכון מונה השליחות בטופס
         await base44.asServiceRole.entities.FormConnection.update(formConnection.id, {
