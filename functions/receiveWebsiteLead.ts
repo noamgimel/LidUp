@@ -35,18 +35,21 @@ Deno.serve(async (req) => {
         const base44 = createClientFromRequest(req);
 
         // חיפוש הטופס במערכת לפי form_id
+        console.log('Searching for form_id:', payload.form_id);
         const formConnections = await base44.asServiceRole.entities.FormConnection.filter({
             form_id: payload.form_id,
             is_active: true
         });
 
         if (!formConnections || formConnections.length === 0) {
+            console.log('ERROR: Form not found or inactive for form_id:', payload.form_id);
             return Response.json({ 
                 error: 'Form not found or inactive' 
             }, { status: 404 });
         }
 
         const formConnection = formConnections[0];
+        console.log('✓ Form found:', formConnection.form_name, 'Owner:', formConnection.owner_email);
 
         // אימות secret_key של החיבור הספציפי
         if (payload.secret_key !== formConnection.secret_key) {
