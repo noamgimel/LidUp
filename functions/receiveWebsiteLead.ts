@@ -116,6 +116,7 @@ Deno.serve(async (req) => {
         });
         console.log('✅✅✅ SUCCESS! Lead created for user:', formConnection.owner_email);
         console.log('Lead ID:', newLead.id, '| Name:', newLead.name, '| Email:', newLead.email);
+        console.log('Lead Details - ID:', newLead.id, '| owner_email:', newLead.owner_email, '| created_by:', newLead.created_by);
 
         // עדכון מונה השליחות בטופס
         await base44.asServiceRole.entities.FormConnection.update(formConnection.id, {
