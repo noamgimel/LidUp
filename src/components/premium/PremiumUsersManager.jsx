@@ -5,8 +5,24 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { Search, Crown, Users, DollarSign, X, Plus, ChevronDown, ChevronUp, Link as LinkIcon } from "lucide-react";
+import { Search, Crown, Users, DollarSign, X, Plus, ChevronDown, ChevronUp, Link as LinkIcon, Trash2, Edit, FileText } from "lucide-react";
 import FormConnectionForm from "../forms/FormConnectionForm";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function PremiumUsersManager() {
   const [users, setUsers] = useState([]);
@@ -16,6 +32,9 @@ export default function PremiumUsersManager() {
   const [showFormConnectionForm, setShowFormConnectionForm] = useState(false);
   const [userConnections, setUserConnections] = useState({});
   const [clients, setClients] = useState([]);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, connection: null });
+  const [editingConnection, setEditingConnection] = useState(null);
+  const [instructionsDialog, setInstructionsDialog] = useState({ open: false, connection: null });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -188,9 +207,50 @@ export default function PremiumUsersManager() {
     if (expandedUserId === userId) {
       setExpandedUserId(null);
       setShowFormConnectionForm(false);
+      setEditingConnection(null);
     } else {
       setExpandedUserId(userId);
       setShowFormConnectionForm(false);
+      setEditingConnection(null);
+    }
+  };
+
+  const handleDeleteConnection = async () => {
+    try {
+      await base44.entities.FormConnection.delete(deleteDialog.connection.id);
+      toast({
+        title: "✅ נמחק בהצלחה!",
+        description: `החיבור "${deleteDialog.connection.form_name}" נמחק`,
+        className: "bg-green-100 text-green-900 border-green-200",
+      });
+      setDeleteDialog({ open: false, connection: null });
+      await loadUsers();
+    } catch (error) {
+      toast({
+        title: "שגיאה במחיקת חיבור",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditConnection = async (userEmail, formData) => {
+    try {
+      await base44.entities.FormConnection.update(editingConnection.id, formData);
+      toast({
+        title: "✅ עודכן בהצלחה!",
+        description: `החיבור "${formData.form_name}" עודכן`,
+        className: "bg-green-100 text-green-900 border-green-200",
+      });
+      setEditingConnection(null);
+      setShowFormConnectionForm(false);
+      await loadUsers();
+    } catch (error) {
+      toast({
+        title: "שגיאה בעדכון חיבור",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -371,25 +431,63 @@ export default function PremiumUsersManager() {
                                 
                                 {showFormConnectionForm && (
                                   <FormConnectionForm
-                                    formConnection={null}
+                                    formConnection={editingConnection}
                                     clients={userClients}
-                                    onSubmit={(formData) => handleCreateFormConnection(user.email, formData)}
-                                    onCancel={() => setShowFormConnectionForm(false)}
+                                    onSubmit={(formData) => editingConnection 
+                                      ? handleEditConnection(user.email, formData)
+                                      : handleCreateFormConnection(user.email, formData)
+                                    }
+                                    onCancel={() => {
+                                      setShowFormConnectionForm(false);
+                                      setEditingConnection(null);
+                                    }}
                                   />
                                 )}
                                 
                                 {connections.length > 0 && !showFormConnectionForm && (
                                   <div className="grid gap-3">
                                     {connections.map(conn => (
-                                      <div key={conn.id} className="bg-white rounded-lg p-3 border border-slate-200">
-                                        <div className="flex items-center justify-between">
-                                          <div>
+                                      <div key={conn.id} className="bg-white rounded-lg p-4 border border-slate-200">
+                                        <div className="flex items-start justify-between gap-3">
+                                          <div className="flex-grow">
                                             <p className="font-medium text-slate-900">{conn.form_name}</p>
-                                            <p className="text-sm text-slate-500">{conn.client_name}</p>
+                                            <p className="text-sm text-slate-500">{conn.client_name || "ללא לקוח"}</p>
                                           </div>
-                                          <Badge variant={conn.is_active ? "default" : "outline"}>
-                                            {conn.is_active ? "פעיל" : "לא פעיל"}
-                                          </Badge>
+                                          <div className="flex items-center gap-2">
+                                            <Badge 
+                                              variant={conn.is_active ? "default" : "outline"}
+                                              className={conn.is_active ? "bg-green-500 hover:bg-green-600" : ""}
+                                            >
+                                              {conn.is_active ? "פעיל" : "לא פעיל"}
+                                            </Badge>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-8 w-8"
+                                              onClick={() => setInstructionsDialog({ open: true, connection: conn })}
+                                            >
+                                              <FileText className="w-4 h-4 text-blue-600" />
+                                            </Button>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-8 w-8"
+                                              onClick={() => {
+                                                setEditingConnection(conn);
+                                                setShowFormConnectionForm(true);
+                                              }}
+                                            >
+                                              <Edit className="w-4 h-4 text-slate-600" />
+                                            </Button>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-8 w-8"
+                                              onClick={() => setDeleteDialog({ open: true, connection: conn })}
+                                            >
+                                              <Trash2 className="w-4 h-4 text-red-600" />
+                                            </Button>
+                                          </div>
                                         </div>
                                       </div>
                                     ))}
@@ -415,6 +513,58 @@ export default function PremiumUsersManager() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => !open && setDeleteDialog({ open: false, connection: null })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+            <AlertDialogDescription>
+              פעולה זו תמחק לצמיתות את החיבור "{deleteDialog.connection?.form_name}". 
+              לא ניתן לשחזר את הפעולה.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ביטול</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConnection}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              מחק חיבור
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Instructions Dialog */}
+      <Dialog open={instructionsDialog.open} onOpenChange={(open) => !open && setInstructionsDialog({ open: false, connection: null })}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>הוראות התקנה - {instructionsDialog.connection?.form_name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-right">
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2">פלטפורמה: {instructionsDialog.connection?.platform_type}</h3>
+              <p className="text-sm text-slate-600">Webhook URL:</p>
+              <code className="block bg-white p-2 rounded text-xs mt-1 break-all">
+                {instructionsDialog.connection?.webhook_url}
+              </code>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <p className="text-sm text-slate-600">Secret Key:</p>
+              <code className="block bg-white p-2 rounded text-xs mt-1 break-all">
+                {instructionsDialog.connection?.secret_key}
+              </code>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <p className="text-sm text-slate-600">Form ID:</p>
+              <code className="block bg-white p-2 rounded text-xs mt-1">
+                {instructionsDialog.connection?.form_id}
+              </code>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
