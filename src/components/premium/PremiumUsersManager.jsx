@@ -35,6 +35,8 @@ export default function PremiumUsersManager() {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, connection: null });
   const [editingConnection, setEditingConnection] = useState(null);
   const [instructionsDialog, setInstructionsDialog] = useState({ open: false, connection: null });
+  const [leadSearchId, setLeadSearchId] = useState("");
+  const [leadSearchResult, setLeadSearchResult] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -285,6 +287,43 @@ export default function PremiumUsersManager() {
     }
   };
 
+  const handleSearchLeadById = async () => {
+    if (!leadSearchId.trim()) {
+      toast({
+        title: "שגיאה",
+        description: "נא להזין Lead ID",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await base44.functions.invoke('searchLeadById', { lead_id: leadSearchId.trim() });
+      if (response.data.ok && response.data.lead) {
+        setLeadSearchResult(response.data.lead);
+        toast({
+          title: "נמצא!",
+          description: `ליד ${response.data.lead.name} נמצא במערכת`,
+          className: "bg-green-100 text-green-900 border-green-200",
+        });
+      } else {
+        setLeadSearchResult(null);
+        toast({
+          title: "לא נמצא",
+          description: "לא נמצא ליד עם ID זה",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error searching lead:", error);
+      toast({
+        title: "שגיאה בחיפוש",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const totalUsers = users.length;
   const premiumUsers = users.filter(u => u.plan_type === 'PREMIUM').length;
   const freeUsers = users.filter(u => u.plan_type !== 'PREMIUM').length;
@@ -299,6 +338,41 @@ export default function PremiumUsersManager() {
 
   return (
     <div className="space-y-6">
+      {/* Lead Search Tool */}
+      <Card>
+        <CardHeader>
+          <CardTitle>חיפוש ליד לפי ID</CardTitle>
+          <CardDescription>כלי לאיתור לידים במערכת</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Input
+              placeholder="הזן Lead ID..."
+              value={leadSearchId}
+              onChange={(e) => setLeadSearchId(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearchLeadById()}
+            />
+            <Button onClick={handleSearchLeadById}>
+              <Search className="w-4 h-4 mr-2" />
+              חפש
+            </Button>
+          </div>
+          {leadSearchResult && (
+            <div className="mt-4 p-4 bg-slate-50 rounded-lg">
+              <h4 className="font-semibold mb-2">פרטי הליד:</h4>
+              <div className="space-y-1 text-sm">
+                <p><strong>ID:</strong> {leadSearchResult.id}</p>
+                <p><strong>שם:</strong> {leadSearchResult.name}</p>
+                <p><strong>אימייל:</strong> {leadSearchResult.email}</p>
+                <p><strong>owner_email:</strong> {leadSearchResult.owner_email || 'לא מוגדר'}</p>
+                <p><strong>created_by:</strong> {leadSearchResult.created_by}</p>
+                <p><strong>סטטוס:</strong> {leadSearchResult.status}</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>

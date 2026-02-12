@@ -70,6 +70,7 @@ export default function Clients() {
       const user = await User.me();
       setCurrentUser(user);
       
+      // טעינת נתונים - מסתמך על RLS (לא מפלטר לפי created_by)
       const [clientsData, meetingsData] = await Promise.all([
         Client.list("-created_date"),
         Meeting.list()
