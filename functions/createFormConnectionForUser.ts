@@ -1,5 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// URL קבוע של Production - תמיד
+const PRODUCTION_BASE_URL = 'https://lidup.co.il';
+const WEBHOOK_PATH = '/api/functions/receiveWebsiteLead';
+
 // פונקציות עזר ליצירת IDs ייחודיים
 const generateFormId = () => {
     return 'form_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
@@ -25,20 +29,12 @@ Deno.serve(async (req) => {
             console.log("✓ Admin authenticated:", adminUser?.email);
         } catch (authError) {
             authState = "auth_error";
-            console.error("✗ Auth failed:", {
-                message: authError.message,
-                stack: authError.stack,
-                headers: Object.fromEntries(req.headers.entries())
-            });
+            console.error("✗ Auth failed:", authError.message);
             return Response.json({ 
                 ok: false,
                 error_code: "AUTH_FAILED",
                 message: "כשל באימות משתמש - אין סשן פעיל",
-                details: { 
-                    error: authError.message,
-                    auth_state: authState,
-                    hint: "ייתכן שהבעיה היא cross-origin או חוסר credentials"
-                }
+                details: { error: authError.message }
             }, { status: 401 });
         }
 
@@ -48,10 +44,7 @@ Deno.serve(async (req) => {
                 ok: false,
                 error_code: "FORBIDDEN",
                 message: "רק אדמין מורשה יכול ליצור חיבורים",
-                details: { 
-                    current_user: adminUser?.email,
-                    auth_state: authState
-                }
+                details: { current_user: adminUser?.email }
             }, { status: 403 });
         }
 
@@ -60,60 +53,42 @@ Deno.serve(async (req) => {
             payload = await req.json();
             console.log("✓ Payload received:", JSON.stringify(payload, null, 2));
         } catch (parseError) {
-            console.error("✗ JSON parse failed:", parseError.message);
             return Response.json({ 
                 ok: false,
                 error_code: "INVALID_JSON",
                 message: "נתונים לא תקינים",
-                details: { 
-                    error: parseError.message,
-                    admin_user: adminUser?.email
-                }
+                details: { error: parseError.message }
             }, { status: 400 });
         }
 
         const { userEmail, form_name, platform_type, notes, client_id, client_name } = payload;
 
-        // שלב 3: בדיקות תקינות - רק השדות שה-UI צריך לשלוח
+        // שלב 3: בדיקות תקינות
         const validationErrors = [];
+        if (!userEmail) validationErrors.push("userEmail חסר");
+        if (!form_name) validationErrors.push("form_name חסר");
+        if (!platform_type) validationErrors.push("platform_type חסר");
         
-        if (!userEmail) {
-            validationErrors.push("userEmail חסר");
-        }
-        if (!form_name) {
-            validationErrors.push("form_name חסר");
-        }
-        if (!platform_type) {
-            validationErrors.push("platform_type חסר");
-        }
-        
-        // בדיקת enum
         const validPlatforms = ['WIX', 'WORDPRESS', 'HTML_CODE', 'OTHER'];
         if (platform_type && !validPlatforms.includes(platform_type)) {
-            validationErrors.push(`platform_type לא תקין: ${platform_type}. חייב להיות אחד מ: ${validPlatforms.join(', ')}`);
+            validationErrors.push(`platform_type לא תקין: ${platform_type}`);
         }
 
         if (validationErrors.length > 0) {
-            console.error("✗ Validation failed:", validationErrors);
             return Response.json({ 
                 ok: false,
                 error_code: "VALIDATION_FAILED",
                 message: "שדות חובה חסרים או לא תקינים",
-                details: { 
-                    errors: validationErrors,
-                    received_payload: payload,
-                    admin_user: adminUser?.email
-                }
+                details: { errors: validationErrors }
             }, { status: 400 });
         }
 
-        console.log("✓ Validation passed");
-
-        // שלב 4: יצירת IDs ומפתחות בשרת (לא סומכים על UI)
+        // שלב 4: יצירת IDs - Webhook URL תמיד מפנה ל-Production
         const formId = generateFormId();
         const secretKey = generateSecretKey();
-        const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://lidup.co.il';
-        const webhookUrl = `${origin}/api/functions/receiveWebsiteLead`;
+        const webhookUrl = `${PRODUCTION_BASE_URL}${WEBHOOK_PATH}`;
+
+        console.log("✓ Production Webhook URL:", webhookUrl);
 
         // שלב 5: הכנת נתוני החיבור
         const connectionData = {
@@ -128,7 +103,6 @@ Deno.serve(async (req) => {
             notes: notes || ""
         };
 
-        // client_id אופציונלי - רק אם קיים
         if (client_id) {
             connectionData.client_id = client_id;
             connectionData.client_name = client_name || "";
@@ -142,24 +116,12 @@ Deno.serve(async (req) => {
             result = await base44.asServiceRole.entities.FormConnection.create(connectionData);
             console.log("✓ DB Create success:", result.id);
         } catch (dbError) {
-            console.error("✗ DB Create failed:", {
-                message: dbError.message,
-                stack: dbError.stack,
-                name: dbError.name,
-                connectionData
-            });
-            
+            console.error("✗ DB Create failed:", dbError.message);
             return Response.json({ 
                 ok: false,
                 error_code: "DB_CREATE_FAILED",
                 message: "כשל ביצירת החיבור במסד הנתונים",
-                details: { 
-                    error: dbError.message,
-                    error_type: dbError.name,
-                    stack: dbError.stack,
-                    data_sent: connectionData,
-                    admin_user: adminUser?.email
-                }
+                details: { error: dbError.message }
             }, { status: 500 });
         }
 
@@ -174,28 +136,12 @@ Deno.serve(async (req) => {
 
     } catch (error) {
         const duration = Date.now() - startTime;
-        console.error("✗ UNEXPECTED ERROR:", {
-            message: error.message,
-            stack: error.stack,
-            name: error.name,
-            payload,
-            admin: adminUser?.email,
-            auth_state: authState,
-            duration_ms: duration
-        });
-        
+        console.error("✗ UNEXPECTED ERROR:", error.message);
         return Response.json({ 
             ok: false,
             error_code: "INTERNAL_ERROR",
             message: "שגיאה לא צפויה בשרת",
-            details: { 
-                error: error.message,
-                error_type: error.name,
-                stack: error.stack,
-                payload_received: payload,
-                admin_user: adminUser?.email || "none",
-                auth_state: authState
-            }
+            details: { error: error.message }
         }, { status: 500 });
     }
 });

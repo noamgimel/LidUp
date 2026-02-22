@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { Search, Crown, Users, DollarSign, X, Plus, ChevronDown, ChevronUp, Link as LinkIcon, Trash2, Edit, FileText } from "lucide-react";
+import { Search, Crown, Users, DollarSign, X, Plus, ChevronDown, ChevronUp, Link as LinkIcon, Trash2, Edit, FileText, Copy, Check, Globe, FlaskConical } from "lucide-react";
 import FormConnectionForm from "../forms/FormConnectionForm";
 import {
   AlertDialog,
@@ -23,6 +23,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+const PRODUCTION_BASE_URL = 'https://lidup.co.il';
+const PREVIEW_BASE_URL = 'https://preview--lid-up-08cf2617.base44.app';
+const WEBHOOK_PATH = '/api/functions/receiveWebsiteLead';
+
+const isPreview = window.location.hostname.includes('preview') || window.location.hostname.includes('localhost');
+
+function CopyButton({ text, label }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <Button size="sm" variant="outline" onClick={handleCopy} className="gap-1 text-xs">
+      {copied ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3" />}
+      {copied ? 'הועתק!' : label}
+    </Button>
+  );
+}
 
 export default function PremiumUsersManager() {
   const [users, setUsers] = useState([]);
@@ -46,7 +67,6 @@ export default function PremiumUsersManager() {
   const loadUsers = async () => {
     setIsLoading(true);
     try {
-      // קריאה לפונקציה שמביאה את כל החיבורים דרך service role
       const connectionsResponse = await base44.functions.invoke('getFormConnectionsForAdmin');
       const allConnections = connectionsResponse.data?.ok ? connectionsResponse.data.connections : [];
       
@@ -55,7 +75,6 @@ export default function PremiumUsersManager() {
         base44.entities.Client.list()
       ]);
       
-      // מיון: פרימיום ראשון, אחר כך חינמי
       const sortedUsers = allUsers.sort((a, b) => {
         if (a.plan_type === 'PREMIUM' && b.plan_type !== 'PREMIUM') return -1;
         if (a.plan_type !== 'PREMIUM' && b.plan_type === 'PREMIUM') return 1;
@@ -65,76 +84,37 @@ export default function PremiumUsersManager() {
       setUsers(sortedUsers);
       setClients(allClients);
       
-      // ארגון חיבורים לפי owner_email
       const connectionsByUser = {};
       allConnections.forEach(conn => {
-        const ownerEmail = conn.owner_email || conn.created_by; // תמיכה גם במבנה הישן
-        if (!connectionsByUser[ownerEmail]) {
-          connectionsByUser[ownerEmail] = [];
-        }
+        const ownerEmail = conn.owner_email || conn.created_by;
+        if (!connectionsByUser[ownerEmail]) connectionsByUser[ownerEmail] = [];
         connectionsByUser[ownerEmail].push(conn);
       });
       setUserConnections(connectionsByUser);
       
     } catch (error) {
       console.error("שגיאה בטעינת משתמשים:", error);
-      toast({
-        title: "שגיאה",
-        description: "לא ניתן לטעון את רשימת המשתמשים",
-        variant: "destructive",
-      });
+      toast({ title: "שגיאה", description: "לא ניתן לטעון את רשימת המשתמשים", variant: "destructive" });
     }
     setIsLoading(false);
   };
 
   const handleTogglePlan = async (user) => {
     const newPlanType = user.plan_type === 'PREMIUM' ? 'FREE' : 'PREMIUM';
-    
     try {
-      console.log("=== UI: התחלת עדכון מסלול ===");
-      console.log("User:", user.email);
-      console.log("New Plan Type:", newPlanType);
-      
       const response = await base44.functions.invoke('updateUserPlanType', {
         user_email: user.email,
         plan_type: newPlanType
       });
-      
-      console.log("=== תגובת השרת ===", response.data);
-      
-      // בדיקת תגובה
-      if (!response.data.ok) {
-        const errorMsg = response.data.message || "שגיאה לא ידועה";
-        const errorDetails = response.data.details ? 
-          `\n\nפרטים:\n${JSON.stringify(response.data.details, null, 2)}` : "";
-        
-        console.error("Server returned error:", {
-          code: response.data.error_code,
-          message: errorMsg,
-          details: response.data.details
-        });
-        
-        throw new Error(`${errorMsg}${errorDetails}`);
-      }
-      
-      console.log("✅ המסלול עודכן בהצלחה!");
-      
+      if (!response.data.ok) throw new Error(response.data.message || "שגיאה לא ידועה");
       toast({
         title: "✅ עודכן בהצלחה!",
         description: `המשתמש ${user.full_name} עבר ל${newPlanType === 'PREMIUM' ? 'פרימיום' : 'חינמי'}`,
         className: "bg-green-100 text-green-900 border-green-200",
       });
-      
       await loadUsers();
     } catch (error) {
-      console.error("❌ UI Error:", error);
-      
-      toast({
-        title: "שגיאה בעדכון מסלול",
-        description: error.message || "שגיאה לא ידועה - פתח Console",
-        variant: "destructive",
-        duration: 10000,
-      });
+      toast({ title: "שגיאה בעדכון מסלול", description: error.message, variant: "destructive", duration: 10000 });
     }
   };
 
@@ -145,78 +125,35 @@ export default function PremiumUsersManager() {
 
   const handleCreateFormConnection = async (userEmail, formData) => {
     try {
-      // בדיקה אם כבר קיים טופס עם אותו השם עבור המשתמש
       const existingConnections = userConnections[userEmail] || [];
       const duplicateName = existingConnections.find(conn => 
         conn.form_name.toLowerCase() === formData.form_name.toLowerCase()
       );
-      
       if (duplicateName) {
-        toast({
-          title: "שם טופס קיים כבר",
-          description: `כבר קיים טופס בשם "${formData.form_name}" עבור משתמש זה`,
-          variant: "destructive",
-        });
+        toast({ title: "שם טופס קיים כבר", description: `כבר קיים טופס בשם "${formData.form_name}" עבור משתמש זה`, variant: "destructive" });
         return;
       }
       
-      console.log("=== UI: התחלת יצירת חיבור ===");
-      console.log("Target User Email:", userEmail);
-      console.log("Form Data from UI:", formData);
-      
-      // שליחת נתונים מינימליים בלבד - השרת יצור form_id, secret_key, webhook_url
       const payload = {
-        userEmail: userEmail,
+        userEmail,
         form_name: formData.form_name,
         platform_type: formData.platform_type,
         notes: formData.notes || "",
-        // client_id ו-client_name רק אם קיימים
-        ...(formData.client_id && { 
-          client_id: formData.client_id,
-          client_name: formData.client_name 
-        })
+        ...(formData.client_id && { client_id: formData.client_id, client_name: formData.client_name })
       };
       
-      console.log("=== Payload נשלח לשרת ===", JSON.stringify(payload, null, 2));
-      
       const response = await base44.functions.invoke('createFormConnectionForUser', payload);
-      
-      console.log("=== תגובת השרת ===", response.data);
-      
-      // בדיקת תגובה
-      if (!response.data.ok) {
-        const errorMsg = response.data.message || "שגיאה לא ידועה";
-        const errorDetails = response.data.details ? 
-          `\n\nפרטים:\n${JSON.stringify(response.data.details, null, 2)}` : "";
-        
-        console.error("Server returned error:", {
-          code: response.data.error_code,
-          message: errorMsg,
-          details: response.data.details
-        });
-        
-        throw new Error(`${errorMsg}${errorDetails}`);
-      }
-      
-      console.log("✅ החיבור נוצר בהצלחה!");
+      if (!response.data.ok) throw new Error(response.data.message || "שגיאה לא ידועה");
       
       toast({
         title: "✅ נוצר בהצלחה!",
         description: `חיבור "${formData.form_name}" נוצר עבור ${userEmail}`,
         className: "bg-green-100 text-green-900 border-green-200",
       });
-      
       setShowFormConnectionForm(false);
       await loadUsers();
     } catch (error) {
-      console.error("❌ UI Error:", error);
-      
-      toast({
-        title: "שגיאה ביצירת חיבור",
-        description: error.message || "שגיאה לא ידועה - פתח Console",
-        variant: "destructive",
-        duration: 10000,
-      });
+      toast({ title: "שגיאה ביצירת חיבור", description: error.message, variant: "destructive", duration: 10000 });
     }
   };
 
@@ -235,92 +172,51 @@ export default function PremiumUsersManager() {
   const handleDeleteConnection = async () => {
     try {
       await base44.entities.FormConnection.delete(deleteDialog.connection.id);
-      toast({
-        title: "✅ נמחק בהצלחה!",
-        description: `החיבור "${deleteDialog.connection.form_name}" נמחק`,
-        className: "bg-green-100 text-green-900 border-green-200",
-      });
+      toast({ title: "✅ נמחק בהצלחה!", description: `החיבור "${deleteDialog.connection.form_name}" נמחק`, className: "bg-green-100 text-green-900 border-green-200" });
       setDeleteDialog({ open: false, connection: null });
       await loadUsers();
     } catch (error) {
-      toast({
-        title: "שגיאה במחיקת חיבור",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "שגיאה במחיקת חיבור", description: error.message, variant: "destructive" });
     }
   };
 
   const handleEditConnection = async (userEmail, formData) => {
     try {
-      // בדיקה אם כבר קיים טופס אחר עם אותו השם עבור המשתמש
       const existingConnections = userConnections[userEmail] || [];
       const duplicateName = existingConnections.find(conn => 
         conn.id !== editingConnection.id && 
         conn.form_name.toLowerCase() === formData.form_name.toLowerCase()
       );
-      
       if (duplicateName) {
-        toast({
-          title: "שם טופס קיים כבר",
-          description: `כבר קיים טופס אחר בשם "${formData.form_name}" עבור משתמש זה`,
-          variant: "destructive",
-        });
+        toast({ title: "שם טופס קיים כבר", description: `כבר קיים טופס אחר בשם "${formData.form_name}"`, variant: "destructive" });
         return;
       }
-      
       await base44.entities.FormConnection.update(editingConnection.id, formData);
-      toast({
-        title: "✅ עודכן בהצלחה!",
-        description: `החיבור "${formData.form_name}" עודכן`,
-        className: "bg-green-100 text-green-900 border-green-200",
-      });
+      toast({ title: "✅ עודכן בהצלחה!", description: `החיבור "${formData.form_name}" עודכן`, className: "bg-green-100 text-green-900 border-green-200" });
       setEditingConnection(null);
       setShowFormConnectionForm(false);
       await loadUsers();
     } catch (error) {
-      toast({
-        title: "שגיאה בעדכון חיבור",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "שגיאה בעדכון חיבור", description: error.message, variant: "destructive" });
     }
   };
 
   const handleSearchLeadById = async () => {
     if (!leadSearchId.trim()) {
-      toast({
-        title: "שגיאה",
-        description: "נא להזין Lead ID",
-        variant: "destructive",
-      });
+      toast({ title: "שגיאה", description: "נא להזין Lead ID", variant: "destructive" });
       return;
     }
-
     try {
       const response = await base44.functions.invoke('searchLeadById', { lead_id: leadSearchId.trim() });
       if (response.data.ok && response.data.lead) {
         setLeadSearchResult(response.data.lead);
-        toast({
-          title: "נמצא!",
-          description: `ליד ${response.data.lead.name} נמצא במערכת`,
-          className: "bg-green-100 text-green-900 border-green-200",
-        });
+        toast({ title: "נמצא!", description: `ליד ${response.data.lead.name} נמצא במערכת`, className: "bg-green-100 text-green-900 border-green-200" });
       } else {
         setLeadSearchResult(null);
-        toast({
-          title: "לא נמצא",
-          description: "לא נמצא ליד עם ID זה",
-          variant: "destructive",
-        });
+        toast({ title: "לא נמצא", description: "לא נמצא ליד עם ID זה", variant: "destructive" });
       }
     } catch (error) {
-      console.error("Error searching lead:", error);
-      toast({
-        title: "שגיאה בחיפוש",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "שגיאה בחיפוש", description: error.message, variant: "destructive" });
     }
   };
 
@@ -328,16 +224,24 @@ export default function PremiumUsersManager() {
   const premiumUsers = users.filter(u => u.plan_type === 'PREMIUM').length;
   const freeUsers = users.filter(u => u.plan_type !== 'PREMIUM').length;
 
+  // Webhook URLs לדיאלוג ההוראות
+  const conn = instructionsDialog.connection;
+  const productionWebhookUrl = `${PRODUCTION_BASE_URL}${WEBHOOK_PATH}`;
+  const previewWebhookUrl = `${PREVIEW_BASE_URL}${WEBHOOK_PATH}`;
+
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-slate-500">טוען משתמשים...</p>
-      </div>
-    );
+    return <div className="flex items-center justify-center py-12"><p className="text-slate-500">טוען משתמשים...</p></div>;
   }
 
   return (
     <div className="space-y-6">
+      {/* Environment Indicator */}
+      <div className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${isPreview ? 'bg-yellow-50 border border-yellow-300 text-yellow-800' : 'bg-green-50 border border-green-300 text-green-800'}`}>
+        {isPreview ? <FlaskConical className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
+        <span>סביבה: {isPreview ? '⚠️ Preview (בדיקות בלבד)' : '✅ Production (lidup.co.il)'}</span>
+        {isPreview && <span className="text-xs text-yellow-600">— לידים שיישלחו מכאן יגיעו לסביבת Preview, לא Production!</span>}
+      </div>
+
       {/* Lead Search Tool */}
       <Card>
         <CardHeader>
@@ -376,39 +280,16 @@ export default function PremiumUsersManager() {
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">סה"כ משתמשים</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              <span className="text-2xl font-bold text-slate-900">{totalUsers}</span>
-            </div>
-          </CardContent>
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-600">סה"כ משתמשים</CardTitle></CardHeader>
+          <CardContent><div className="flex items-center gap-2"><Users className="w-5 h-5 text-blue-600" /><span className="text-2xl font-bold text-slate-900">{totalUsers}</span></div></CardContent>
         </Card>
-        
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">משתמשי פרימיום</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Crown className="w-5 h-5 text-purple-600" />
-              <span className="text-2xl font-bold text-purple-900">{premiumUsers}</span>
-            </div>
-          </CardContent>
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-600">משתמשי פרימיום</CardTitle></CardHeader>
+          <CardContent><div className="flex items-center gap-2"><Crown className="w-5 h-5 text-purple-600" /><span className="text-2xl font-bold text-purple-900">{premiumUsers}</span></div></CardContent>
         </Card>
-        
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">משתמשים חינמיים</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <span className="text-2xl font-bold text-green-900">{freeUsers}</span>
-            </div>
-          </CardContent>
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-medium text-slate-600">משתמשים חינמיים</CardTitle></CardHeader>
+          <CardContent><div className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-green-600" /><span className="text-2xl font-bold text-green-900">{freeUsers}</span></div></CardContent>
         </Card>
       </div>
 
@@ -418,18 +299,9 @@ export default function PremiumUsersManager() {
           <div className="flex items-center gap-2">
             <div className="relative flex-grow">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600 pointer-events-none" />
-              <Input
-                placeholder="חיפוש לפי שם או אימייל..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-10 w-full pr-10"
-              />
+              <Input placeholder="חיפוש לפי שם או אימייל..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-10 w-full pr-10" />
             </div>
-            {searchTerm && (
-              <Button variant="ghost" onClick={() => setSearchTerm("")} size="icon" className="h-10 w-10">
-                <X className="h-5 w-5" />
-              </Button>
-            )}
+            {searchTerm && <Button variant="ghost" onClick={() => setSearchTerm("")} size="icon" className="h-10 w-10"><X className="h-5 w-5" /></Button>}
           </div>
         </CardContent>
       </Card>
@@ -452,11 +324,7 @@ export default function PremiumUsersManager() {
               </thead>
               <tbody>
                 {filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan="3" className="px-4 py-8 text-center text-slate-500">
-                      לא נמצאו משתמשים
-                    </td>
-                  </tr>
+                  <tr><td colSpan="3" className="px-4 py-8 text-center text-slate-500">לא נמצאו משתמשים</td></tr>
                 ) : (
                   filteredUsers.map((user) => {
                     const isExpanded = expandedUserId === user.id;
@@ -470,12 +338,7 @@ export default function PremiumUsersManager() {
                           <td className="px-4 py-4 border-b">
                             <div className="flex items-center gap-3">
                               {isPremium && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => toggleUserExpanded(user.id)}
-                                  className="p-1 h-auto"
-                                >
+                                <Button variant="ghost" size="sm" onClick={() => toggleUserExpanded(user.id)} className="p-1 h-auto">
                                   {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                 </Button>
                               )}
@@ -489,10 +352,7 @@ export default function PremiumUsersManager() {
                             {user.email === 'noam.gamliel@gmail.com' ? (
                               <Badge className="bg-red-500 hover:bg-red-600">Admin</Badge>
                             ) : isPremium ? (
-                              <Badge className="bg-purple-500 hover:bg-purple-600 gap-1">
-                                <Crown className="w-3 h-3" />
-                                פרימיום
-                              </Badge>
+                              <Badge className="bg-purple-500 hover:bg-purple-600 gap-1"><Crown className="w-3 h-3" />פרימיום</Badge>
                             ) : (
                               <Badge variant="outline" className="text-slate-600">חינמי</Badge>
                             )}
@@ -503,9 +363,7 @@ export default function PremiumUsersManager() {
                                 onClick={() => handleTogglePlan(user)}
                                 variant={isPremium ? 'outline' : 'default'}
                                 size="sm"
-                                className={isPremium 
-                                  ? 'text-slate-600 hover:bg-slate-100' 
-                                  : 'bg-purple-600 hover:bg-purple-700 text-white'}
+                                className={isPremium ? 'text-slate-600 hover:bg-slate-100' : 'bg-purple-600 hover:bg-purple-700 text-white'}
                               >
                                 {isPremium ? 'שנמוך לחינמי' : 'שדרג לפרימיום'}
                               </Button>
@@ -523,13 +381,8 @@ export default function PremiumUsersManager() {
                                     חיבורי טפסים ({connections.length})
                                   </h4>
                                   {!showFormConnectionForm && (
-                                    <Button
-                                      onClick={() => setShowFormConnectionForm(true)}
-                                      size="sm"
-                                      className="bg-blue-600 hover:bg-blue-700 gap-2"
-                                    >
-                                      <Plus className="w-4 h-4" />
-                                      חיבור חדש
+                                    <Button onClick={() => setShowFormConnectionForm(true)} size="sm" className="bg-blue-600 hover:bg-blue-700 gap-2">
+                                      <Plus className="w-4 h-4" />חיבור חדש
                                     </Button>
                                   )}
                                 </div>
@@ -542,10 +395,7 @@ export default function PremiumUsersManager() {
                                       ? handleEditConnection(user.email, formData)
                                       : handleCreateFormConnection(user.email, formData)
                                     }
-                                    onCancel={() => {
-                                      setShowFormConnectionForm(false);
-                                      setEditingConnection(null);
-                                    }}
+                                    onCancel={() => { setShowFormConnectionForm(false); setEditingConnection(null); }}
                                   />
                                 )}
                                 
@@ -556,42 +406,19 @@ export default function PremiumUsersManager() {
                                         <div className="flex items-start justify-between gap-3">
                                           <div className="flex-grow">
                                             <p className="font-medium text-slate-900">{conn.form_name}</p>
-                                            {conn.client_name && (
-                                              <p className="text-sm text-slate-500">{conn.client_name}</p>
-                                            )}
+                                            {conn.client_name && <p className="text-sm text-slate-500">{conn.client_name}</p>}
                                           </div>
                                           <div className="flex items-center gap-2">
-                                            <Badge 
-                                              variant={conn.is_active ? "default" : "outline"}
-                                              className={conn.is_active ? "bg-green-500 hover:bg-green-600" : ""}
-                                            >
+                                            <Badge variant={conn.is_active ? "default" : "outline"} className={conn.is_active ? "bg-green-500 hover:bg-green-600" : ""}>
                                               {conn.is_active ? "פעיל" : "לא פעיל"}
                                             </Badge>
-                                            <Button
-                                              size="icon"
-                                              variant="ghost"
-                                              className="h-8 w-8"
-                                              onClick={() => setInstructionsDialog({ open: true, connection: conn })}
-                                            >
+                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setInstructionsDialog({ open: true, connection: conn })}>
                                               <FileText className="w-4 h-4 text-blue-600" />
                                             </Button>
-                                            <Button
-                                              size="icon"
-                                              variant="ghost"
-                                              className="h-8 w-8"
-                                              onClick={() => {
-                                                setEditingConnection(conn);
-                                                setShowFormConnectionForm(true);
-                                              }}
-                                            >
+                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setEditingConnection(conn); setShowFormConnectionForm(true); }}>
                                               <Edit className="w-4 h-4 text-slate-600" />
                                             </Button>
-                                            <Button
-                                              size="icon"
-                                              variant="ghost"
-                                              className="h-8 w-8"
-                                              onClick={() => setDeleteDialog({ open: true, connection: conn })}
-                                            >
+                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setDeleteDialog({ open: true, connection: conn })}>
                                               <Trash2 className="w-4 h-4 text-red-600" />
                                             </Button>
                                           </div>
@@ -626,48 +453,75 @@ export default function PremiumUsersManager() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
-            <AlertDialogDescription>
-              פעולה זו תמחק לצמיתות את החיבור "{deleteDialog.connection?.form_name}". 
-              לא ניתן לשחזר את הפעולה.
-            </AlertDialogDescription>
+            <AlertDialogDescription>פעולה זו תמחק לצמיתות את החיבור "{deleteDialog.connection?.form_name}". לא ניתן לשחזר את הפעולה.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>ביטול</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConnection}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              מחק חיבור
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteConnection} className="bg-red-600 hover:bg-red-700">מחק חיבור</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Instructions Dialog */}
       <Dialog open={instructionsDialog.open} onOpenChange={(open) => !open && setInstructionsDialog({ open: false, connection: null })}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>הוראות התקנה - {instructionsDialog.connection?.form_name}</DialogTitle>
+            <DialogTitle>הוראות התקנה — {conn?.form_name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 text-right">
-            <div className="bg-slate-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-2">פלטפורמה: {instructionsDialog.connection?.platform_type}</h3>
-              <p className="text-sm text-slate-600">Webhook URL:</p>
-              <code className="block bg-white p-2 rounded text-xs mt-1 break-all">
-                {instructionsDialog.connection?.webhook_url}
+
+            {/* Production Webhook - PRIMARY */}
+            <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="w-4 h-4 text-green-700" />
+                <h3 className="font-semibold text-green-800">Webhook URL — Production ✅</h3>
+                <Badge className="bg-green-600 text-white text-xs">השתמש בזה!</Badge>
+              </div>
+              <code className="block bg-white border border-green-200 p-2 rounded text-xs mt-1 break-all text-green-900">
+                {productionWebhookUrl}
               </code>
+              <div className="mt-2">
+                <CopyButton text={productionWebhookUrl} label="העתק Production Webhook" />
+              </div>
             </div>
-            <div className="bg-slate-50 p-4 rounded-lg">
-              <p className="text-sm text-slate-600">Secret Key:</p>
-              <code className="block bg-white p-2 rounded text-xs mt-1 break-all">
-                {instructionsDialog.connection?.secret_key}
+
+            {/* Preview Webhook - SECONDARY */}
+            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <FlaskConical className="w-4 h-4 text-yellow-700" />
+                <h3 className="font-semibold text-yellow-800">Webhook URL — Preview ⚠️</h3>
+                <Badge className="bg-yellow-500 text-white text-xs">לבדיקות בלבד</Badge>
+              </div>
+              <code className="block bg-white border border-yellow-200 p-2 rounded text-xs mt-1 break-all text-yellow-900">
+                {previewWebhookUrl}
               </code>
+              <div className="mt-2">
+                <CopyButton text={previewWebhookUrl} label="העתק Preview Webhook" />
+              </div>
+              <p className="text-xs text-yellow-700 mt-2">⚠️ לידים שיישלחו לכאן יגיעו לסביבת Preview בלבד ולא יופיעו ב-Production!</p>
             </div>
+
+            {/* Secret Key */}
             <div className="bg-slate-50 p-4 rounded-lg">
-              <p className="text-sm text-slate-600">Form ID:</p>
-              <code className="block bg-white p-2 rounded text-xs mt-1">
-                {instructionsDialog.connection?.form_id}
-              </code>
+              <p className="text-sm font-medium text-slate-700 mb-1">Secret Key:</p>
+              <code className="block bg-white border p-2 rounded text-xs mt-1 break-all">{conn?.secret_key}</code>
+              <div className="mt-2">
+                <CopyButton text={conn?.secret_key || ''} label="העתק Secret Key" />
+              </div>
+            </div>
+
+            {/* Form ID */}
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <p className="text-sm font-medium text-slate-700 mb-1">Form ID:</p>
+              <code className="block bg-white border p-2 rounded text-xs mt-1">{conn?.form_id}</code>
+              <div className="mt-2">
+                <CopyButton text={conn?.form_id || ''} label="העתק Form ID" />
+              </div>
+            </div>
+
+            {/* Platform */}
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <p className="text-sm font-medium text-slate-700">פלטפורמה: <span className="font-bold">{conn?.platform_type}</span></p>
             </div>
           </div>
         </DialogContent>
