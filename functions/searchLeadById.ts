@@ -7,42 +7,31 @@ Deno.serve(async (req) => {
         // אימות אדמין בלבד
         const user = await base44.auth.me();
         if (!user || user.email !== 'noam.gamliel@gmail.com') {
-            return Response.json({ 
-                ok: false,
-                error: 'Unauthorized: Admin access required'
-            }, { status: 403 });
+            return Response.json({ ok: false, error: 'Unauthorized: Admin access required' }, { status: 403 });
         }
 
         const { lead_id } = await req.json();
 
         if (!lead_id) {
-            return Response.json({ 
-                ok: false,
-                error: 'Missing lead_id parameter'
-            }, { status: 400 });
+            return Response.json({ ok: false, error: 'Missing lead_id parameter' }, { status: 400 });
         }
 
-        // חיפוש הליד דרך service role
-        const leads = await base44.asServiceRole.entities.Client.filter({ id: lead_id });
-
-        if (!leads || leads.length === 0) {
-            return Response.json({ 
-                ok: false,
-                message: 'Lead not found'
-            }, { status: 404 });
+        // חיפוש הליד דרך service role - get() לפי ID
+        let lead = null;
+        try {
+            lead = await base44.asServiceRole.entities.Client.get(lead_id);
+        } catch (e) {
+            // לא נמצא
         }
 
-        return Response.json({ 
-            ok: true,
-            lead: leads[0]
-        });
+        if (!lead) {
+            return Response.json({ ok: false, message: 'Lead not found' }, { status: 404 });
+        }
+
+        return Response.json({ ok: true, lead });
 
     } catch (error) {
         console.error('Error in searchLeadById:', error);
-        return Response.json({ 
-            ok: false,
-            error: 'Internal server error',
-            details: error.message 
-        }, { status: 500 });
+        return Response.json({ ok: false, error: 'Internal server error', details: error.message }, { status: 500 });
     }
 });
