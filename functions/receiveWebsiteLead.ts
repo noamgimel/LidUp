@@ -107,16 +107,12 @@ Deno.serve(async (req) => {
             owner_email: formConnection.owner_email
         };
 
-        // יצירת הליד תחת owner_email של חיבור הטופס
+        // יצירת הליד - owner_email מגדיר את הבעלים (RLS מבוסס על owner_email)
         console.log('Creating lead for user:', formConnection.owner_email);
-        console.log('Lead data to create:', { name: leadData.name, email: leadData.email, phone: leadData.phone });
-        const newLead = await base44.asServiceRole.entities.Client.create({
-            ...leadData,
-            created_by: formConnection.owner_email
-        });
+        console.log('Lead data to create:', { name: leadData.name, email: leadData.email, phone: leadData.phone, owner_email: leadData.owner_email });
+        const newLead = await base44.asServiceRole.entities.Client.create(leadData);
         console.log('✅✅✅ SUCCESS! Lead created for user:', formConnection.owner_email);
-        console.log('Lead ID:', newLead.id, '| Name:', newLead.name, '| Email:', newLead.email);
-        console.log('Lead Details - ID:', newLead.id, '| owner_email:', newLead.owner_email, '| created_by:', newLead.created_by);
+        console.log('Lead ID:', newLead.id, '| Name:', newLead.name, '| owner_email:', newLead.owner_email);
 
         // עדכון מונה השליחות בטופס
         await base44.asServiceRole.entities.FormConnection.update(formConnection.id, {
