@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,20 +52,21 @@ const DetailItem = ({ icon: Icon, label, value, children }) => (
   </div>
 );
 
-// Helper function to format date in Israel timezone
+// Helper function to format date in Israel timezone (automatic DST handling)
 const formatIsraeliDate = (dateString) => {
   if (!dateString) return '-';
-  
   try {
     const date = new Date(dateString);
-    
-    // Add 3 hours to convert UTC to Israel time (UTC+3 for daylight saving time)
-    // In winter it's UTC+2, but we'll use UTC+3 as it's more common
-    const israelDate = new Date(date.getTime() + (3 * 60 * 60 * 1000));
-    
-    return format(israelDate, 'dd/MM/yyyy, HH:mm', { locale: he });
+    return new Intl.DateTimeFormat('he-IL', {
+      timeZone: 'Asia/Jerusalem',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(date);
   } catch (error) {
-    console.error('Error formatting date:', error);
     return '-';
   }
 };
