@@ -1,19 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-// פונקציה לשליפת כל הרשומות עם pagination
-async function fetchAll(entityRef, filter) {
-    const pageSize = 100;
-    let skip = 0;
-    let all = [];
-    while (true) {
-        const page = await entityRef.filter(filter, '-created_date', pageSize, skip);
-        all = all.concat(page);
-        if (page.length < pageSize) break;
-        skip += pageSize;
-    }
-    return all;
-}
-
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
@@ -27,15 +13,19 @@ Deno.serve(async (req) => {
 
         const clientEntity = base44.asServiceRole.entities.Client;
 
-        // שליפה לפי owner_email (לידים מטפסים חיצוניים)
-        const byOwner = await fetchAll(clientEntity, { owner_email: user.email });
+        // שלב 1: שליפה לפי owner_email (לידים מטפסים חיצוניים)
+        const byOwner = await clientEntity.filter({ owner_email: user.email }, '-created_date', 5000);
         console.log('[getMyClients] byOwner count =', byOwner.length);
 
-        // שליפה לפי created_by (רשומות שנוצרו ידנית)
-        const byCreator = await fetchAll(clientEntity, { created_by: user.email });
-        console.log('[getMyClients] byCreator count =', byCreator.length);
+        // שלב 2: שליפת כל הרשומות בבת אחת וסינון לפי created_by בצד הקוד
+        // (כי created_by הוא שדה מערכת ולא ניתן לפלטר עליו ישירות)
+        const allClients = await clientEntity.list('-created_date', 5000);
+        console.log('[getMyClients] allClients total =', allClients.length);
 
-        // מיזוג ללא כפילויות לפי ID
+        const byCreator = allClients.filter(c => c.created_by === user.email);
+        console.log('[getMyClients] byCreator (filtered in code) count =', byCreator.length);
+
+        // שלב 3: מיזוג ללא כפילויות לפי ID
         const allMap = new Map();
         [...byOwner, ...byCreator].forEach(c => allMap.set(c.id, c));
         const clients = Array.from(allMap.values());
