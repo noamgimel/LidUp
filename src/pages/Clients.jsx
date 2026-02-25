@@ -260,7 +260,7 @@ export default function Clients() {
   const handleDelete = async (clientId) => {
     if (confirm("האם אתה בטוח שברצונך למחוק לקוח זה?")) {
       try {
-        await Client.delete(clientId);
+        await base44.entities.Client.delete(clientId);
         if (viewingClient?.id === clientId) {
           setViewingClient(null);
         }
