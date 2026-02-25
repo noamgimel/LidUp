@@ -180,9 +180,9 @@ export default function Clients() {
   const handleSubmit = async (clientData) => {
     try {
       if (editingClient) {
-        await Client.update(editingClient.id, clientData);
+        await base44.entities.Client.update(editingClient.id, clientData);
       } else {
-        await Client.create(clientData);
+        await base44.entities.Client.create(clientData);
       }
       setShowForm(false);
       setEditingClient(null);
