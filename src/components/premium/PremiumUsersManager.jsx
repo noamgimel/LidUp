@@ -213,10 +213,18 @@ export default function PremiumUsersManager() {
         toast({ title: "נמצא!", description: `ליד ${response.data.lead.name} נמצא במערכת`, className: "bg-green-100 text-green-900 border-green-200" });
       } else {
         setLeadSearchResult(null);
-        toast({ title: "לא נמצא", description: "לא נמצא ליד עם ID זה", variant: "destructive" });
+        const msg = response.data?.message || "לא נמצא ליד עם המזהה שהוזן";
+        toast({ title: "לא נמצא", description: msg, variant: "destructive" });
       }
     } catch (error) {
-      toast({ title: "שגיאה בחיפוש", description: error.message, variant: "destructive" });
+      setLeadSearchResult(null);
+      // טיפול ב-404 ובשגיאות אחרות בצורה ידידותית
+      const status = error?.response?.status;
+      if (status === 404) {
+        toast({ title: "לא נמצא", description: "לא נמצא ליד עם המזהה שהוזן", variant: "destructive" });
+      } else {
+        toast({ title: "שגיאה בחיפוש", description: error.message, variant: "destructive" });
+      }
     }
   };
 
