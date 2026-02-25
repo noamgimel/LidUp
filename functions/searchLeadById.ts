@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
         }
 
         if (!lead) {
-            return Response.json({ ok: false, message: 'Lead not found' }, { status: 404 });
+            return Response.json({ ok: false, error_code: 'NOT_FOUND', message: 'לא נמצא ליד עם המזהה שהוזן' }, { status: 404 });
         }
 
         return Response.json({ ok: true, lead });
