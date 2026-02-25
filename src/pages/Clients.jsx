@@ -70,17 +70,24 @@ export default function Clients() {
       const user = await User.me();
       setCurrentUser(user);
 
-      // שליפת לקוחות דרך backend function שמחזיר גם owner_email וגם created_by
+      console.log('[Clients] loadData: user =', user?.email);
+
       const [clientsResponse, meetingsData] = await Promise.all([
         base44.functions.invoke('getMyClients'),
         Meeting.list()
       ]);
 
-      const clientsData = clientsResponse?.data?.clients || [];
+      console.log('[Clients] getMyClients raw response:', clientsResponse?.data);
+
+      const responseData = clientsResponse?.data || {};
+      const clientsData = responseData.clients || [];
+
+      console.log('[Clients] user_email from fn:', responseData.user_email, '| count:', responseData.count, '| clients array length:', clientsData.length);
+
       setClients(clientsData);
       setMeetings(meetingsData || []);
     } catch (error) {
-      console.error("שגיאה בטעינת נתונים:", error);
+      console.error("[Clients] שגיאה בטעינת נתונים:", error);
     }
     setIsLoading(false);
   };
