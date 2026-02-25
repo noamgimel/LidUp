@@ -327,7 +327,8 @@ export default function Clients() {
     if (confirm("אזהרה: האם אתה בטוח שברצונך למחוק את כל הלקוחות והלידים? פעולה זו אינה הפיכה!")) {
         setIsLoading(true);
         try {
-            const clientsToDelete = await Client.list();
+            const clientsRes = await base44.functions.invoke('getMyClients');
+            const clientsToDelete = clientsRes?.data?.clients || [];
 
             if (clientsToDelete.length === 0) {
                 toast({
@@ -337,7 +338,7 @@ export default function Clients() {
                 return;
             }
 
-            const deletePromises = clientsToDelete.map(client => Client.delete(client.id));
+            const deletePromises = clientsToDelete.map(client => base44.entities.Client.delete(client.id));
             await Promise.all(deletePromises);
             
             toast({
