@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Client } from "@/entities/Client";
 import { Meeting } from "@/entities/Meeting";
 import { User } from "@/entities/User";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, Plus, Search, X, Upload, Trash2, MoreVertical, Download } from "lucide-react";
