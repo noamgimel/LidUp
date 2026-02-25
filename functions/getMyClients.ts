@@ -7,39 +7,35 @@ Deno.serve(async (req) => {
     try {
         user = await base44.auth.me();
     } catch (authError) {
-        console.log('[getMyClients] auth.me() threw:', authError.message);
+        console.log('[getMyClients] auth.me() error:', authError.message);
+        return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     if (!user) {
-        console.log('[getMyClients] No authenticated user — returning 401');
         return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     console.log('[getMyClients] user.email =', user.email);
 
     try {
-        const clientEntity = base44.asServiceRole.entities.Client;
+        // שלב 1: שליפה רגילה כמשתמש המחובר — ה-RLS מאפשר created_by ו-owner_email
+        // limit גדול כדי לא לפספס רשומות
+        const userClients = await base44.entities.Client.list('-created_date', 5000);
+        console.log('[getMyClients] userClients (via user token, RLS applied) count =', userClients.length);
 
-        // שליפה לפי owner_email (לידים מטפסים חיצוניים)
-        const byOwner = await clientEntity.filter({ owner_email: user.email }, '-created_date', 5000);
-        console.log('[getMyClients] byOwner count =', byOwner.length);
+        // שלב 2: גם שליפה ישירה לפי owner_email דרך service role (ל-webhook leads)
+        const byOwner = await base44.asServiceRole.entities.Client.filter(
+            { owner_email: user.email }, '-created_date', 5000
+        );
+        console.log('[getMyClients] byOwner (service role) count =', byOwner.length);
 
-        // שליפת כל הרשומות וסינון לפי created_by בצד הקוד
-        // (created_by הוא שדה מערכת שלא עובד כ-filter ישיר)
-        const allClients = await clientEntity.list('-created_date', 5000);
-        console.log('[getMyClients] allClients total from DB =', allClients.length);
-
-        const byCreator = allClients.filter(c => c.created_by === user.email);
-        console.log('[getMyClients] byCreator (in-memory filter) count =', byCreator.length);
-
-        // מיזוג ללא כפילויות לפי ID
+        // מיזוג ללא כפילויות
         const allMap = new Map();
-        [...byOwner, ...byCreator].forEach(c => allMap.set(c.id, c));
+        [...userClients, ...byOwner].forEach(c => allMap.set(c.id, c));
         const clients = Array.from(allMap.values());
 
         console.log('[getMyClients] Total merged count =', clients.length);
 
-        // מיון לפי תאריך יצירה (חדש ראשון)
         clients.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
 
         return Response.json({
@@ -50,7 +46,7 @@ Deno.serve(async (req) => {
         });
 
     } catch (error) {
-        console.error('[getMyClients] ERROR:', error.message, error.stack);
+        console.error('[getMyClients] ERROR:', error.message);
         return Response.json({ ok: false, error: error.message }, { status: 500 });
     }
 });
