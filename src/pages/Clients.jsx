@@ -69,14 +69,15 @@ export default function Clients() {
     try {
       const user = await User.me();
       setCurrentUser(user);
-      
-      // טעינת נתונים - מסתמך על RLS (לא מפלטר לפי created_by)
-      const [clientsData, meetingsData] = await Promise.all([
-        Client.list("-created_date"),
+
+      // שליפת לקוחות דרך backend function שמחזיר גם owner_email וגם created_by
+      const [clientsResponse, meetingsData] = await Promise.all([
+        base44.functions.invoke('getMyClients'),
         Meeting.list()
       ]);
-      
-      setClients(clientsData || []);
+
+      const clientsData = clientsResponse?.data?.clients || [];
+      setClients(clientsData);
       setMeetings(meetingsData || []);
     } catch (error) {
       console.error("שגיאה בטעינת נתונים:", error);
