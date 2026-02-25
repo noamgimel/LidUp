@@ -14,8 +14,10 @@ import {
   Plug,
   Copy,
   Info,
-  Loader2
+  Loader2,
+  Crown
 } from "lucide-react";
+import { createPageUrl } from "@/utils";
 
 import { googleAuth } from '@/functions/googleAuth';
 
@@ -99,7 +101,7 @@ export default function Integrations() {
   const integrations = [
     {
       id: "website-forms",
-      name: "חיבור האתר",
+      name: "חיבורי האתר",
       description: "חיבור טפסים מהאתר לקליטה אוטומטית של לידים למערכת, בזמן אמת.",
       icon: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/233c624f0_.png",
       status: "premium",
@@ -108,7 +110,8 @@ export default function Integrations() {
         "שמירת מקור הפנייה ושדות הטופס",
         "התחלת עבודה מיידית בלי איבוד לידים"
       ],
-      color: "blue"
+      color: "blue",
+      hasSettings: true
     },
     {
       id: "google-calendar",
@@ -154,14 +157,51 @@ export default function Integrations() {
   };
 
   const getActionButton = (integration) => {
+    const isPremium = currentUser?.plan_type === 'PREMIUM' || currentUser?.email === 'noam.gamliel@gmail.com';
+    
     if (integration.status === "premium") {
+      if (isPremium && integration.hasSettings) {
+        // Premium user with settings available
+        return (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => window.location.href = createPageUrl('WebsiteConnections')}
+            className="gap-2"
+          >
+            <Settings className="w-3 h-3" />
+            הגדרות
+          </Button>
+        );
+      }
+      
+      // Non-premium or no settings
       return (
         <div className="flex flex-col items-end gap-1">
-          <Button variant="outline" size="sm" disabled className="opacity-60">
-            <Zap className="w-3 h-3 mr-1" />
-            התחבר
+          <Button 
+            variant="outline" 
+            size="sm" 
+            disabled={!isPremium}
+            className={!isPremium ? "opacity-60" : ""}
+            onClick={() => {
+              if (isPremium && !integration.hasSettings) {
+                window.location.href = 'mailto:noam.gamliel@gmail.com?subject=בקשה לחיבור אינטגרציה';
+              }
+            }}
+          >
+            {isPremium ? (
+              <>
+                <Zap className="w-3 h-3 mr-1" />
+                התחבר
+              </>
+            ) : (
+              <>
+                <Crown className="w-3 h-3 mr-1" />
+                שדרג לפרימיום
+              </>
+            )}
           </Button>
-          <span className="text-xs text-purple-600">זמין למשתמשי פרימיום</span>
+          {!isPremium && <span className="text-xs text-purple-600">זמין למשתמשי פרימיום</span>}
         </div>
       );
     }
