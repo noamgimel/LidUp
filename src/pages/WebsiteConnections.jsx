@@ -25,13 +25,14 @@ import {
   Play,
   RefreshCw,
   ChevronDown,
-  ExternalLink,
   CheckCircle2,
   XCircle,
-  AlertCircle,
   Copy,
-  Crown
+  Crown,
+  ArrowRight
 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import moment from "moment";
 
 export default function WebsiteConnections() {
@@ -164,7 +165,15 @@ export default function WebsiteConnections() {
   return (
     <div className="px-4 pt-20 pb-4 sm:px-6 md:p-8 min-h-screen">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
+        {/* Back + Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <Link to={createPageUrl("Integrations")}>
+            <Button variant="ghost" size="sm" className="gap-2 text-slate-600 hover:text-slate-900">
+              <ArrowRight className="w-4 h-4" />
+              חזרה לאינטגרציות
+            </Button>
+          </Link>
+        </div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">חיבורי האתר</h1>
@@ -333,21 +342,7 @@ export default function WebsiteConnections() {
                                     )}
                                   </div>
                                 </div>
-                                {connection.platform_type === 'WIX' && (
-                                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <h5 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-                                      <AlertCircle className="w-4 h-4" />
-                                      הוראות חיבור ל-Wix
-                                    </h5>
-                                    <ol className="text-sm text-blue-800 space-y-1 mr-5 list-decimal">
-                                      <li>היכנס לאוטומציות ב-Wix</li>
-                                      <li>צור אוטומציה חדשה: "When form is submitted"</li>
-                                      <li>הוסף Action: "Call webhook"</li>
-                                      <li>הדבק את ה-Webhook URL מלמעלה</li>
-                                      <li>שמור והפעל את האוטומציה</li>
-                                    </ol>
-                                  </div>
-                                )}
+
                               </div>
                             </TableCell>
                           </TableRow>

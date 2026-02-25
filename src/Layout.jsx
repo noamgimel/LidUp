@@ -208,7 +208,8 @@ export default function Layout({ children, currentPageName }) {
                       to={item.url}
                       onClick={() => setSidebarOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-right w-full ${
-                        location.pathname === item.url
+                        location.pathname === item.url ||
+                        (item.url === createPageUrl("Integrations") && location.pathname === createPageUrl("WebsiteConnections"))
                           ? 'bg-gradient-to-l from-blue-600 to-blue-700 text-white shadow-md'
                           : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'
                       }`}
