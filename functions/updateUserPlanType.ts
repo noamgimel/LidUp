@@ -92,9 +92,14 @@ Deno.serve(async (req) => {
 
         console.log("✓ Validation passed");
 
-        // שלב 4: עדכון plan_type
+        // שלב 4: עדכון plan_type — מחפשים את ה-User לפי email ואז מעדכנים
         try {
-            await base44.asServiceRole.users.update(user_email, {
+            const users = await base44.asServiceRole.entities.User.filter({ email: user_email }, '-created_date', 1);
+            if (!users || users.length === 0) {
+                return Response.json({ ok: false, error_code: "USER_NOT_FOUND", message: `משתמש ${user_email} לא נמצא` }, { status: 404 });
+            }
+            const userId = users[0].id;
+            await base44.asServiceRole.entities.User.update(userId, {
                 plan_type: plan_type
             });
             console.log(`✓ User ${user_email} updated to ${plan_type}`);
