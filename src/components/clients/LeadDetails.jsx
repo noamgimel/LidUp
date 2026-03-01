@@ -15,6 +15,11 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { addDays } from "date-fns";
 import { base44 } from "@/api/base44Client";
+import { markFirstContact } from "@/functions/markFirstContact";
+import { markFollowupDone } from "@/functions/markFollowupDone";
+import { scheduleFollowup } from "@/functions/scheduleFollowup";
+import { getLeadActivities } from "@/functions/getLeadActivities";
+import { addLeadNote } from "@/functions/addLeadNote";
 
 import { useUserWorkStages } from "../hooks/useUserWorkStages";
 import { getWorkStageColorClass } from "../utils/workStagesUtils";
@@ -43,8 +48,7 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
   const loadActivities = async () => {
     setIsLoading(true);
     try {
-      // Use backend function to bypass RLS for webhook leads
-      const res = await base44.functions.invoke("getLeadActivities", { lead_id: leadId });
+      const res = await getLeadActivities({ lead_id: leadId });
       setActivities(res?.data?.activities || []);
     } catch {
       setActivities([]);
@@ -52,11 +56,11 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
     setIsLoading(false);
   };
 
-  const addNote = async () => {
+  const addNoteHandler = async () => {
     if (!newNote.trim()) return;
     setIsSaving(true);
     try {
-      await base44.functions.invoke("addLeadNote", { lead_id: leadId, content: newNote.trim() });
+      await addLeadNote({ lead_id: leadId, content: newNote.trim() });
       setNewNote("");
       await loadActivities();
       onActivityAdded?.();
@@ -92,21 +96,19 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
 
   return (
     <div className="space-y-3">
-      {/* Add note */}
       <div className="flex gap-2">
         <Textarea
           value={newNote}
           onChange={e => setNewNote(e.target.value)}
           placeholder="הוסף הערה..."
           className="text-right min-h-[60px] resize-none text-sm"
-          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); addNote(); } }}
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); addNoteHandler(); } }}
         />
-        <Button onClick={addNote} disabled={isSaving || !newNote.trim()} size="icon" className="bg-blue-600 hover:bg-blue-700 self-end h-9 w-9 flex-shrink-0">
+        <Button onClick={addNoteHandler} disabled={isSaving || !newNote.trim()} size="icon" className="bg-blue-600 hover:bg-blue-700 self-end h-9 w-9 flex-shrink-0">
           <Send className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* Timeline */}
       {isLoading ? (
         <p className="text-slate-400 text-sm text-center py-4">טוען...</p>
       ) : activities.length === 0 ? (
@@ -138,7 +140,7 @@ function FollowupPanel({ client, onUpdate }) {
     if (!nextDate) return;
     setIsSaving(true);
     try {
-      await base44.functions.invoke("scheduleFollowup", { lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
+      await scheduleFollowup({ lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
       onUpdate?.();
     } finally {
       setIsSaving(false);
@@ -148,7 +150,7 @@ function FollowupPanel({ client, onUpdate }) {
   const markDone = async () => {
     setIsSaving(true);
     try {
-      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
+      await markFollowupDone({ lead_id: client.id });
       setShowNextPrompt(true);
       onUpdate?.();
     } finally {
@@ -241,7 +243,6 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
   const workStage = userWorkStages.find(s => s.id === client.work_stage);
   const workStageLabel = workStage?.label || "";
-  const workStageColor = workStage ? getWorkStageColorClass(workStage.color) : "bg-gray-100 text-gray-700 border-gray-200";
 
   const upcomingMeetings = meetings?.filter(m => m.status === "scheduled") || [];
 
@@ -252,7 +253,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (client.first_response_at || isMarkingContacted) return;
     setIsMarkingContacted(true);
     try {
-      const res = await base44.functions.invoke("markFirstContact", { lead_id: client.id });
+      const res = await markFirstContact({ lead_id: client.id });
       const data = res?.data;
       if (data?.ok) {
         setClient(prev => ({
@@ -273,7 +274,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (isMarkingFollowupDone) return;
     setIsMarkingFollowupDone(true);
     try {
-      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
+      await markFollowupDone({ lead_id: client.id });
       setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
       onRefresh?.();
       setShowFollowupPrompt(true);
@@ -320,7 +321,6 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
         {/* ───── ACTION BAR HEADER ───── */}
         <div className={`p-4 border-b border-slate-200 ${pCfg.row}`}>
-          {/* Top row: name + priority + age + close */}
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex items-center gap-3 flex-wrap">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg ${pCfg.accent}`}>
@@ -344,10 +344,8 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
             </div>
           </div>
 
-          {/* Quick action buttons */}
           <TooltipProvider delayDuration={200}>
           <div className="flex items-center gap-1.5 mt-3 flex-wrap">
-            {/* Icon-only contact buttons */}
             {phone && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -387,7 +385,6 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
             <div className="w-px bg-slate-300 self-stretch mx-1" />
 
-            {/* Contextual action buttons — with text */}
             {client.first_response_at ? (
               <>
                 <div className="flex items-center gap-1.5 h-9 px-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm font-semibold">
@@ -476,7 +473,6 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
         </AnimatePresence>
 
         <CardContent className="p-0">
-          {/* ───── QUICK FACTS ───── */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-slate-200 border-b border-slate-200">
             {[
               { label: "טלפון", value: client.phone || "—" },
@@ -493,7 +489,6 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
             ))}
           </div>
 
-          {/* ───── TABS ───── */}
           <div className="border-b border-slate-200 flex">
             {[
               { key: "activity", label: "פעילות" },
@@ -516,12 +511,10 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
           </div>
 
           <div className="p-4">
-            {/* Activity Tab */}
             {activeTab === "activity" && (
               <ActivityTimeline leadId={client.id} onActivityAdded={onRefresh} />
             )}
 
-            {/* Meetings Tab */}
             {activeTab === "meetings" && (
               <div className="space-y-3">
                 <Button size="sm" onClick={() => onCreateMeeting(client)} className="gap-2 bg-purple-600 hover:bg-purple-700">
@@ -544,12 +537,10 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
               </div>
             )}
 
-            {/* Followup Tab */}
             {activeTab === "followup" && (
               <FollowupPanel client={client} onUpdate={() => { onRefresh?.(); }} />
             )}
 
-            {/* Details Tab */}
             {activeTab === "details" && (
               <div className="space-y-3">
                 {client.notes && (
