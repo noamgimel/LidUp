@@ -26,13 +26,10 @@ Deno.serve(async (req) => {
         const now = new Date().toISOString();
         const followupOverdue = lead.next_followup_at && new Date(lead.next_followup_at) <= new Date();
         const newPriority = lead.priority === 'overdue' && !followupOverdue ? 'warm' : (lead.priority === 'overdue' ? 'warm' : lead.priority);
-        const stageUpdate = (!lead.work_stage || lead.work_stage === 'new_lead') ? { work_stage: 'first_contact' } : {};
-
         await base44.asServiceRole.entities.Client.update(lead_id, {
             first_response_at: now,
             last_activity_at: now,
             priority: newPriority,
-            ...stageUpdate
         });
 
         await base44.asServiceRole.entities.LeadActivity.create({
@@ -42,7 +39,7 @@ Deno.serve(async (req) => {
             created_by_email: user.email
         });
 
-        return Response.json({ ok: true, first_response_at: now, priority: newPriority, ...stageUpdate });
+        return Response.json({ ok: true, first_response_at: now, priority: newPriority });
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
     }
