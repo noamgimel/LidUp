@@ -130,6 +130,7 @@ function FollowupPanel({ client, onUpdate }) {
   const [date, setDate] = useState(client.next_followup_at ? client.next_followup_at.slice(0, 16) : "");
   const [note, setNote] = useState(client.next_followup_note || "");
   const [isSaving, setIsSaving] = useState(false);
+  const [showNextPrompt, setShowNextPrompt] = useState(false);
 
   const save = async (nextDate, nextNote) => {
     setIsSaving(true);
@@ -149,6 +150,25 @@ function FollowupPanel({ client, onUpdate }) {
     onUpdate?.();
   };
 
+  const markDone = async () => {
+    setIsSaving(true);
+    const user = await base44.auth.me();
+    await base44.entities.Client.update(client.id, {
+      next_followup_at: null,
+      next_followup_note: "",
+      last_activity_at: new Date().toISOString()
+    });
+    await base44.entities.LeadActivity.create({
+      lead_id: client.id,
+      event_type: "followup_done",
+      content: "פולואפ בוצע",
+      created_by_email: user?.email || ""
+    });
+    setIsSaving(false);
+    setShowNextPrompt(true);
+    onUpdate?.();
+  };
+
   const quickSet = (days) => {
     const d = addDays(new Date(), days);
     d.setHours(9, 0, 0, 0);
@@ -160,42 +180,61 @@ function FollowupPanel({ client, onUpdate }) {
   const isOverdue = client.next_followup_at && new Date(client.next_followup_at) <= new Date();
 
   return (
-    <div className="space-y-3 p-4 bg-orange-50 border border-orange-200 rounded-xl">
-      <div className="flex items-center gap-2 mb-1">
-        <Bell className="w-4 h-4 text-orange-600" />
-        <span className="font-semibold text-orange-800 text-sm">פולואפ הבא</span>
-        {isOverdue && <Badge className="bg-red-600 text-white text-xs">עבר!</Badge>}
+    <>
+      <div className="space-y-3 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2">
+            <Bell className="w-4 h-4 text-orange-600" />
+            <span className="font-semibold text-orange-800 text-sm">פולואפ הבא</span>
+            {isOverdue && <Badge className="bg-red-600 text-white text-xs">עבר!</Badge>}
+          </div>
+          {client.next_followup_at && (
+            <Button size="sm" onClick={markDone} disabled={isSaving} className="bg-teal-600 hover:bg-teal-700 text-white text-xs gap-1 h-7">
+              <CheckCircle2 className="w-3.5 h-3.5" />בוצע פולואפ
+            </Button>
+          )}
+        </div>
+
+        {client.next_followup_at && (
+          <p className="text-sm font-medium text-orange-900">
+            {formatIsraeliDate(client.next_followup_at)}
+            {client.next_followup_note && <span className="text-orange-600 mr-2">— {client.next_followup_note}</span>}
+          </p>
+        )}
+
+        <Input
+          type="datetime-local"
+          value={date}
+          onChange={e => setDate(e.target.value)}
+          className="text-sm bg-white"
+        />
+        <Input
+          placeholder="הערה קצרה..."
+          value={note}
+          onChange={e => setNote(e.target.value)}
+          className="text-right text-sm bg-white"
+        />
+
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => quickSet(1)} className="text-xs bg-white">מחר</Button>
+          <Button size="sm" variant="outline" onClick={() => quickSet(3)} className="text-xs bg-white">עוד 3 ימים</Button>
+          <Button size="sm" variant="outline" onClick={() => quickSet(7)} className="text-xs bg-white">שבוע</Button>
+          <Button size="sm" onClick={() => save(date, note)} disabled={isSaving || !date} className="bg-orange-600 hover:bg-orange-700 text-white text-xs">
+            {isSaving ? "שומר..." : "קבע פולואפ"}
+          </Button>
+        </div>
       </div>
 
-      {client.next_followup_at && (
-        <p className="text-sm font-medium text-orange-900">
-          {formatIsraeliDate(client.next_followup_at)}
-          {client.next_followup_note && <span className="text-orange-600 mr-2">— {client.next_followup_note}</span>}
-        </p>
-      )}
-
-      <Input
-        type="datetime-local"
-        value={date}
-        onChange={e => setDate(e.target.value)}
-        className="text-sm bg-white"
-      />
-      <Input
-        placeholder="הערה קצרה..."
-        value={note}
-        onChange={e => setNote(e.target.value)}
-        className="text-right text-sm bg-white"
-      />
-
-      <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" onClick={() => quickSet(1)} className="text-xs bg-white">מחר</Button>
-        <Button size="sm" variant="outline" onClick={() => quickSet(3)} className="text-xs bg-white">עוד 3 ימים</Button>
-        <Button size="sm" variant="outline" onClick={() => quickSet(7)} className="text-xs bg-white">שבוע</Button>
-        <Button size="sm" onClick={() => save(date, note)} disabled={isSaving || !date} className="bg-orange-600 hover:bg-orange-700 text-white text-xs">
-          {isSaving ? "שומר..." : "קבע פולואפ"}
-        </Button>
-      </div>
-    </div>
+      <AnimatePresence>
+        {showNextPrompt && (
+          <FollowupPrompt
+            leadId={client.id}
+            onDone={() => { setShowNextPrompt(false); onUpdate?.(); }}
+            onClose={() => setShowNextPrompt(false)}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
