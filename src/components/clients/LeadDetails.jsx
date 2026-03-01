@@ -352,19 +352,21 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
             <div className="w-px bg-slate-300 self-stretch mx-1" />
 
             {/* Contextual action buttons — with text */}
-            <Button
-              size="sm"
-              disabled={!!client.first_response_at}
-              onClick={handleFirstResponse}
-              className={`gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg ${
-                client.first_response_at
-                  ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-default"
-                  : "bg-blue-600 hover:bg-blue-700 text-white"
-              }`}
-            >
-              <Handshake className="w-4 h-4" />
-              {client.first_response_at ? "נוצר קשר ✓" : "סמן 'נוצר קשר'"}
-            </Button>
+            {client.first_response_at ? (
+              <div className="flex items-center gap-1.5 h-9 px-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm font-semibold">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                ✅ נוצר קשר — {formatIsraeliDate(client.first_response_at)}
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleFirstResponse}
+                className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Handshake className="w-4 h-4" />
+                סמן &#39;נוצר קשר&#39;
+              </Button>
+            )}
 
             <Button size="sm" variant="outline" onClick={() => onCreateMeeting(client)} className="gap-1.5 h-9 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm rounded-lg">
               <Calendar className="w-4 h-4" />פגישה
