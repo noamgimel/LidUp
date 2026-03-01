@@ -27,12 +27,11 @@ export default function WorkStagePrompt({ leadId, currentWorkStage, onDone, onCl
     setError(null);
     const stageLabel = userWorkStages.find(s => s.id === stageId)?.label || stageId;
     try {
-      console.log("[WorkStagePrompt] updateWorkStage →", { action: "update stage", lead_id: leadId, stage_id: stageId });
-      const res = await base44.functions.invoke("updateWorkStage", { lead_id: leadId, stage_id: stageId, stage_label: stageLabel });
-      console.log("[WorkStagePrompt] updateWorkStage ←", res?.status, res?.data);
-      const data = res?.data;
-      if (!data?.ok) {
-        setError(data?.error || "שגיאה בשמירת השלב. אנא נסה שוב.");
+      console.log("[WorkStagePrompt] updateWorkStage →", { action: "update stage", leadId, stageId, stageLabel });
+      const res = await base44.asServiceRole.functions.invoke("updateWorkStage", { lead_id: leadId, stage_id: stageId, stage_label: stageLabel });
+      console.log("[WorkStagePrompt] updateWorkStage ←", { ok: res?.ok, error: res?.error });
+      if (!res?.ok) {
+        setError(res?.error || "שגיאה בשמירת השלב. אנא נסה שוב.");
         return;
       }
       toast({
@@ -42,7 +41,9 @@ export default function WorkStagePrompt({ leadId, currentWorkStage, onDone, onCl
       });
       onDone?.(stageId);
     } catch (err) {
-      setError(err?.response?.data?.error || "שגיאה בשמירת השלב. אנא נסה שוב.");
+      const errMsg = err?.message || "שגיאה בשמירת השלב. אנא נסה שוב.";
+      console.error("[WorkStagePrompt] Error:", errMsg);
+      setError(errMsg);
     } finally {
       setIsSaving(false);
     }
