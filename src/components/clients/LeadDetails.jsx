@@ -15,6 +15,8 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { addDays } from "date-fns";
 import { base44 } from "@/api/base44Client";
+import { markFirstContact } from "@/functions/markFirstContact";
+import { markFollowupDone } from "@/functions/markFollowupDone";
 
 import { useUserWorkStages } from "../hooks/useUserWorkStages";
 import { getWorkStageColorClass } from "../utils/workStagesUtils";
@@ -248,8 +250,8 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (client.first_response_at || isMarkingContacted) return;
     setIsMarkingContacted(true);
     try {
-      console.log("[LeadDetails] markFirstContact →", { action: "first contact", lead_id: client.id });
-      const res = await base44.functions.invoke("markFirstContact", { lead_id: client.id });
+      console.log("[LeadDetails] markFirstContact →", { action: "mark first contact", lead_id: client.id });
+      const res = await markFirstContact({ lead_id: client.id });
       console.log("[LeadDetails] markFirstContact ← success", res?.status, res?.data);
       const data = res?.data;
       if (data?.ok) {
@@ -273,9 +275,9 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (isMarkingFollowupDone) return;
     setIsMarkingFollowupDone(true);
     try {
-      console.log("[LeadDetails] markFollowupDone →", { action: "followup done", lead_id: client.id });
-      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
-      console.log("[LeadDetails] markFollowupDone ← success");
+      console.log("[LeadDetails] markFollowupDone →", { action: "mark followup done", lead_id: client.id });
+      const res = await markFollowupDone({ lead_id: client.id });
+      console.log("[LeadDetails] markFollowupDone ← success", res?.status, res?.data);
       setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
       onRefresh?.();
       setShowFollowupPrompt(true);
