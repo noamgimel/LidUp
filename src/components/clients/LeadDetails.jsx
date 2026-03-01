@@ -275,7 +275,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (isMarkingFollowupDone) return;
     setIsMarkingFollowupDone(true);
     try {
-      await markFollowupDone({ lead_id: client.id });
+      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
       setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
       onRefresh?.();
       setShowFollowupPrompt(true);
