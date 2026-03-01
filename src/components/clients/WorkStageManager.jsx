@@ -123,7 +123,7 @@ export default function WorkStageManager() {
     
     toast({
       title: "הצלחה!",
-      description: "שלבי העבודה עודכנו בהצלחה.",
+      description: "שלבי המכירה עודכנו בהצלחה.",
       className: "bg-green-100 text-green-900 border-green-200",
     });
     
