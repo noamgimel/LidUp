@@ -142,7 +142,8 @@ Deno.serve(async (req) => {
             consent_marketing: payload.consent_marketing || false,
             submission_date: new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" })).toISOString(),
             ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '',
-            owner_email: formConnection.owner_email
+            owner_email: formConnection.owner_email,
+            work_stage: "new_lead"
         };
 
         console.log('Creating lead for user:', formConnection.owner_email);
