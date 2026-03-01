@@ -43,7 +43,7 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
   const loadActivities = async () => {
     setIsLoading(true);
     try {
-      const res = await getLeadActivities({ lead_id: leadId });
+      const res = await base44.functions.invoke("getLeadActivities", { lead_id: leadId });
       setActivities(res?.data?.activities || []);
     } catch {
       setActivities([]);
@@ -55,7 +55,7 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
     if (!newNote.trim()) return;
     setIsSaving(true);
     try {
-      await addLeadNote({ lead_id: leadId, content: newNote.trim() });
+      await base44.functions.invoke("addLeadNote", { lead_id: leadId, content: newNote.trim() });
       setNewNote("");
       await loadActivities();
       onActivityAdded?.();
