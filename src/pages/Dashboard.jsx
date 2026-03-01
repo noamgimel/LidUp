@@ -21,6 +21,7 @@ import RecentClients from "../components/dashboard/RecentClients";
 import UpcomingMeetings from "../components/dashboard/UpcomingMeetings";
 import LeadsClientsTrendChart from "../components/reports/LeadsClientsTrendChart";
 import ReportsWidget from "../components/dashboard/ReportsWidget";
+import WorkBlockList from "../components/dashboard/WorkBlockList";
 
 export default function Dashboard() {
   const [clients, setClients] = useState([]);
