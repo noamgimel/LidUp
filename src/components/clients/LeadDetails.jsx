@@ -60,7 +60,7 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
     if (!newNote.trim()) return;
     setIsSaving(true);
     try {
-      await base44.functions.invoke("addLeadNote", { lead_id: leadId, content: newNote.trim() });
+      await addLeadNote({ lead_id: leadId, content: newNote.trim() });
       setNewNote("");
       await loadActivities();
       onActivityAdded?.();
@@ -140,7 +140,7 @@ function FollowupPanel({ client, onUpdate }) {
     if (!nextDate) return;
     setIsSaving(true);
     try {
-      await base44.functions.invoke("scheduleFollowup", { lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
+      await scheduleFollowup({ lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
       onUpdate?.();
     } finally {
       setIsSaving(false);
@@ -150,7 +150,7 @@ function FollowupPanel({ client, onUpdate }) {
   const markDone = async () => {
     setIsSaving(true);
     try {
-      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
+      await markFollowupDone({ lead_id: client.id });
       setShowNextPrompt(true);
       onUpdate?.();
     } finally {
@@ -253,7 +253,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (client.first_response_at || isMarkingContacted) return;
     setIsMarkingContacted(true);
     try {
-      const res = await base44.functions.invoke("markFirstContact", { lead_id: client.id });
+      const res = await markFirstContact({ lead_id: client.id });
       const data = res?.data;
       if (data?.ok) {
         setClient(prev => ({
@@ -274,7 +274,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (isMarkingFollowupDone) return;
     setIsMarkingFollowupDone(true);
     try {
-      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
+      await markFollowupDone({ lead_id: client.id });
       setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
       onRefresh?.();
       setShowFollowupPrompt(true);
