@@ -67,7 +67,7 @@ export default function FollowupPrompt({ leadId, onDone, onClose }) {
     setIsSaving(true);
     try {
       console.log("[FollowupPrompt] scheduleFollowup →", { action: "schedule followup", lead_id: leadId, datetime: iso });
-      const res = await scheduleFollowup({ lead_id: leadId, datetime: iso, note });
+      const res = await base44.functions.invoke("scheduleFollowup", { lead_id: leadId, datetime: iso, note });
       console.log("[FollowupPrompt] scheduleFollowup ← success", res?.status);
       onDone?.(iso);
     } catch (err) {
