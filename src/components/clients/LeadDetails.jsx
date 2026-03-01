@@ -140,19 +140,8 @@ function FollowupPanel({ client, onUpdate }) {
     if (!nextDate) return;
     setIsSaving(true);
     try {
-      const user = await base44.auth.me();
-      const isoDate = new Date(nextDate).toISOString();
-      await base44.entities.Client.update(client.id, {
-        next_followup_at: isoDate,
-        next_followup_note: nextNote || "",
-        last_activity_at: new Date().toISOString()
-      });
-      await base44.entities.LeadActivity.create({
-        lead_id: client.id,
-        event_type: "followup_set",
-        content: `פולואפ נקבע ל-${formatIsraeliDate(isoDate)}${nextNote ? ` — ${nextNote}` : ""}`,
-        created_by_email: user?.email || ""
-      });
+      const { scheduleFollowup } = await import("@/functions/scheduleFollowup");
+      await scheduleFollowup({ lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
       onUpdate?.();
     } finally {
       setIsSaving(false);
@@ -161,21 +150,13 @@ function FollowupPanel({ client, onUpdate }) {
 
   const markDone = async () => {
     setIsSaving(true);
-    const user = await base44.auth.me();
-    await base44.entities.Client.update(client.id, {
-      next_followup_at: null,
-      next_followup_note: "",
-      last_activity_at: new Date().toISOString()
-    });
-    await base44.entities.LeadActivity.create({
-      lead_id: client.id,
-      event_type: "followup_done",
-      content: "פולואפ בוצע",
-      created_by_email: user?.email || ""
-    });
-    setIsSaving(false);
-    setShowNextPrompt(true);
-    onUpdate?.();
+    try {
+      await markFollowupDone({ lead_id: client.id });
+      setShowNextPrompt(true);
+      onUpdate?.();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const quickSet = (days) => {
