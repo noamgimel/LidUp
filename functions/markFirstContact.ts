@@ -14,8 +14,10 @@ Deno.serve(async (req) => {
         const lead = leads?.[0];
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
 
-        // Ownership check
-        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
+        // Check if user is a system admin OR owns the lead (by email or created_by)
+        const isAdmin = await base44.asServiceRole.entities.SystemAdmin.filter({ user_email: user.email, is_active: true });
+        const isLeadOwner = lead.owner_email === user.email || lead.created_by === user.email;
+        if (!isLeadOwner && !isAdmin?.length) {
             return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
 
