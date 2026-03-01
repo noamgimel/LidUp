@@ -1,118 +1,104 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Users, Zap, CheckCircle, XCircle, Flame, Briefcase } from 'lucide-react';
+import { Users, AlertTriangle, Flame, Thermometer, Snowflake, CheckCircle, XCircle } from 'lucide-react';
+import { PRIORITY_CONFIG } from './LeadPriorityConfig';
 
-const statusConfig = {
+// Priority tabs config
+const priorityTabConfig = {
   all: {
     label: 'הכל',
     icon: Users,
-    button: 'bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200 hover:border-blue-400',
+    button: 'bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200',
     activeButton: 'ring-2 ring-offset-1 ring-blue-400 shadow-lg bg-blue-200',
     badge: 'bg-blue-200 text-blue-900 border-transparent',
-    activeBadge: 'bg-white text-blue-800 border-blue-500',
-    iconFillClass: 'fill-blue-800'
+    activeBadge: 'bg-white text-blue-800 border-blue-500'
   },
-  lead: {
-    label: 'לידים',
-    icon: Zap,
-    button: 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200 hover:border-yellow-400',
-    activeButton: 'ring-2 ring-offset-1 ring-yellow-400 shadow-lg bg-yellow-200',
-    badge: 'bg-yellow-200 text-yellow-900 border-transparent',
-    activeBadge: 'bg-white text-yellow-800 border-amber-500',
-    iconFillClass: 'fill-yellow-800'
+  overdue: {
+    label: 'חורגים SLA',
+    icon: AlertTriangle,
+    button: PRIORITY_CONFIG.overdue.button,
+    activeButton: PRIORITY_CONFIG.overdue.activeButton,
+    badge: PRIORITY_CONFIG.overdue.badgeTab,
+    activeBadge: PRIORITY_CONFIG.overdue.activeBadgeTab
   },
-  hot_lead: {
-    label: 'לידים חמים',
+  hot: {
+    label: 'חמים 🔥',
     icon: Flame,
-    button: 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200 hover:border-orange-400',
-    activeButton: 'ring-2 ring-offset-1 ring-orange-400 shadow-lg bg-orange-200',
-    badge: 'bg-orange-200 text-orange-900 border-transparent',
-    activeBadge: 'bg-white text-orange-800 border-orange-500',
-    iconFillClass: 'fill-orange-800'
+    button: PRIORITY_CONFIG.hot.button,
+    activeButton: PRIORITY_CONFIG.hot.activeButton,
+    badge: PRIORITY_CONFIG.hot.badgeTab,
+    activeBadge: PRIORITY_CONFIG.hot.activeBadgeTab
   },
-  client: {
-    label: 'לקוחות',
-    icon: Briefcase,
-    button: 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:border-green-400',
-    activeButton: 'ring-2 ring-offset-1 ring-green-400 shadow-lg bg-green-200',
-    badge: 'bg-green-200 text-green-900 border-transparent',
-    activeBadge: 'bg-white text-green-800 border-green-600',
-    iconFillClass: 'fill-green-800'
+  warm: {
+    label: 'בינוניים',
+    icon: Thermometer,
+    button: PRIORITY_CONFIG.warm.button,
+    activeButton: PRIORITY_CONFIG.warm.activeButton,
+    badge: PRIORITY_CONFIG.warm.badgeTab,
+    activeBadge: PRIORITY_CONFIG.warm.activeBadgeTab
   },
-  inactive: {
-    label: 'לא פעילים',
-    icon: XCircle,
-    button: 'bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200 hover:border-slate-400',
-    activeButton: 'ring-2 ring-offset-1 ring-slate-400 shadow-lg bg-slate-200',
-    badge: 'bg-slate-200 text-slate-900 border-transparent',
-    activeBadge: 'bg-white text-slate-800 border-slate-500',
-    iconFillClass: 'fill-slate-800'
+  cold: {
+    label: 'קרים',
+    icon: Snowflake,
+    button: PRIORITY_CONFIG.cold.button,
+    activeButton: PRIORITY_CONFIG.cold.activeButton,
+    badge: PRIORITY_CONFIG.cold.badgeTab,
+    activeBadge: PRIORITY_CONFIG.cold.activeBadgeTab
   }
 };
 
-export default function ClientStatusTabs({ activeTab, onTabChange, statusCounts }) {
-  const tabs = ['all', 'lead', 'hot_lead', 'client', 'inactive'];
+// Lifecycle tabs
+const lifecycleTabConfig = {
+  open:  { label: 'פעילים', icon: Users,        button: 'bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200',  activeButton: 'ring-2 ring-offset-1 ring-blue-400 shadow-lg bg-blue-200',  badge: 'bg-blue-200 text-blue-900',  activeBadge: 'bg-white text-blue-800 border-blue-500' },
+  won:   { label: 'נסגרו ✅', icon: CheckCircle, button: 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200', activeButton: 'ring-2 ring-offset-1 ring-green-400 shadow-lg bg-green-200', badge: 'bg-green-200 text-green-900', activeBadge: 'bg-white text-green-800 border-green-500' },
+  lost:  { label: 'לא רלוונטי ❌', icon: XCircle,  button: 'bg-slate-100 text-slate-800 border-slate-300 hover:bg-slate-200',  activeButton: 'ring-2 ring-offset-1 ring-slate-400 shadow-lg bg-slate-200',  badge: 'bg-slate-200 text-slate-900',  activeBadge: 'bg-white text-slate-800 border-slate-500' }
+};
 
-  const renderTab = (status) => {
-    const config = statusConfig[status];
+export default function LeadFilterTabs({ activePriority, onPriorityChange, activeLifecycle, onLifecycleChange, counts }) {
+  const priorityTabs = ['all', 'overdue', 'hot', 'warm', 'cold'];
+  const lifecycleTabs = ['open', 'won', 'lost'];
+
+  const renderTab = (key, config, isActive, onClick, count) => {
     const Icon = config.icon;
-    const isActive = activeTab === status;
-    const count = status === 'all' ? 
-      Object.values(statusCounts).reduce((sum, count) => sum + count, 0) : 
-      statusCounts[status] || 0;
-
     return (
       <button
-        key={status}
-        onClick={() => onTabChange(status)}
-        className={`group flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all duration-300 border whitespace-nowrap ${
-          config.button
-        } ${
-          isActive ? config.activeButton : ''
-        }`}
+        key={key}
+        onClick={() => onClick(key)}
+        className={`group flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 border whitespace-nowrap text-sm font-medium ${config.button} ${isActive ? config.activeButton : ''}`}
       >
-        <Icon className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${
-            isActive ? `${config.iconFillClass} scale-110` : 'fill-transparent group-hover:scale-105'
-        }`}/>
-        <span className={`font-medium text-sm transition-transform duration-200 ${
-            isActive ? 'scale-105' : 'group-hover:scale-100'
-        }`}>{config.label}</span>
+        <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'scale-110' : ''}`} />
+        <span>{config.label}</span>
         {count > 0 && (
-          <Badge 
-            variant="outline" 
-            className={`text-xs transition-all duration-300 border ${isActive ? `${config.activeBadge} scale-110` : config.badge}`}
-          >
+          <Badge variant="outline" className={`text-xs border ${isActive ? config.activeBadge : config.badge}`}>
             {count}
           </Badge>
         )}
       </button>
     );
-  }
+  };
 
   return (
-    <div className="mb-6">
-      {/* Desktop Tabs */}
-      <div className="hidden sm:block">
-        <div className="flex flex-wrap gap-2">
-          {tabs.map(renderTab)}
-        </div>
+    <div className="space-y-2 mb-4">
+      {/* Priority filter row */}
+      <div className="flex flex-wrap gap-2">
+        {priorityTabs.map(key => {
+          const cnt = key === 'all'
+            ? (counts.priority?.overdue || 0) + (counts.priority?.hot || 0) + (counts.priority?.warm || 0) + (counts.priority?.cold || 0)
+            : (counts.priority?.[key] || 0);
+          return renderTab(key, priorityTabConfig[key], activePriority === key, onPriorityChange, cnt);
+        })}
       </div>
 
-      {/* Mobile Tabs - Horizontal Scroll with improved spacing */}
-      <div className="sm:hidden">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide py-2 px-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {tabs.map(renderTab)}
-        </div>
-        <style jsx>{`
-          .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
+      {/* Lifecycle filter row */}
+      <div className="flex flex-wrap gap-2">
+        {lifecycleTabs.map(key => {
+          const cnt = counts.lifecycle?.[key] || 0;
+          return renderTab(key, lifecycleTabConfig[key], activeLifecycle === key, onLifecycleChange, cnt);
+        })}
       </div>
     </div>
   );
 }
 
-// Export status config for use in other components
-export { statusConfig };
+// Keep named export for backward compat
+export { priorityTabConfig as statusConfig };
