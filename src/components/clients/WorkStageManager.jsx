@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { UserCustomWorkStages } from "@/entities/UserCustomWorkStages";
 import { Client } from "@/entities/Client";
@@ -233,7 +232,7 @@ export default function WorkStageManager() {
       <CardHeader className="border-b border-slate-100 pb-3 md:pb-4 p-4 md:p-6">
         <CardTitle className="flex items-center gap-2 text-sm md:text-base">
           <ClipboardList className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
-          ניהול שלבי עבודה
+          ניהול שלבי מכירה
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 md:p-6">
