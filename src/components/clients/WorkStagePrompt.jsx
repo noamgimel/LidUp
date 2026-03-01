@@ -14,9 +14,8 @@ export default function WorkStagePrompt({ leadId, currentWorkStage, onDone, onCl
   const [isSaving, setIsSaving] = useState(false);
   const [selected, setSelected] = useState(null);
 
-  // Filter out the current stage and closed stages
+  // All stages except closed ones
   const availableStages = userWorkStages.filter(s =>
-    s.id !== currentWorkStage &&
     s.id !== "closed_won" &&
     s.id !== "closed_lost" &&
     s.is_active !== false
