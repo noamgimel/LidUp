@@ -9,12 +9,15 @@ import { Input } from "@/components/ui/input";
 import {
   X, Edit, Phone, Mail, MessageCircle, Calendar, Clock,
   Plus, ChevronUp, CheckCircle2, XCircle, Handshake,
-  AlertTriangle, User, ClipboardList, Link2, ChevronDown, Send, Bell
+  Link2, ChevronDown, Send, Bell
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { format, addDays } from "date-fns";
-import { he } from "date-fns/locale";
+import { addDays } from "date-fns";
 import { base44 } from "@/api/base44Client";
+import { markFirstContact } from "@/functions/markFirstContact";
+import { markFollowupDone } from "@/functions/markFollowupDone";
+import { scheduleFollowup } from "@/functions/scheduleFollowup";
+import { getLeadActivities } from "@/functions/getLeadActivities";
 import { useUserWorkStages } from "../hooks/useUserWorkStages";
 import { getWorkStageColorClass } from "../utils/workStagesUtils";
 import { PRIORITY_CONFIG, LIFECYCLE_CONFIG } from "./LeadPriorityConfig";
