@@ -135,10 +135,8 @@ function FollowupPanel({ client, onUpdate }) {
     if (!nextDate) return;
     setIsSaving(true);
     try {
-      console.log("[FollowupPanel] scheduleFollowup →", { clientId: client.id, datetime: nextDate });
-      const res = await base44.asServiceRole.functions.invoke("scheduleFollowup", { lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
-      console.log("[FollowupPanel] scheduleFollowup ←", { ok: res?.ok, error: res?.error });
-      if (res?.ok) onUpdate?.();
+      await base44.functions.invoke("scheduleFollowup", { lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
+      onUpdate?.();
     } finally {
       setIsSaving(false);
     }
@@ -147,13 +145,9 @@ function FollowupPanel({ client, onUpdate }) {
   const markDone = async () => {
     setIsSaving(true);
     try {
-      console.log("[FollowupPanel] markFollowupDone →", { clientId: client.id });
-      const res = await base44.asServiceRole.functions.invoke("markFollowupDone", { lead_id: client.id });
-      console.log("[FollowupPanel] markFollowupDone ←", { ok: res?.ok, error: res?.error });
-      if (res?.ok) {
-        setShowNextPrompt(true);
-        onUpdate?.();
-      }
+      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
+      setShowNextPrompt(true);
+      onUpdate?.();
     } finally {
       setIsSaving(false);
     }
@@ -254,21 +248,22 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (client.first_response_at || isMarkingContacted) return;
     setIsMarkingContacted(true);
     try {
-      console.log("[LeadDetails] markFirstContact →", { clientId: client.id, action: "mark as first contact" });
-      const res = await base44.asServiceRole.functions.invoke("markFirstContact", { lead_id: client.id });
-      console.log("[LeadDetails] markFirstContact ←", { ok: res?.ok, error: res?.error });
-      if (res?.ok) {
+      console.log("[LeadDetails] markFirstContact →", { action: "first contact", lead_id: client.id });
+      const res = await base44.functions.invoke("markFirstContact", { lead_id: client.id });
+      console.log("[LeadDetails] markFirstContact ← success", res?.status, res?.data);
+      const data = res?.data;
+      if (data?.ok) {
         setClient(prev => ({
           ...prev,
-          first_response_at: res.first_response_at || new Date().toISOString(),
-          priority: res.priority || prev.priority,
-          ...(res.work_stage ? { work_stage: res.work_stage } : {})
+          first_response_at: data.first_response_at || new Date().toISOString(),
+          priority: data.priority || prev.priority,
+          ...(data.work_stage ? { work_stage: data.work_stage } : {})
         }));
         onRefresh?.();
         setShowFollowupPrompt(true);
       }
     } catch (err) {
-      console.error("[LeadDetails] markFirstContact error:", err?.message);
+      console.error("[LeadDetails] markFirstContact ← FAILED", err?.response?.status, err?.message);
     } finally {
       setIsMarkingContacted(false);
     }
@@ -278,16 +273,14 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (isMarkingFollowupDone) return;
     setIsMarkingFollowupDone(true);
     try {
-      console.log("[LeadDetails] markFollowupDone →", { clientId: client.id, action: "mark followup done" });
-      const res = await base44.asServiceRole.functions.invoke("markFollowupDone", { lead_id: client.id });
-      console.log("[LeadDetails] markFollowupDone ←", { ok: res?.ok, error: res?.error });
-      if (res?.ok) {
-        setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
-        onRefresh?.();
-        setShowFollowupPrompt(true);
-      }
+      console.log("[LeadDetails] markFollowupDone →", { action: "followup done", lead_id: client.id });
+      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
+      console.log("[LeadDetails] markFollowupDone ← success");
+      setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
+      onRefresh?.();
+      setShowFollowupPrompt(true);
     } catch (err) {
-      console.error("[LeadDetails] markFollowupDone error:", err?.message);
+      console.error("[LeadDetails] markFollowupDone ← FAILED", err?.response?.status, err?.message);
     } finally {
       setIsMarkingFollowupDone(false);
     }
