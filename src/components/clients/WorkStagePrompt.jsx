@@ -26,26 +26,22 @@ export default function WorkStagePrompt({ leadId, currentWorkStage, onDone, onCl
   const save = async (stageId) => {
     setIsSaving(true);
     setError(null);
+    const stageLabel = userWorkStages.find(s => s.id === stageId)?.label || stageId;
     try {
-      const user = await base44.auth.me();
-      await base44.entities.Client.update(leadId, {
-        work_stage: stageId,
-        last_activity_at: new Date().toISOString()
-      });
-      await base44.entities.LeadActivity.create({
-        lead_id: leadId,
-        event_type: "stage_change",
-        content: `שלב מכירה עודכן ל: ${userWorkStages.find(s => s.id === stageId)?.label || stageId}`,
-        created_by_email: user?.email || ""
-      });
+      const res = await updateWorkStage({ lead_id: leadId, stage_id: stageId, stage_label: stageLabel });
+      const data = res?.data;
+      if (!data?.ok) {
+        setError(data?.error || "שגיאה בשמירת השלב. אנא נסה שוב.");
+        return;
+      }
       toast({
         title: "שלב עודכן",
-        description: `שלב המכירה עודכן ל: ${userWorkStages.find(s => s.id === stageId)?.label || stageId}`,
+        description: `שלב המכירה עודכן ל: ${stageLabel}`,
         className: "bg-green-100 text-green-900 border-green-200",
       });
       onDone?.(stageId);
     } catch (err) {
-      setError("שגיאה בשמירת השלב. אנא נסה שוב.");
+      setError(err?.response?.data?.error || "שגיאה בשמירת השלב. אנא נסה שוב.");
     } finally {
       setIsSaving(false);
     }
