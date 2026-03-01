@@ -27,12 +27,12 @@ export default function Settings() {
           <CardContent className="text-blue-800 p-4 md:p-6 pt-0">
             <div className="grid grid-cols-1 md:grid-cols-1 gap-4 text-xs md:text-sm">
               <div>
-                <h4 className="font-semibold mb-2">שלבי עבודה:</h4>
+                <h4 className="font-semibold mb-2">שלבי מכירה:</h4>
                 <ul className="space-y-1">
-                  <li>• התאם את שלבי העבודה לתהליך העסקי שלך</li>
+                  <li>• התאם את שלבי המכירה לתהליך העסקי שלך</li>
                   <li>• שנה את סדר השלבים בעזרת החצים</li>
                   <li>• ניתן למחוק שלבים מסוימים אם אין בהם לקוחות פעילים</li>
-                  <li>• שלבי העבודה יעזרו לך לעקוב אחר התקדמות הלקוחות</li>
+                  <li>• שלבי המכירה יעזרו לך לעקוב אחר התקדמות הלקוחות</li>
                 </ul>
               </div>
             </div>
@@ -47,8 +47,8 @@ export default function Settings() {
                 <ClipboardList className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
               </div>
               <div>
-                <h2 className="text-lg md:text-xl font-bold text-slate-900">שלבי עבודה</h2>
-                <p className="text-xs md:text-sm text-slate-600">התאם את תהליך העבודה עם הלקוחות</p>
+                <h2 className="text-lg md:text-xl font-bold text-slate-900">שלבי מכירה</h2>
+                <p className="text-xs md:text-sm text-slate-600">התאם את תהליך המכירה עם הלקוחות</p>
               </div>
             </div>
             <WorkStageManager />

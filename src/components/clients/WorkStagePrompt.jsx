@@ -1,29 +1,30 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { X, TrendingUp } from "lucide-react";
+import { X, TrendingUp, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useUserWorkStages } from "../hooks/useUserWorkStages";
 import { getWorkStageColorClass } from "../utils/workStagesUtils";
+import { useToast } from "@/components/ui/use-toast";
 
 /**
  * Props: leadId, currentWorkStage, onDone(stageId|null), onClose
  */
 export default function WorkStagePrompt({ leadId, currentWorkStage, onDone, onClose }) {
   const { userWorkStages } = useUserWorkStages();
+  const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [error, setError] = useState(null);
 
-  // Filter out the current stage and closed stages
-  const availableStages = userWorkStages.filter(s =>
-    s.id !== currentWorkStage &&
-    s.id !== "closed_won" &&
-    s.id !== "closed_lost" &&
-    s.is_active !== false
-  );
+  // Show ALL active stages (including closed), sorted by order, current stage highlighted but still selectable
+  const availableStages = userWorkStages
+    .filter(s => s.is_active !== false)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   const save = async (stageId) => {
     setIsSaving(true);
+    setError(null);
     try {
       const user = await base44.auth.me();
       await base44.entities.Client.update(leadId, {
@@ -36,10 +37,27 @@ export default function WorkStagePrompt({ leadId, currentWorkStage, onDone, onCl
         content: `שלב מכירה עודכן ל: ${userWorkStages.find(s => s.id === stageId)?.label || stageId}`,
         created_by_email: user?.email || ""
       });
+      toast({
+        title: "שלב עודכן",
+        description: `שלב המכירה עודכן ל: ${userWorkStages.find(s => s.id === stageId)?.label || stageId}`,
+        className: "bg-green-100 text-green-900 border-green-200",
+      });
       onDone?.(stageId);
+    } catch (err) {
+      setError("שגיאה בשמירת השלב. אנא נסה שוב.");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Color dot mapping
+  const dotColor = (color) => {
+    const map = {
+      blue: "bg-blue-500", green: "bg-green-500", yellow: "bg-yellow-500",
+      orange: "bg-orange-500", red: "bg-red-500", purple: "bg-purple-500",
+      pink: "bg-pink-500", gray: "bg-slate-400"
+    };
+    return map[color] || map.gray;
   };
 
   return (
@@ -50,25 +68,25 @@ export default function WorkStagePrompt({ leadId, currentWorkStage, onDone, onCl
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm rtl-text z-10">
+      <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm rtl-text z-10 max-h-[85vh] flex flex-col">
         <button onClick={onClose} className="absolute top-3 left-3 p-1 rounded-full text-slate-400 hover:bg-slate-100">
           <X className="w-4 h-4" />
         </button>
 
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center">
+          <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
             <TrendingUp className="w-5 h-5 text-blue-600" />
           </div>
           <div>
             <h3 className="font-bold text-slate-900">עדכן שלב מכירה</h3>
-            <p className="text-xs text-slate-500">האם השלב השתנה לאחר הפנייה?</p>
+            <p className="text-xs text-slate-500">בחר את השלב הנוכחי בתהליך</p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 overflow-y-auto flex-1 pb-2">
           {availableStages.map(stage => {
-            const colorClass = getWorkStageColorClass(stage.color);
             const isSelected = selected === stage.id;
+            const isCurrent = stage.id === currentWorkStage;
             return (
               <button
                 key={stage.id}
@@ -76,15 +94,25 @@ export default function WorkStagePrompt({ leadId, currentWorkStage, onDone, onCl
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-right transition-all ${
                   isSelected
                     ? "border-blue-500 bg-blue-50"
+                    : isCurrent
+                    ? "border-slate-400 bg-slate-50"
                     : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
-                <span className={`inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 ${colorClass.replace(/text-\S+/g, "").replace(/border-\S+/g, "")}`} />
-                <span className="text-sm font-medium text-slate-800">{stage.label}</span>
+                <span className={`inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotColor(stage.color)}`} />
+                <span className="text-sm font-medium text-slate-800 flex-1">{stage.label}</span>
+                {isCurrent && <span className="text-xs text-slate-400">נוכחי</span>}
               </button>
             );
           })}
         </div>
+
+        {error && (
+          <div className="flex items-center gap-2 mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            {error}
+          </div>
+        )}
 
         <div className="flex gap-2 mt-4">
           <Button

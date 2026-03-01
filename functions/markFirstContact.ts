@@ -26,7 +26,10 @@ Deno.serve(async (req) => {
         const now = new Date().toISOString();
         const followupOverdue = lead.next_followup_at && new Date(lead.next_followup_at) <= new Date();
         const newPriority = lead.priority === 'overdue' && !followupOverdue ? 'warm' : (lead.priority === 'overdue' ? 'warm' : lead.priority);
-        const stageUpdate = (!lead.work_stage || lead.work_stage === 'new_lead') ? { work_stage: 'first_contact' } : {};
+        // Only update work_stage if lead is still at the initial 'new_lead' stage.
+        // If user already manually set a more advanced stage, don't override it.
+        const isAtInitialStage = !lead.work_stage || lead.work_stage === 'new_lead';
+        const stageUpdate = isAtInitialStage ? { work_stage: 'first_contact' } : {};
 
         await base44.asServiceRole.entities.Client.update(lead_id, {
             first_response_at: now,
