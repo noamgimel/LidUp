@@ -138,8 +138,7 @@ function FollowupPanel({ client, onUpdate }) {
     if (!nextDate) return;
     setIsSaving(true);
     try {
-      const { scheduleFollowup } = await import("@/functions/scheduleFollowup");
-      await scheduleFollowup({ lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
+      await base44.functions.invoke("scheduleFollowup", { lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
       onUpdate?.();
     } finally {
       setIsSaving(false);
