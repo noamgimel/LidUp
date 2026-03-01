@@ -75,11 +75,14 @@ export default function WorkStagePrompt({ leadId, currentWorkStage, onDone, onCl
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-right transition-all ${
                   isSelected
                     ? "border-blue-500 bg-blue-50"
+                    : stage.id === currentWorkStage
+                    ? "border-slate-300 bg-slate-100 opacity-60"
                     : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
                 <span className={`inline-block w-2.5 h-2.5 rounded-full flex-shrink-0 ${colorClass.replace(/text-\S+/g, "").replace(/border-\S+/g, "")}`} />
                 <span className="text-sm font-medium text-slate-800">{stage.label}</span>
+                {stage.id === currentWorkStage && <span className="text-xs text-slate-400 mr-auto">נוכחי</span>}
               </button>
             );
           })}
