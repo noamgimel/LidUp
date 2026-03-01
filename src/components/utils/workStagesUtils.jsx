@@ -1,76 +1,75 @@
-
 export const DEFAULT_WORK_STAGES = [
   { 
-    id: "initial_contact", 
-    label: "פניה ראשונית", 
-    description: "קשר ראשוני עם הלקוח",
+    id: "new_lead", 
+    label: "ליד חדש", 
+    description: "ליד שנכנס למערכת ועדיין לא טופל",
     color: "gray", 
     order: 1,
-    is_active: true
+    is_active: true,
+    locked: false
   },
   { 
-    id: "consultation", 
-    label: "שיחה/פגישת ייעוץ", 
-    description: "פגישת היכרות וייעוץ ראשוני",
+    id: "first_contact", 
+    label: "נוצר קשר", 
+    description: "יצרנו קשר ראשוני עם הליד",
     color: "blue", 
     order: 2,
-    is_active: true
+    is_active: true,
+    locked: false
+  },
+  { 
+    id: "qualification", 
+    label: "איסוף פרטים / סינון", 
+    description: "בירור צרכים, תקציב והתאמה",
+    color: "blue", 
+    order: 3,
+    is_active: true,
+    locked: false
+  },
+  { 
+    id: "meeting_scheduled", 
+    label: "פגישה/ייעוץ נקבעו", 
+    description: "נקבעה פגישה או שיחת ייעוץ",
+    color: "purple", 
+    order: 4,
+    is_active: true,
+    locked: false
   },
   { 
     id: "proposal_sent", 
-    label: "הצעת מחיר", 
-    description: "נשלחה הצעת מחיר ללקוח",
-    color: "blue", 
-    order: 3,
-    is_active: true
-  },
-  { 
-    id: "contract_stage", 
-    label: "שלב חוזה", 
-    description: "משא ומתן וחתימה על חוזה",
-    color: "blue", 
-    order: 4,
-    is_active: true
-  },
-  { 
-    id: "specification_stage", 
-    label: "שלב אפיון", 
-    description: "אפיון מפורט של הפרויקט",
-    color: "blue", 
+    label: "הצעה נשלחה", 
+    description: "נשלחה הצעת מחיר/שירות ללקוח",
+    color: "orange", 
     order: 5,
-    is_active: true
+    is_active: true,
+    locked: false
   },
   { 
-    id: "development_stage", 
-    label: "שלב פיתוח/עבודה", 
-    description: "ביצוע והפיתוח של הפרויקט",
-    color: "blue", 
+    id: "follow_up", 
+    label: "פולואפ", 
+    description: "ממתינים לתגובה, מבצעים מעקב",
+    color: "yellow", 
     order: 6,
-    is_active: true
+    is_active: true,
+    locked: false
   },
   { 
-    id: "project_completion", 
-    label: "סיום פרויקט", 
-    description: "הפרויקט הושלם ונמסר",
+    id: "closed_won", 
+    label: "נסגר ✅", 
+    description: "הליד נסגר בהצלחה",
     color: "green", 
     order: 7,
-    is_active: true
+    is_active: true,
+    locked: true
   },
   { 
-    id: "ongoing_service", 
-    label: "שירות שוטף", 
-    description: "מתן שירות תחזוקה ותמיכה",
-    color: "green", 
-    order: 8,
-    is_active: true
-  },
-  { 
-    id: "awaiting_response", 
-    label: "ממתין לתגובה", 
-    description: "ממתין לתגובה מהלקוח",
+    id: "closed_lost", 
+    label: "לא רלוונטי ❌", 
+    description: "הליד לא הבשיל לעסקה",
     color: "red", 
-    order: 9,
-    is_active: true
+    order: 8,
+    is_active: true,
+    locked: true
   }
 ];
 
