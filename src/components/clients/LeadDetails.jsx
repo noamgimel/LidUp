@@ -392,6 +392,20 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
           </TooltipProvider>
         </div>
 
+        <AnimatePresence>
+          {showFollowupPrompt && (
+            <FollowupPrompt
+              leadId={client.id}
+              onDone={(iso) => {
+                setShowFollowupPrompt(false);
+                if (iso) setClient(prev => ({ ...prev, next_followup_at: iso }));
+                onRefresh?.();
+              }}
+              onClose={() => setShowFollowupPrompt(false)}
+            />
+          )}
+        </AnimatePresence>
+
         <CardContent className="p-0">
           {/* ───── QUICK FACTS ───── */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-slate-200 border-b border-slate-200">
