@@ -121,6 +121,7 @@ Deno.serve(async (req) => {
         console.log('✓ Secret key validated');
 
         // הכנת נתוני הליד
+        const pageUrl = extractField(payload, 'page_url', 'pageUrl', 'url', 'referer') || '';
         const leadData = {
             name,
             email,
@@ -128,9 +129,10 @@ Deno.serve(async (req) => {
             company: extractField(payload, 'company', 'business', 'organization') || '',
             notes,
             status: 'lead',
-            source: `Website Form - ${formConnection.form_name}`,
+            source: 'website_form',
             form_id,
-            page_url: extractField(payload, 'page_url', 'pageUrl', 'url', 'referer') || '',
+            form_name: formConnection.form_name,
+            page_url: pageUrl,
             raw_payload: raw,
             utm_source: extractField(payload, 'utm_source') || '',
             utm_medium: extractField(payload, 'utm_medium') || '',
@@ -146,6 +148,14 @@ Deno.serve(async (req) => {
         console.log('Creating lead for user:', formConnection.owner_email);
         const newLead = await base44.asServiceRole.entities.Client.create(leadData);
         console.log('✅ SUCCESS! Lead created:', newLead.id, '| owner_email:', newLead.owner_email);
+
+        // יצירת Activity אוטומטי
+        await base44.asServiceRole.entities.LeadActivity.create({
+            lead_id: newLead.id,
+            event_type: 'created',
+            content: `ליד נקלט מטופס: ${formConnection.form_name}${pageUrl ? ` | דף: ${pageUrl}` : ''}`,
+            created_by_email: formConnection.owner_email
+        });
 
         // עדכון מונה השליחות בטופס
         await base44.asServiceRole.entities.FormConnection.update(formConnection.id, {
