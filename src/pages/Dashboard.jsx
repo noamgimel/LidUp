@@ -8,8 +8,7 @@ import {
   Users,
   Calendar,
   TrendingUp,
-  Plus,
-  Banknote
+  Plus
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,7 +70,7 @@ export default function Dashboard() {
         <div className="flex flex-col gap-3 md:gap-6 mb-4 md:mb-8">
           <div className="text-right">
             <h1 className="text-xl md:text-3xl font-bold text-slate-900 mb-2">דשבורד ראשי</h1>
-            <p className="text-sm md:text-base text-slate-600">סקירה כללית של פעילות המערכת</p>
+            <p className="text-sm md:text-base text-slate-600">סקירה כללית של פעילות הלידים</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-start">
              <Link to={createPageUrl("Clients")} className="w-full sm:w-auto">
