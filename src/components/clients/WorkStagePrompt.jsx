@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { X, TrendingUp, AlertCircle } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { updateWorkStage } from "@/functions/updateWorkStage";
 import { useUserWorkStages } from "../hooks/useUserWorkStages";
 import { getWorkStageColorClass } from "../utils/workStagesUtils";
 import { useToast } from "@/components/ui/use-toast";
@@ -27,12 +27,15 @@ export default function WorkStagePrompt({ leadId, currentWorkStage, onDone, onCl
     setError(null);
     const stageLabel = userWorkStages.find(s => s.id === stageId)?.label || stageId;
     try {
-      console.log("[WorkStagePrompt] updateWorkStage →", { action: "update stage", lead_id: leadId, stage_id: stageId });
-      const res = await base44.functions.invoke("updateWorkStage", { lead_id: leadId, stage_id: stageId, stage_label: stageLabel });
-      console.log("[WorkStagePrompt] updateWorkStage ←", res?.status, res?.data);
+      console.log("[WorkStagePrompt] updateWorkStage →", { action: "update work stage", lead_id: leadId, stage_id: stageId, stage_label: stageLabel });
+      const res = await updateWorkStage({ lead_id: leadId, stage_id: stageId, stage_label: stageLabel });
+      console.log("[WorkStagePrompt] updateWorkStage ← success", res?.status, res?.data);
       const data = res?.data;
       if (!data?.ok) {
-        setError(data?.error || "שגיאה בשמירת השלב. אנא נסה שוב.");
+        const errorMsg = data?.error || "שגיאה בשמירת השלב. אנא נסה שוב.";
+        console.error("[WorkStagePrompt] updateWorkStage error response", errorMsg);
+        setError(errorMsg);
+        setIsSaving(false);
         return;
       }
       toast({
@@ -40,10 +43,13 @@ export default function WorkStagePrompt({ leadId, currentWorkStage, onDone, onCl
         description: `שלב המכירה עודכן ל: ${stageLabel}`,
         className: "bg-green-100 text-green-900 border-green-200",
       });
+      setIsSaving(false);
       onDone?.(stageId);
+      onClose?.();
     } catch (err) {
-      setError(err?.response?.data?.error || "שגיאה בשמירת השלב. אנא נסה שוב.");
-    } finally {
+      const errorMsg = err?.response?.data?.error || err?.message || "שגיאה בשמירת השלב. אנא נסה שוב.";
+      console.error("[WorkStagePrompt] updateWorkStage catch", err?.response?.status, errorMsg);
+      setError(errorMsg);
       setIsSaving(false);
     }
   };
