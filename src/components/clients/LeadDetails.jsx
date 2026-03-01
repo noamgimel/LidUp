@@ -164,7 +164,6 @@ function FollowupPanel({ client, onUpdate }) {
     d.setHours(9, 0, 0, 0);
     const iso = d.toISOString().slice(0, 16);
     setDate(iso);
-    save(iso, note);
   };
 
   const isOverdue = client.next_followup_at && new Date(client.next_followup_at) <= new Date();
