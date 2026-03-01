@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { UserCustomWorkStages } from "@/entities/UserCustomWorkStages";
 import { User } from "@/entities/User";
@@ -31,7 +30,7 @@ export function useUserWorkStages() {
         setUserWorkStages(DEFAULT_WORK_STAGES);
       }
     } catch (error) {
-      console.error("שגיאה בטעינת שלבי עבודה:", error);
+      console.error("שגיאה בטעינת שלבי מכירה:", error);
       setUserWorkStages(DEFAULT_WORK_STAGES);
     }
     setIsLoading(false);
