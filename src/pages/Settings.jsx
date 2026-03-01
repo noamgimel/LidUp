@@ -47,8 +47,8 @@ export default function Settings() {
                 <ClipboardList className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
               </div>
               <div>
-                <h2 className="text-lg md:text-xl font-bold text-slate-900">שלבי עבודה</h2>
-                <p className="text-xs md:text-sm text-slate-600">התאם את תהליך העבודה עם הלקוחות</p>
+                <h2 className="text-lg md:text-xl font-bold text-slate-900">שלבי מכירה</h2>
+                <p className="text-xs md:text-sm text-slate-600">התאם את שלבי המכירה שלך</p>
               </div>
             </div>
             <WorkStageManager />
