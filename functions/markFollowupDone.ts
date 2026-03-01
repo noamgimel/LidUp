@@ -9,7 +9,12 @@ Deno.serve(async (req) => {
         const { lead_id } = await req.json();
         if (!lead_id) return Response.json({ error: 'Missing lead_id' }, { status: 400 });
 
-        const lead = await base44.asServiceRole.entities.Client.get(lead_id);
+        let lead;
+        try {
+            lead = await base44.asServiceRole.entities.Client.get(lead_id);
+        } catch {
+            return Response.json({ error: 'Lead not found' }, { status: 404 });
+        }
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
 
         if (lead.owner_email !== user.email && lead.created_by !== user.email) {
