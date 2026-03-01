@@ -27,7 +27,9 @@ export default function WorkStagePrompt({ leadId, currentWorkStage, onDone, onCl
     setError(null);
     const stageLabel = userWorkStages.find(s => s.id === stageId)?.label || stageId;
     try {
-      const res = await updateWorkStage({ lead_id: leadId, stage_id: stageId, stage_label: stageLabel });
+      console.log("[WorkStagePrompt] updateWorkStage →", { action: "update stage", lead_id: leadId, stage_id: stageId });
+      const res = await base44.functions.invoke("updateWorkStage", { lead_id: leadId, stage_id: stageId, stage_label: stageLabel });
+      console.log("[WorkStagePrompt] updateWorkStage ←", res?.status, res?.data);
       const data = res?.data;
       if (!data?.ok) {
         setError(data?.error || "שגיאה בשמירת השלב. אנא נסה שוב.");
