@@ -159,7 +159,7 @@ export default function WorkStageManager() {
     await saveUserWorkStages(newStages);
     toast({
       title: "שלב נמחק",
-      description: "שלב העבודה הוסר בהצלחה מהרשימה.",
+      description: "שלב המכירה הוסר בהצלחה מהרשימה.",
       className: "bg-green-100 text-green-900 border-green-200", // Added class for success toast
     });
   };
