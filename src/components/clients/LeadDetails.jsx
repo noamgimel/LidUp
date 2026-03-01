@@ -290,55 +290,66 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
           </div>
 
           {/* Quick action buttons */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mt-3">
+            {/* Primary contact actions */}
             {phone && (
               <a href={`tel:${phone}`}>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700 gap-1.5">
-                  <Phone className="w-3.5 h-3.5" />התקשר
+                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white gap-2 px-4 py-2 text-sm font-semibold shadow-sm">
+                  <Phone className="w-4 h-4" />התקשר
                 </Button>
               </a>
             )}
             {phone && (
               <a href={`https://wa.me/972${phone.replace(/^0/, "")}`} target="_blank" rel="noreferrer">
-                <Button size="sm" className="bg-[#25D366] hover:bg-[#1ebe5b] text-white gap-1.5">
-                  <MessageCircle className="w-3.5 h-3.5" />וואטסאפ
+                <Button size="sm" className="bg-[#25D366] hover:bg-[#1db954] text-white gap-2 px-4 py-2 text-sm font-semibold shadow-sm">
+                  <MessageCircle className="w-4 h-4" />וואטסאפ
                 </Button>
               </a>
             )}
             {client.email && (
               <a href={`mailto:${client.email}`}>
-                <Button size="sm" variant="outline" className="gap-1.5 bg-white">
-                  <Mail className="w-3.5 h-3.5" />מייל
+                <Button size="sm" variant="outline" className="gap-2 px-4 py-2 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm">
+                  <Mail className="w-4 h-4" />מייל
                 </Button>
               </a>
             )}
+
+            {/* Separator */}
+            <div className="w-px bg-slate-300 self-stretch mx-1 hidden sm:block" />
+
             <Button
               size="sm"
-              variant={client.first_response_at ? "outline" : "default"}
               disabled={!!client.first_response_at}
               onClick={handleFirstResponse}
-              className={`gap-1.5 ${!client.first_response_at ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-white text-slate-500"}`}
+              className={`gap-2 px-4 py-2 text-sm font-semibold shadow-sm ${
+                client.first_response_at
+                  ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-default"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
             >
-              <Handshake className="w-3.5 h-3.5" />
+              <Handshake className="w-4 h-4" />
               {client.first_response_at ? "נוצר קשר ✓" : "סמן 'נוצר קשר'"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => onCreateMeeting(client)} className="gap-1.5 bg-white">
-              <Calendar className="w-3.5 h-3.5" />פגישה
+
+            <Button size="sm" variant="outline" onClick={() => onCreateMeeting(client)} className="gap-2 px-4 py-2 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm">
+              <Calendar className="w-4 h-4" />פגישה
             </Button>
 
+            {/* Separator */}
+            <div className="w-px bg-slate-300 self-stretch mx-1 hidden sm:block" />
+
             {/* Lifecycle actions */}
-            {lifecycle === "open" && (
+            {lifecycle === "open" ? (
               <>
-                <Button size="sm" onClick={() => handleLifecycleChange("won")} className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white">
-                  <CheckCircle2 className="w-3.5 h-3.5" />סגור ✅
+                <Button size="sm" onClick={() => handleLifecycleChange("won")} className="gap-2 px-4 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
+                  <CheckCircle2 className="w-4 h-4" />סגור ✅
                 </Button>
-                <Button size="sm" onClick={() => handleLifecycleChange("lost")} variant="outline" className="gap-1.5 border-red-300 text-red-600 hover:bg-red-50 bg-white">
-                  <XCircle className="w-3.5 h-3.5" />לא רלוונטי ❌
+                <Button size="sm" onClick={() => handleLifecycleChange("lost")} variant="outline" className="gap-2 px-4 py-2 text-sm font-semibold border-red-300 text-red-600 hover:bg-red-50 bg-white shadow-sm">
+                  <XCircle className="w-4 h-4" />לא רלוונטי
                 </Button>
               </>
-            )}
-            {lifecycle !== "open" && (
-              <Button size="sm" onClick={() => handleLifecycleChange("open")} variant="outline" className="gap-1.5 bg-white">
+            ) : (
+              <Button size="sm" onClick={() => handleLifecycleChange("open")} variant="outline" className="gap-2 px-4 py-2 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm">
                 החזר לפעיל
               </Button>
             )}
