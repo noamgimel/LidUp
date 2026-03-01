@@ -148,7 +148,7 @@ function FollowupPanel({ client, onUpdate }) {
   const markDone = async () => {
     setIsSaving(true);
     try {
-      await markFollowupDone({ lead_id: client.id });
+      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
       setShowNextPrompt(true);
       onUpdate?.();
     } finally {
