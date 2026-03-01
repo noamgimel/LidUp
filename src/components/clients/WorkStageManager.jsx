@@ -333,7 +333,7 @@ export default function WorkStageManager() {
         {userWorkStages.length === 0 && (
           <div className="text-center py-6 md:py-8 text-slate-500">
             <ClipboardList className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-2 text-slate-300" />
-            <p className="text-sm">אין שלבי עבודה מוגדרים</p>
+            <p className="text-sm">אין שלבי מכירה מוגדרים</p>
           </div>
         )}
       </CardContent>
