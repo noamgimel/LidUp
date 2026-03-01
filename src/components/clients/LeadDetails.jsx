@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import FollowupPrompt from "./FollowupPrompt";
+import WorkStagePrompt from "./WorkStagePrompt";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -232,6 +233,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   const [activeTab, setActiveTab] = useState("activity");
   const [showUtm, setShowUtm] = useState(false);
   const [showFollowupPrompt, setShowFollowupPrompt] = useState(false);
+  const [showWorkStagePrompt, setShowWorkStagePrompt] = useState(false);
   const { userWorkStages } = useUserWorkStages();
 
   useEffect(() => { setClient(initialClient); }, [initialClient]);
