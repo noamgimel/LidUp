@@ -193,7 +193,7 @@ export default function WorkStageManager() {
     await saveUserWorkStages(DEFAULT_WORK_STAGES);
     toast({
       title: "איפוס הושלם",
-      description: "שלבי העבודה אופסו לברירת המחדל של המערכת.",
+      description: "שלבי המכירה אופסו לברירת המחדל של המערכת.",
       className: "bg-blue-100 text-blue-900 border-blue-200",
     });
   };
