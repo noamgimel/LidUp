@@ -78,23 +78,32 @@ export default function LeadFilterTabs({ activePriority, onPriorityChange, activ
   };
 
   return (
-    <div className="space-y-2 mb-4">
-      {/* Priority filter row */}
-      <div className="flex flex-wrap gap-2">
-        {priorityTabs.map(key => {
-          const cnt = key === 'all'
-            ? (counts.priority?.overdue || 0) + (counts.priority?.hot || 0) + (counts.priority?.warm || 0) + (counts.priority?.cold || 0)
-            : (counts.priority?.[key] || 0);
-          return renderTab(key, priorityTabConfig[key], activePriority === key, onPriorityChange, cnt);
-        })}
+    <div className="mb-4 space-y-3">
+      {/* Row 1 – Priority (urgency) */}
+      <div>
+        <p className="text-xs font-semibold text-slate-400 mb-1.5 pr-1">דחיפות</p>
+        <div className="flex flex-wrap gap-2">
+          {priorityTabs.map(key => {
+            const cnt = key === 'all'
+              ? (counts.priority?.overdue || 0) + (counts.priority?.hot || 0) + (counts.priority?.warm || 0) + (counts.priority?.cold || 0)
+              : (counts.priority?.[key] || 0);
+            return renderTab(key, priorityTabConfig[key], activePriority === key, onPriorityChange, cnt);
+          })}
+        </div>
       </div>
 
-      {/* Lifecycle filter row */}
-      <div className="flex flex-wrap gap-2">
-        {lifecycleTabs.map(key => {
-          const cnt = counts.lifecycle?.[key] || 0;
-          return renderTab(key, lifecycleTabConfig[key], activeLifecycle === key, onLifecycleChange, cnt);
-        })}
+      {/* Divider */}
+      <div className="border-t border-slate-200" />
+
+      {/* Row 2 – Lifecycle (stage) */}
+      <div>
+        <p className="text-xs font-semibold text-slate-400 mb-1.5 pr-1">שלב ליד</p>
+        <div className="flex flex-wrap gap-2">
+          {lifecycleTabs.map(key => {
+            const cnt = counts.lifecycle?.[key] || 0;
+            return renderTab(key, lifecycleTabConfig[key], activeLifecycle === key, onLifecycleChange, cnt);
+          })}
+        </div>
       </div>
     </div>
   );

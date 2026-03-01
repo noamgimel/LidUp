@@ -128,17 +128,14 @@ const ClientList = ({ clients, isLoading, onView, onEdit, onDelete }) => {
                     </Badge>
                   </div>
 
-                  {/* Work stage */}
+                  {/* Work stage only – lifecycle is shown via tab filter, no duplicate badge */}
                   <div className="col-span-2">
                     {client.work_stage && workStageLabels[client.work_stage] ? (
                       <Badge className={`${workStageColors[client.work_stage]} border whitespace-nowrap text-xs`}>
                         {workStageLabels[client.work_stage]}
                       </Badge>
                     ) : (
-                      <Badge className="bg-gray-600 text-white border-gray-600 whitespace-nowrap text-xs">לא מוגדר</Badge>
-                    )}
-                    {lifecycle !== 'open' && (
-                      <Badge className={`${lCfg.badge} border text-xs mt-1`}>{lCfg.label}</Badge>
+                      <Badge className="bg-gray-200 text-gray-600 border-gray-300 whitespace-nowrap text-xs">לא מוגדר</Badge>
                     )}
                   </div>
 
@@ -176,10 +173,7 @@ const ClientList = ({ clients, isLoading, onView, onEdit, onDelete }) => {
                         {client.work_stage && workStageLabels[client.work_stage] ? (
                           <Badge className={`${workStageColors[client.work_stage]} border text-xs`}>{workStageLabels[client.work_stage]}</Badge>
                         ) : (
-                          <Badge className="bg-gray-600 text-white text-xs">לא מוגדר</Badge>
-                        )}
-                        {lifecycle !== 'open' && (
-                          <Badge className={`${lCfg.badge} border text-xs`}>{lCfg.label}</Badge>
+                          <Badge className="bg-gray-200 text-gray-600 border-gray-300 text-xs">לא מוגדר</Badge>
                         )}
                       </div>
                     </div>
