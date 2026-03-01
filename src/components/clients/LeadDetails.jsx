@@ -48,7 +48,7 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
   const loadActivities = async () => {
     setIsLoading(true);
     try {
-      const res = await base44.functions.invoke("getLeadActivities", { lead_id: leadId });
+      const res = await getLeadActivities({ lead_id: leadId });
       setActivities(res?.data?.activities || []);
     } catch {
       setActivities([]);
