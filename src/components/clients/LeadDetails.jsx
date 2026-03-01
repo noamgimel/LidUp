@@ -404,10 +404,31 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
             {/* Contextual action buttons — with text */}
             {client.first_response_at ? (
-              <div className="flex items-center gap-1.5 h-9 px-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm font-semibold">
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                ✅ נוצר קשר — {formatIsraeliDate(client.first_response_at)}
-              </div>
+              <>
+                <div className="flex items-center gap-1.5 h-9 px-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm font-semibold">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  ✅ נוצר קשר — {formatIsraeliDate(client.first_response_at)}
+                </div>
+                {client.next_followup_at ? (
+                  <Button
+                    size="sm"
+                    onClick={handleFollowupDone}
+                    disabled={isMarkingFollowupDone}
+                    className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-teal-600 hover:bg-teal-700 text-white"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    {isMarkingFollowupDone ? "שומר..." : "בוצע פולואפ"}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => setShowFollowupPrompt(true)}
+                    className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    <Bell className="w-4 h-4" />קבע פולואפ
+                  </Button>
+                )}
+              </>
             ) : (
               <Button
                 size="sm"
