@@ -248,7 +248,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (client.first_response_at || isMarkingContacted) return;
     setIsMarkingContacted(true);
     try {
-      const res = await markFirstContact({ lead_id: client.id });
+      const res = await base44.functions.invoke("markFirstContact", { lead_id: client.id });
       const data = res?.data;
       if (data?.ok) {
         setClient(prev => ({
