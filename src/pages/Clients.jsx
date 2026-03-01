@@ -139,7 +139,7 @@ export default function Clients() {
           created_by_email: (await base44.auth.me())?.email || ""
         });
       } else {
-        const newLead = await base44.entities.Client.create({ ...clientData, last_activity_at: now });
+        const newLead = await base44.entities.Client.create({ ...clientData, work_stage: clientData.work_stage || "new_lead", last_activity_at: now });
         await base44.entities.LeadActivity.create({
           lead_id: newLead.id,
           event_type: "created",
