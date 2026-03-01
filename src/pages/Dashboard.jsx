@@ -23,22 +23,31 @@ import LeadsClientsTrendChart from "../components/reports/LeadsClientsTrendChart
 import ReportsWidget from "../components/dashboard/ReportsWidget";
 import WorkBlockList from "../components/dashboard/WorkBlockList";
 
+const SLA_MINUTES = 30;
+function computePriorityDash(c) {
+  const now = Date.now();
+  const lifecycle = c.lifecycle || "open";
+  if (lifecycle !== "open") return c.priority || "warm";
+  const createdMs = new Date(c.created_date).getTime();
+  const minutesSince = (now - createdMs) / 60000;
+  const followupMs = c.next_followup_at ? new Date(c.next_followup_at).getTime() : null;
+  if ((!c.first_response_at && minutesSince >= SLA_MINUTES) || (followupMs && followupMs <= now)) return "overdue";
+  return c.priority || "warm";
+}
+
 export default function Dashboard() {
   const [clients, setClients] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
       const user = await User.me();
       setCurrentUser(user);
-
       const [clientsData, meetingsData] = await Promise.all([
         Client.list("-created_date"),
         Meeting.list("-date")
@@ -51,17 +60,28 @@ export default function Dashboard() {
     setIsLoading(false);
   };
 
-  // --- Calculations for Stats Cards ---
-
-  // Main metrics
+  // --- Calculations ---
   const startOfThisMonth = startOfMonth(new Date());
-  const openLeads = clients.filter(c => (c.lifecycle || 'open') === 'open');
+  const enriched = clients.map(c => ({ ...c, priority: computePriorityDash(c) }));
+  const openLeads = enriched.filter(c => (c.lifecycle || 'open') === 'open');
   const leadsCount = openLeads.length;
   const hotLeads = openLeads.filter(c => c.priority === 'hot' || c.priority === 'overdue').length;
-  const wonLeads = clients.filter(c => c.lifecycle === 'won').length;
-  const newLeadsThisMonth = clients.filter(c => new Date(c.created_date) >= startOfThisMonth).length;
-  const wonThisMonth = clients.filter(c => c.lifecycle === 'won' && new Date(c.updated_date || c.created_date) >= startOfThisMonth).length;
-  
+  const wonLeads = enriched.filter(c => c.lifecycle === 'won').length;
+  const newLeadsThisMonth = enriched.filter(c => new Date(c.created_date) >= startOfThisMonth).length;
+  const wonThisMonth = enriched.filter(c => c.lifecycle === 'won' && new Date(c.updated_date || c.created_date) >= startOfThisMonth).length;
+
+  // Work blocks
+  const now = new Date();
+  const endOfToday = new Date(now); endOfToday.setHours(23, 59, 59, 999);
+  const overdueLeads = openLeads
+    .filter(c => c.priority === 'overdue')
+    .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+  const followupTodayLeads = openLeads
+    .filter(c => c.next_followup_at && new Date(c.next_followup_at) <= endOfToday)
+    .sort((a, b) => new Date(a.next_followup_at) - new Date(b.next_followup_at));
+  const newNoContactLeads = openLeads
+    .filter(c => !c.first_response_at)
+    .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
   // --- End of Calculations ---
 
   return (
