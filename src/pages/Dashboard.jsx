@@ -76,7 +76,7 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-start">
              <Link to={createPageUrl("Clients")} className="w-full sm:w-auto">
               <Button size="sm" className="bg-gradient-to-l from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 gap-2 shadow-lg text-right w-full sm:w-auto">
-                <span>לקוח חדש</span>
+                     <span>ליד חדש</span>
                 <Plus className="w-4 h-4" />
               </Button>
             </Link>
@@ -92,26 +92,26 @@ export default function Dashboard() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 mb-4 md:mb-8">
           <StatsCard
-            title="סך הכל לידים"
+            title="לידים פעילים"
             value={leadsCount}
-            subTitle={`לידים חדשים החודש: ${newLeadsThisMonth}`}
+            subTitle={`חדשים החודש: ${newLeadsThisMonth}`}
             icon={Users}
             colorScheme="blue"
           />
           
           <StatsCard
-            title="לקוחות פעילים"
-            value={activeClientsCount}
-            subTitle={`לקוחות חדשים החודש: ${newClientsThisMonth}`}
+            title="חמים / חורגים SLA"
+            value={hotLeads}
+            subTitle="דורשים טיפול מיידי"
             icon={TrendingUp}
             colorScheme="green"
           />
 
           <StatsCard
-            title="הכנסות בפועל"
-            value={`₪${totalRevenue.toLocaleString()}`}
-            subTitle={remainingPayments > 0 ? `יתרה לתשלום: ₪${remainingPayments.toLocaleString()}` : 'כל התשלומים התקבלו'}
-            icon={Banknote}
+            title="נסגרו בהצלחה ✅"
+            value={wonLeads}
+            subTitle={`נסגרו החודש: ${wonThisMonth}`}
+            icon={TrendingUp}
             colorScheme="purple"
           />
         </div>
