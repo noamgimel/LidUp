@@ -301,9 +301,9 @@ export default function WorkStageManager() {
                       </AlertDialogTrigger>
                       <AlertDialogContent dir="rtl">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>מחיקת שלב עבודה</AlertDialogTitle>
+                          <AlertDialogTitle>מחיקת שלב מכירה</AlertDialogTitle>
                           <AlertDialogDescription>
-                            האם אתה בטוח שברצונך למחוק את שלב העבודה "{stage.label}"?
+                            האם אתה בטוח שברצונך למחוק את שלב המכירה "{stage.label}"?
                             {clientsInStages[stage.id] > 0 && (
                               <span className="block mt-2 text-red-600 font-medium">
                                 יש {clientsInStages[stage.id]} לקוחות בשלב זה!
