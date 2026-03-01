@@ -140,8 +140,7 @@ function FollowupPanel({ client, onUpdate }) {
     if (!nextDate) return;
     setIsSaving(true);
     try {
-      const { scheduleFollowup } = await import("@/functions/scheduleFollowup");
-      await scheduleFollowup({ lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
+      await base44.functions.invoke("scheduleFollowup", { lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
       onUpdate?.();
     } finally {
       setIsSaving(false);
@@ -151,7 +150,7 @@ function FollowupPanel({ client, onUpdate }) {
   const markDone = async () => {
     setIsSaving(true);
     try {
-      await markFollowupDone({ lead_id: client.id });
+      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
       setShowNextPrompt(true);
       onUpdate?.();
     } finally {
