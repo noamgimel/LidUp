@@ -286,6 +286,13 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     }
   };
 
+  const handleFollowupPromptDone = (iso) => {
+    setShowFollowupPrompt(false);
+    if (iso) setClient(prev => ({ ...prev, next_followup_at: iso }));
+    onRefresh?.();
+    setShowWorkStagePrompt(true);
+  };
+
   const handleLifecycleChange = async (newLifecycle) => {
     const user = await base44.auth.me();
     const now = new Date().toISOString();
