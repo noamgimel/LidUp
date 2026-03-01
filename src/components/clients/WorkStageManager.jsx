@@ -365,7 +365,7 @@ export default function WorkStageManager() {
                   id="label"
                   value={formData.label}
                   onChange={(e) => setFormData({...formData, label: e.target.value})}
-                  placeholder="הכנס שם לשלב העבודה"
+                  placeholder="הכנס שם לשלב המכירה"
                   required
                   className="text-right"
                 />
