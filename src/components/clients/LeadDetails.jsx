@@ -291,38 +291,54 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
           </div>
 
           {/* Quick action buttons */}
-          <div className="flex flex-wrap gap-2 mt-3">
-            {/* Primary contact actions */}
+          <TooltipProvider delayDuration={200}>
+          <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+            {/* Icon-only contact buttons */}
             {phone && (
-              <a href={`tel:${phone}`}>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white gap-2 px-4 py-2 text-sm font-semibold shadow-sm">
-                  <Phone className="w-4 h-4" />התקשר
-                </Button>
-              </a>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a href={`tel:${phone}`}>
+                    <Button size="icon" className="bg-green-600 hover:bg-green-700 text-white h-9 w-9 shadow-sm rounded-lg">
+                      <Phone className="w-4 h-4" />
+                    </Button>
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>התקשר — {client.phone}</TooltipContent>
+              </Tooltip>
             )}
             {phone && (
-              <a href={`https://wa.me/972${phone.replace(/^0/, "")}`} target="_blank" rel="noreferrer">
-                <Button size="sm" className="bg-[#25D366] hover:bg-[#1db954] text-white gap-2 px-4 py-2 text-sm font-semibold shadow-sm">
-                  <MessageCircle className="w-4 h-4" />וואטסאפ
-                </Button>
-              </a>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a href={`https://wa.me/972${phone.replace(/^0/, "")}`} target="_blank" rel="noreferrer">
+                    <Button size="icon" className="bg-[#25D366] hover:bg-[#1db954] text-white h-9 w-9 shadow-sm rounded-lg">
+                      <MessageCircle className="w-4 h-4" />
+                    </Button>
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>וואטסאפ</TooltipContent>
+              </Tooltip>
             )}
             {client.email && (
-              <a href={`mailto:${client.email}`}>
-                <Button size="sm" variant="outline" className="gap-2 px-4 py-2 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm">
-                  <Mail className="w-4 h-4" />מייל
-                </Button>
-              </a>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a href={`mailto:${client.email}`}>
+                    <Button size="icon" variant="outline" className="h-9 w-9 bg-white border-slate-300 text-slate-600 hover:bg-slate-50 shadow-sm rounded-lg">
+                      <Mail className="w-4 h-4" />
+                    </Button>
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>שלח מייל</TooltipContent>
+              </Tooltip>
             )}
 
-            {/* Separator */}
-            <div className="w-px bg-slate-300 self-stretch mx-1 hidden sm:block" />
+            <div className="w-px bg-slate-300 self-stretch mx-1" />
 
+            {/* Contextual action buttons — with text */}
             <Button
               size="sm"
               disabled={!!client.first_response_at}
               onClick={handleFirstResponse}
-              className={`gap-2 px-4 py-2 text-sm font-semibold shadow-sm ${
+              className={`gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg ${
                 client.first_response_at
                   ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-default"
                   : "bg-blue-600 hover:bg-blue-700 text-white"
@@ -332,29 +348,28 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
               {client.first_response_at ? "נוצר קשר ✓" : "סמן 'נוצר קשר'"}
             </Button>
 
-            <Button size="sm" variant="outline" onClick={() => onCreateMeeting(client)} className="gap-2 px-4 py-2 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm">
+            <Button size="sm" variant="outline" onClick={() => onCreateMeeting(client)} className="gap-1.5 h-9 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm rounded-lg">
               <Calendar className="w-4 h-4" />פגישה
             </Button>
 
-            {/* Separator */}
-            <div className="w-px bg-slate-300 self-stretch mx-1 hidden sm:block" />
+            <div className="w-px bg-slate-300 self-stretch mx-1" />
 
-            {/* Lifecycle actions */}
             {lifecycle === "open" ? (
               <>
-                <Button size="sm" onClick={() => handleLifecycleChange("won")} className="gap-2 px-4 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
+                <Button size="sm" onClick={() => handleLifecycleChange("won")} className="gap-1.5 h-9 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm rounded-lg">
                   <CheckCircle2 className="w-4 h-4" />סגור ✅
                 </Button>
-                <Button size="sm" onClick={() => handleLifecycleChange("lost")} variant="outline" className="gap-2 px-4 py-2 text-sm font-semibold border-red-300 text-red-600 hover:bg-red-50 bg-white shadow-sm">
+                <Button size="sm" onClick={() => handleLifecycleChange("lost")} variant="outline" className="gap-1.5 h-9 text-sm font-semibold border-red-300 text-red-600 hover:bg-red-50 bg-white shadow-sm rounded-lg">
                   <XCircle className="w-4 h-4" />לא רלוונטי
                 </Button>
               </>
             ) : (
-              <Button size="sm" onClick={() => handleLifecycleChange("open")} variant="outline" className="gap-2 px-4 py-2 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm">
+              <Button size="sm" onClick={() => handleLifecycleChange("open")} variant="outline" className="gap-1.5 h-9 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm rounded-lg">
                 החזר לפעיל
               </Button>
             )}
           </div>
+          </TooltipProvider>
         </div>
 
         <CardContent className="p-0">
