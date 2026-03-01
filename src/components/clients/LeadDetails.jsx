@@ -16,7 +16,6 @@ import { addDays } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { markFirstContact } from "@/functions/markFirstContact";
 import { markFollowupDone } from "@/functions/markFollowupDone";
-import { scheduleFollowup } from "@/functions/scheduleFollowup";
 import { getLeadActivities } from "@/functions/getLeadActivities";
 import { useUserWorkStages } from "../hooks/useUserWorkStages";
 import { getWorkStageColorClass } from "../utils/workStagesUtils";
