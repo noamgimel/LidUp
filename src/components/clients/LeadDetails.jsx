@@ -44,8 +44,13 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
 
   const loadActivities = async () => {
     setIsLoading(true);
-    const data = await base44.entities.LeadActivity.filter({ lead_id: leadId }, "-created_date", 50);
-    setActivities(data || []);
+    try {
+      // Use backend function to bypass RLS for webhook leads
+      const res = await getLeadActivities({ lead_id: leadId });
+      setActivities(res?.data?.activities || []);
+    } catch {
+      setActivities([]);
+    }
     setIsLoading(false);
   };
 
