@@ -355,7 +355,7 @@ export default function WorkStageManager() {
           <DialogContent dir="rtl">
             <DialogHeader>
               <DialogTitle>
-                {editingStage ? "עריכת שלב עבודה" : "הוספת שלב עבודה חדש"}
+                {editingStage ? "עריכת שלב מכירה" : "הוספת שלב מכירה חדש"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
