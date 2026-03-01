@@ -397,10 +397,11 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
               <Button
                 size="sm"
                 onClick={handleFirstResponse}
+                disabled={isMarkingContacted}
                 className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <Handshake className="w-4 h-4" />
-                סמן &#39;נוצר קשר&#39;
+                {isMarkingContacted ? "שומר..." : "סמן 'נוצר קשר'"}
               </Button>
             )}
 
