@@ -21,6 +21,7 @@ import { scheduleFollowup } from "@/functions/scheduleFollowup";
 import { getLeadActivities } from "@/functions/getLeadActivities";
 import { addLeadNote } from "@/functions/addLeadNote";
 
+
 import { useUserWorkStages } from "../hooks/useUserWorkStages";
 import { getWorkStageColorClass } from "../utils/workStagesUtils";
 import { PRIORITY_CONFIG, LIFECYCLE_CONFIG } from "./LeadPriorityConfig";
