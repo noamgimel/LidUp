@@ -9,13 +9,9 @@ Deno.serve(async (req) => {
         const { lead_id } = await req.json();
         if (!lead_id) return Response.json({ error: 'Missing lead_id' }, { status: 400 });
 
-        // Fetch lead via service role (handles webhook leads too)
-        let lead;
-        try {
-            lead = await base44.asServiceRole.entities.Client.get(lead_id);
-        } catch {
-            return Response.json({ error: 'Lead not found' }, { status: 404 });
-        }
+        // Fetch lead via service role using filter (bypass RLS)
+        const leads = await base44.asServiceRole.entities.Client.filter({ id: lead_id });
+        const lead = leads?.[0];
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
 
         // Ownership check
