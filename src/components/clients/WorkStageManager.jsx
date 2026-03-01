@@ -435,9 +435,9 @@ export default function WorkStageManager() {
           </AlertDialogTrigger>
           <AlertDialogContent dir="rtl">
             <AlertDialogHeader>
-              <AlertDialogTitle>איפוס שלבי עבודה</AlertDialogTitle>
+              <AlertDialogTitle>איפוס שלבי מכירה</AlertDialogTitle>
               <AlertDialogDescription>
-                האם אתה בטוח שברצונך לאפס את כל שלבי העבודה לברירת המחדל של המערכת?
+                האם אתה בטוח שברצונך לאפס את כל שלבי המכירה לברירת המחדל של המערכת?
                 פעולה זו תמחק את כל השלבים המותאמים אישית.
               </AlertDialogDescription>
             </AlertDialogHeader>
