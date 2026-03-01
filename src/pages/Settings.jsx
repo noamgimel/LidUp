@@ -27,12 +27,12 @@ export default function Settings() {
           <CardContent className="text-blue-800 p-4 md:p-6 pt-0">
             <div className="grid grid-cols-1 md:grid-cols-1 gap-4 text-xs md:text-sm">
               <div>
-                <h4 className="font-semibold mb-2">שלבי עבודה:</h4>
+                <h4 className="font-semibold mb-2">שלבי מכירה:</h4>
                 <ul className="space-y-1">
-                  <li>• התאם את שלבי העבודה לתהליך העסקי שלך</li>
+                  <li>• התאם את שלבי המכירה לתהליך העסקי שלך</li>
                   <li>• שנה את סדר השלבים בעזרת החצים</li>
                   <li>• ניתן למחוק שלבים מסוימים אם אין בהם לקוחות פעילים</li>
-                  <li>• שלבי העבודה יעזרו לך לעקוב אחר התקדמות הלקוחות</li>
+                  <li>• שלבי המכירה יעזרו לך לעקוב אחר התקדמות הלידים</li>
                 </ul>
               </div>
             </div>
