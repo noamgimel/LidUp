@@ -5,7 +5,10 @@ const SLA_MINUTES = 30;
 
 function getAgeParts(dateStr) {
   if (!dateStr) return null;
-  const diff = Date.now() - new Date(dateStr).getTime();
+  // Use Israel timezone for accurate local time comparison
+  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
+  const created = new Date(new Date(dateStr).toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
+  const diff = now.getTime() - created.getTime();
   if (diff < 0) return { text: "עכשיו", minutes: 0 };
   const totalMinutes = Math.floor(diff / 60000);
   const hours = Math.floor(totalMinutes / 60);
