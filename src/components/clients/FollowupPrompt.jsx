@@ -66,8 +66,12 @@ export default function FollowupPrompt({ leadId, onDone, onClose }) {
     if (!iso) return;
     setIsSaving(true);
     try {
-      await scheduleFollowup({ lead_id: leadId, datetime: iso, note });
+      console.log("[FollowupPrompt] scheduleFollowup →", { action: "schedule followup", lead_id: leadId, datetime: iso });
+      const res = await scheduleFollowup({ lead_id: leadId, datetime: iso, note });
+      console.log("[FollowupPrompt] scheduleFollowup ← success", res?.status);
       onDone?.(iso);
+    } catch (err) {
+      console.error("[FollowupPrompt] scheduleFollowup ← FAILED", err?.response?.status, err?.message);
     } finally {
       setIsSaving(false);
     }

@@ -253,7 +253,9 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (client.first_response_at || isMarkingContacted) return;
     setIsMarkingContacted(true);
     try {
+      console.log("[LeadDetails] markFirstContact →", { action: "first contact", lead_id: client.id });
       const res = await markFirstContact({ lead_id: client.id });
+      console.log("[LeadDetails] markFirstContact ← success", res?.status, res?.data);
       const data = res?.data;
       if (data?.ok) {
         setClient(prev => ({
@@ -265,6 +267,8 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
         onRefresh?.();
         setShowFollowupPrompt(true);
       }
+    } catch (err) {
+      console.error("[LeadDetails] markFirstContact ← FAILED", err?.response?.status, err?.message);
     } finally {
       setIsMarkingContacted(false);
     }
@@ -274,10 +278,14 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (isMarkingFollowupDone) return;
     setIsMarkingFollowupDone(true);
     try {
+      console.log("[LeadDetails] markFollowupDone →", { action: "followup done", lead_id: client.id });
       await markFollowupDone({ lead_id: client.id });
+      console.log("[LeadDetails] markFollowupDone ← success");
       setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
       onRefresh?.();
       setShowFollowupPrompt(true);
+    } catch (err) {
+      console.error("[LeadDetails] markFollowupDone ← FAILED", err?.response?.status, err?.message);
     } finally {
       setIsMarkingFollowupDone(false);
     }
