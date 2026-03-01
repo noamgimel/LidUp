@@ -127,6 +127,7 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
 }
 
 function FollowupPanel({ client, onUpdate }) {
+  // eslint-disable-next-line no-unused-vars
   const [date, setDate] = useState(client.next_followup_at ? client.next_followup_at.slice(0, 16) : "");
   const [note, setNote] = useState(client.next_followup_note || "");
   const [isSaving, setIsSaving] = useState(false);
