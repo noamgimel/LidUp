@@ -458,12 +458,23 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
           {showFollowupPrompt && (
             <FollowupPrompt
               leadId={client.id}
-              onDone={(iso) => {
-                setShowFollowupPrompt(false);
-                if (iso) setClient(prev => ({ ...prev, next_followup_at: iso }));
+              onDone={handleFollowupPromptDone}
+              onClose={() => setShowFollowupPrompt(false)}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showWorkStagePrompt && (
+            <WorkStagePrompt
+              leadId={client.id}
+              currentWorkStage={client.work_stage}
+              onDone={(stageId) => {
+                setShowWorkStagePrompt(false);
+                if (stageId) setClient(prev => ({ ...prev, work_stage: stageId }));
                 onRefresh?.();
               }}
-              onClose={() => setShowFollowupPrompt(false)}
+              onClose={() => setShowWorkStagePrompt(false)}
             />
           )}
         </AnimatePresence>
