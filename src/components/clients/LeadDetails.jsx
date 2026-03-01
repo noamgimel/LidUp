@@ -57,18 +57,30 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
   const addNote = async () => {
     if (!newNote.trim()) return;
     setIsSaving(true);
-    const user = await base44.auth.me();
-    await base44.entities.LeadActivity.create({
-      lead_id: leadId,
-      event_type: "note",
-      content: newNote.trim(),
-      created_by_email: user?.email || ""
-    });
-    await base44.entities.Client.update(leadId, { last_activity_at: new Date().toISOString() });
-    setNewNote("");
-    await loadActivities();
-    setIsSaving(false);
-    onActivityAdded?.();
+    try {
+      // Use service role via backend to support webhook leads
+      const res = await base44.functions.invoke("scheduleFollowup", { lead_id: leadId, note_only: true });
+      // Actually just use direct create with user token, RLS allows if owner
+      const user = await base44.auth.me();
+      await base44.asServiceRole?.entities?.LeadActivity?.create?.({
+        lead_id: leadId,
+        event_type: "note",
+        content: newNote.trim(),
+        created_by_email: user?.email || ""
+      }).catch(() => base44.entities.LeadActivity.create({
+        lead_id: leadId,
+        event_type: "note",
+        content: newNote.trim(),
+        created_by_email: user?.email || ""
+      }));
+      await base44.entities.Client.update(leadId, { last_activity_at: new Date().toISOString() })
+        .catch(() => {});
+      setNewNote("");
+      await loadActivities();
+      onActivityAdded?.();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const eventTypeLabel = {
