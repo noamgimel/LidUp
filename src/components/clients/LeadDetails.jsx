@@ -267,34 +267,40 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
   const upcomingMeetings = meetings?.filter(m => m.status === "scheduled") || [];
 
-  const [isMarkingContacted, setIsMarkingContacted] = React.useState(false);
+  const [isMarkingContacted, setIsMarkingContacted] = useState(false);
+  const [isMarkingFollowupDone, setIsMarkingFollowupDone] = useState(false);
 
   const handleFirstResponse = async () => {
     if (client.first_response_at || isMarkingContacted) return;
     setIsMarkingContacted(true);
     try {
-      const user = await base44.auth.me();
-      const now = new Date().toISOString();
-      const followupOverdue = client.next_followup_at && new Date(client.next_followup_at) <= new Date();
-      const newPriority = (client.priority === "overdue" && !followupOverdue) ? "warm" : (client.priority === "overdue" ? "warm" : client.priority);
-      const stageUpdate = (!client.work_stage || client.work_stage === "new_lead") ? { work_stage: "first_contact" } : {};
-      await base44.entities.Client.update(client.id, {
-        first_response_at: now,
-        last_activity_at: now,
-        priority: newPriority,
-        ...stageUpdate
-      });
-      await base44.entities.LeadActivity.create({
-        lead_id: client.id,
-        event_type: "first_response",
-        content: "נוצר קשר ראשון עם הליד",
-        created_by_email: user?.email || ""
-      });
-      setClient(prev => ({ ...prev, first_response_at: now, priority: newPriority, ...stageUpdate }));
+      const res = await markFirstContact({ lead_id: client.id });
+      const data = res?.data;
+      if (data?.ok) {
+        setClient(prev => ({
+          ...prev,
+          first_response_at: data.first_response_at || new Date().toISOString(),
+          priority: data.priority || prev.priority,
+          ...(data.work_stage ? { work_stage: data.work_stage } : {})
+        }));
+        onRefresh?.();
+        setShowFollowupPrompt(true);
+      }
+    } finally {
+      setIsMarkingContacted(false);
+    }
+  };
+
+  const handleFollowupDone = async () => {
+    if (isMarkingFollowupDone) return;
+    setIsMarkingFollowupDone(true);
+    try {
+      await markFollowupDone({ lead_id: client.id });
+      setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
       onRefresh?.();
       setShowFollowupPrompt(true);
     } finally {
-      setIsMarkingContacted(false);
+      setIsMarkingFollowupDone(false);
     }
   };
 
