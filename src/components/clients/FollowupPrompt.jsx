@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Bell, X, Clock } from "lucide-react";
 import { addDays, format } from "date-fns";
-import { base44 } from "@/api/base44Client";
+import { scheduleFollowup } from "@/functions/scheduleFollowup";
 
 const DEFAULT_TIMES = ["09:00", "12:00", "16:00", "19:00"];
 
