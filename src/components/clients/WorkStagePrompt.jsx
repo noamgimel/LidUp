@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { X, TrendingUp, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { updateWorkStage } from "@/functions/updateWorkStage";
 import { useUserWorkStages } from "../hooks/useUserWorkStages";
 import { getWorkStageColorClass } from "../utils/workStagesUtils";
 import { useToast } from "@/components/ui/use-toast";
