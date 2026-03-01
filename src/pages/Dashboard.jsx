@@ -5,11 +5,8 @@ import { User } from "@/entities/User";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Users, Calendar, TrendingUp, Plus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { startOfMonth } from "date-fns";
-import { he } from "date-fns/locale";
 
 import StatsCard from "../components/dashboard/StatsCard";
 import RecentClients from "../components/dashboard/RecentClients";
