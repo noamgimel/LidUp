@@ -203,6 +203,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   const [client, setClient] = useState(initialClient);
   const [activeTab, setActiveTab] = useState("activity");
   const [showUtm, setShowUtm] = useState(false);
+  const [showFollowupPrompt, setShowFollowupPrompt] = useState(false);
   const { userWorkStages } = useUserWorkStages();
 
   useEffect(() => { setClient(initialClient); }, [initialClient]);
@@ -222,10 +223,23 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (client.first_response_at) return;
     const user = await base44.auth.me();
     const now = new Date().toISOString();
+
+    // Determine new priority: if was overdue ONLY due to SLA (no followup overdue), reset to warm
+    const followupOverdue = client.next_followup_at && new Date(client.next_followup_at) <= new Date();
+    const newPriority = client.priority === "overdue" && !followupOverdue
+      ? "warm"
+      : (client.priority === "overdue" ? "warm" : client.priority);
+
+    // Auto-advance work_stage from "new_lead" to "first_contact" if applicable
+    const stageUpdate = (!client.work_stage || client.work_stage === "new_lead")
+      ? { work_stage: "first_contact" }
+      : {};
+
     await base44.entities.Client.update(client.id, {
       first_response_at: now,
       last_activity_at: now,
-      priority: client.priority === "overdue" ? "warm" : client.priority
+      priority: newPriority,
+      ...stageUpdate
     });
     await base44.entities.LeadActivity.create({
       lead_id: client.id,
@@ -233,7 +247,10 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
       content: "נוצר קשר ראשון עם הליד",
       created_by_email: user?.email || ""
     });
+    setClient(prev => ({ ...prev, first_response_at: now, priority: newPriority, ...stageUpdate }));
     onRefresh?.();
+    // Open follow-up prompt
+    setShowFollowupPrompt(true);
   };
 
   const handleLifecycleChange = async (newLifecycle) => {
