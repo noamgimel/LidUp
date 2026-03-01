@@ -54,25 +54,13 @@ export default function Dashboard() {
   // --- Calculations for Stats Cards ---
 
   // Main metrics
-  const leadsCount = clients.filter(client => client.status === 'lead' || client.status === 'hot_lead').length;
-  const activeClients = clients.filter(client => client.status === 'client');
-  const activeClientsCount = activeClients.length;
-  const totalRevenue = activeClients.reduce((sum, client) => sum + (client.paid || 0), 0);
-  const totalValue = activeClients.reduce((sum, client) => sum + (client.total_value || 0), 0);
-  const remainingPayments = totalValue - totalRevenue;
-
-  // New metrics for subtitles
   const startOfThisMonth = startOfMonth(new Date());
-  
-  const newLeadsThisMonth = clients.filter(client => {
-    const createdDate = new Date(client.created_date);
-    return (client.status === 'lead' || client.status === 'hot_lead') && createdDate >= startOfThisMonth;
-  }).length;
-
-  const newClientsThisMonth = clients.filter(client => {
-    const createdDate = new Date(client.created_date);
-    return client.status === 'client' && createdDate >= startOfThisMonth;
-  }).length;
+  const openLeads = clients.filter(c => (c.lifecycle || 'open') === 'open');
+  const leadsCount = openLeads.length;
+  const hotLeads = openLeads.filter(c => c.priority === 'hot' || c.priority === 'overdue').length;
+  const wonLeads = clients.filter(c => c.lifecycle === 'won').length;
+  const newLeadsThisMonth = clients.filter(c => new Date(c.created_date) >= startOfThisMonth).length;
+  const wonThisMonth = clients.filter(c => c.lifecycle === 'won' && new Date(c.updated_date || c.created_date) >= startOfThisMonth).length;
   
   // --- End of Calculations ---
 

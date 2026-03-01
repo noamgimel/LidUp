@@ -58,8 +58,8 @@ import Meetings from './pages/Meetings';
 import PremiumManagement from './pages/PremiumManagement';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
-import WorkStageSettings from './pages/WorkStageSettings';
 import WebsiteConnections from './pages/WebsiteConnections';
+import WorkStageSettings from './pages/WorkStageSettings';
 import __Layout from './Layout.jsx';
 
 
@@ -75,8 +75,8 @@ export const PAGES = {
     "PremiumManagement": PremiumManagement,
     "Reports": Reports,
     "Settings": Settings,
-    "WorkStageSettings": WorkStageSettings,
     "WebsiteConnections": WebsiteConnections,
+    "WorkStageSettings": WorkStageSettings,
 }
 
 export const pagesConfig = {
