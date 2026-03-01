@@ -111,7 +111,9 @@ const ClientList = ({ clients, isLoading, onView, onEdit, onDelete }) => {
 
                   {/* Source */}
                   <div className="col-span-1">
-                    <span className="text-xs text-slate-500 truncate block">{client.source || "—"}</span>
+                    <span className="text-xs text-slate-500 truncate block">
+                      {client.source === "website_form" && client.form_name ? `טופס: ${client.form_name}` : (client.source || "—")}
+                    </span>
                   </div>
 
                   {/* Work Stage */}
