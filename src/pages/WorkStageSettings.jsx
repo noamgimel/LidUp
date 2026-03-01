@@ -12,8 +12,8 @@ export default function WorkStageSettings() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">הגדרות שלבי עבודה</h1>
-          <p className="text-slate-600">התאם אישית את שלבי העבודה של הפרויקטים שלך</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">הגדרות שלבי מכירה</h1>
+          <p className="text-slate-600">התאם אישית את שלבי המכירה של הלידים שלך</p>
         </div>
 
         {/* Info Card */}
