@@ -12,8 +12,8 @@ export default function WorkStageSettings() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">הגדרות שלבי מכירה</h1>
-          <p className="text-slate-600">התאם אישית את שלבי המכירה של הלידים שלך</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">הגדרות שלבי עבודה</h1>
+          <p className="text-slate-600">התאם אישית את שלבי העבודה של הפרויקטים שלך</p>
         </div>
 
         {/* Info Card */}
@@ -26,10 +26,10 @@ export default function WorkStageSettings() {
           </CardHeader>
           <CardContent className="text-purple-800">
             <ul className="space-y-2 text-sm">
-              <li>• תוכל לערוך את שמות שלבי המכירה הקיימים או להוסיף שלבים חדשים</li>
+              <li>• תוכל לערוך את שמות השלבים הקיימים או להוסיף שלבים חדשים</li>
               <li>• השתמש בחצים כדי לשנות את סדר השלבים</li>
               <li>• לא ניתן למחוק שלבים שיש בהם לקוחות פעילים</li>
-              <li>• שלבי המכירה יופיעו בכל הדוחות והפילטרים</li>
+              <li>• השלבים החדשים יופיעו בכל הדוחות והפילטרים</li>
               <li>• כל שלב יכול לקבל צבע ייחודי לזיהוי קל</li>
             </ul>
           </CardContent>

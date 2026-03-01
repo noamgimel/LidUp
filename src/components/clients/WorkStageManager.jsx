@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { UserCustomWorkStages } from "@/entities/UserCustomWorkStages";
 import { Client } from "@/entities/Client";
@@ -123,7 +124,7 @@ export default function WorkStageManager() {
     
     toast({
       title: "הצלחה!",
-      description: "שלבי המכירה עודכנו בהצלחה.",
+      description: "שלבי העבודה עודכנו בהצלחה.",
       className: "bg-green-100 text-green-900 border-green-200",
     });
     
@@ -159,7 +160,7 @@ export default function WorkStageManager() {
     await saveUserWorkStages(newStages);
     toast({
       title: "שלב נמחק",
-      description: "שלב המכירה הוסר בהצלחה מהרשימה.",
+      description: "שלב העבודה הוסר בהצלחה מהרשימה.",
       className: "bg-green-100 text-green-900 border-green-200", // Added class for success toast
     });
   };
@@ -193,7 +194,7 @@ export default function WorkStageManager() {
     await saveUserWorkStages(DEFAULT_WORK_STAGES);
     toast({
       title: "איפוס הושלם",
-      description: "שלבי המכירה אופסו לברירת המחדל של המערכת.",
+      description: "שלבי העבודה אופסו לברירת המחדל של המערכת.",
       className: "bg-blue-100 text-blue-900 border-blue-200",
     });
   };
@@ -232,7 +233,7 @@ export default function WorkStageManager() {
       <CardHeader className="border-b border-slate-100 pb-3 md:pb-4 p-4 md:p-6">
         <CardTitle className="flex items-center gap-2 text-sm md:text-base">
           <ClipboardList className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
-          ניהול שלבי מכירה
+          ניהול שלבי עבודה
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 md:p-6">
@@ -301,9 +302,9 @@ export default function WorkStageManager() {
                       </AlertDialogTrigger>
                       <AlertDialogContent dir="rtl">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>מחיקת שלב מכירה</AlertDialogTitle>
+                          <AlertDialogTitle>מחיקת שלב עבודה</AlertDialogTitle>
                           <AlertDialogDescription>
-                            האם אתה בטוח שברצונך למחוק את שלב המכירה "{stage.label}"?
+                            האם אתה בטוח שברצונך למחוק את שלב העבודה "{stage.label}"?
                             {clientsInStages[stage.id] > 0 && (
                               <span className="block mt-2 text-red-600 font-medium">
                                 יש {clientsInStages[stage.id]} לקוחות בשלב זה!
@@ -333,7 +334,7 @@ export default function WorkStageManager() {
         {userWorkStages.length === 0 && (
           <div className="text-center py-6 md:py-8 text-slate-500">
             <ClipboardList className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-2 text-slate-300" />
-            <p className="text-sm">אין שלבי מכירה מוגדרים</p>
+            <p className="text-sm">אין שלבי עבודה מוגדרים</p>
           </div>
         )}
       </CardContent>
@@ -355,7 +356,7 @@ export default function WorkStageManager() {
           <DialogContent dir="rtl">
             <DialogHeader>
               <DialogTitle>
-                {editingStage ? "עריכת שלב מכירה" : "הוספת שלב מכירה חדש"}
+                {editingStage ? "עריכת שלב עבודה" : "הוספת שלב עבודה חדש"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -365,7 +366,7 @@ export default function WorkStageManager() {
                   id="label"
                   value={formData.label}
                   onChange={(e) => setFormData({...formData, label: e.target.value})}
-                  placeholder="הכנס שם לשלב המכירה"
+                  placeholder="הכנס שם לשלב העבודה"
                   required
                   className="text-right"
                 />
@@ -435,9 +436,9 @@ export default function WorkStageManager() {
           </AlertDialogTrigger>
           <AlertDialogContent dir="rtl">
             <AlertDialogHeader>
-              <AlertDialogTitle>איפוס שלבי מכירה</AlertDialogTitle>
+              <AlertDialogTitle>איפוס שלבי עבודה</AlertDialogTitle>
               <AlertDialogDescription>
-                האם אתה בטוח שברצונך לאפס את כל שלבי המכירה לברירת המחדל של המערכת?
+                האם אתה בטוח שברצונך לאפס את כל שלבי העבודה לברירת המחדל של המערכת?
                 פעולה זו תמחק את כל השלבים המותאמים אישית.
               </AlertDialogDescription>
             </AlertDialogHeader>

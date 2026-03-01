@@ -16,6 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { addDays } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { markFirstContact } from "@/functions/markFirstContact";
+import { markFollowupDone } from "@/functions/markFollowupDone";
 import { getLeadActivities } from "@/functions/getLeadActivities";
 import { useUserWorkStages } from "../hooks/useUserWorkStages";
 import { getWorkStageColorClass } from "../utils/workStagesUtils";
@@ -140,7 +141,8 @@ function FollowupPanel({ client, onUpdate }) {
     if (!nextDate) return;
     setIsSaving(true);
     try {
-      await base44.functions.invoke("scheduleFollowup", { lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
+      const { scheduleFollowup } = await import("@/functions/scheduleFollowup");
+      await scheduleFollowup({ lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
       onUpdate?.();
     } finally {
       setIsSaving(false);
@@ -150,7 +152,7 @@ function FollowupPanel({ client, onUpdate }) {
   const markDone = async () => {
     setIsSaving(true);
     try {
-      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
+      await markFollowupDone({ lead_id: client.id });
       setShowNextPrompt(true);
       onUpdate?.();
     } finally {
@@ -275,7 +277,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (isMarkingFollowupDone) return;
     setIsMarkingFollowupDone(true);
     try {
-      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
+      await markFollowupDone({ lead_id: client.id });
       setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
       onRefresh?.();
       setShowFollowupPrompt(true);
