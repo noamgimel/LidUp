@@ -66,7 +66,7 @@ export default function FollowupPrompt({ leadId, onDone, onClose }) {
     if (!iso) return;
     setIsSaving(true);
     try {
-      await base44.functions.invoke("scheduleFollowup", { lead_id: leadId, datetime: iso, note });
+      await scheduleFollowup({ lead_id: leadId, datetime: iso, note });
       onDone?.(iso);
     } finally {
       setIsSaving(false);
