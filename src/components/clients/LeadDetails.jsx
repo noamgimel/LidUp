@@ -10,6 +10,7 @@ import {
   Plus, ChevronUp, CheckCircle2, XCircle, Handshake,
   AlertTriangle, User, ClipboardList, Link2, ChevronDown, Send, Bell
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, addDays } from "date-fns";
 import { he } from "date-fns/locale";
 import { base44 } from "@/api/base44Client";
