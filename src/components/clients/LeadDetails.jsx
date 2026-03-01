@@ -56,8 +56,7 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
     if (!newNote.trim()) return;
     setIsSaving(true);
     try {
-      const { addLeadNote } = await import("@/functions/addLeadNote");
-      await addLeadNote({ lead_id: leadId, content: newNote.trim() });
+      await base44.functions.invoke("addLeadNote", { lead_id: leadId, content: newNote.trim() });
       setNewNote("");
       await loadActivities();
       onActivityAdded?.();
