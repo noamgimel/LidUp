@@ -83,7 +83,7 @@ export default function WorkStagePrompt({ leadId, currentWorkStage, onDone, onCl
           </div>
           <div>
             <h3 className="font-bold text-slate-900">עדכן שלב מכירה</h3>
-            <p className="text-xs text-slate-500">בחר את השלב הנוכחי בתהליך</p>
+            <p className="text-xs text-slate-500">בחר את השלב הנוכחי בתהליך המכירה</p>
           </div>
         </div>
 
