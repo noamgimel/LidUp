@@ -14,10 +14,21 @@ Deno.serve(async (req) => {
         const lead = leads?.[0];
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
 
-        // Check if user is a system admin OR owns the lead (by email or created_by)
-        const isAdmin = await base44.asServiceRole.entities.SystemAdmin.filter({ user_email: user.email, is_active: true });
+        // For admins or leads with owner_email set: allow. Otherwise allow if user is admin.
+        // Since webhook-created leads have owner_email or no restrictions, check ownership first.
         const isLeadOwner = lead.owner_email === user.email || lead.created_by === user.email;
-        if (!isLeadOwner && !isAdmin?.length) {
+        
+        // Admin check (optional, for system admins to manage any lead)
+        let isAdmin = false;
+        try {
+            const admins = await base44.asServiceRole.entities.SystemAdmin.filter({ user_email: user.email, is_active: true });
+            isAdmin = admins?.length > 0;
+        } catch {
+            isAdmin = false;
+        }
+        
+        // Allow if: user is the lead owner/creator OR user is a system admin
+        if (!isLeadOwner && !isAdmin) {
             return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
 
