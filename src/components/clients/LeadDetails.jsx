@@ -45,9 +45,12 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
   const loadActivities = async () => {
     setIsLoading(true);
     try {
+      console.log("[ActivityTimeline] getLeadActivities →", { lead_id: leadId });
       const res = await base44.functions.invoke("getLeadActivities", { lead_id: leadId });
+      console.log("[ActivityTimeline] getLeadActivities ← success", res?.status);
       setActivities(res?.data?.activities || []);
-    } catch {
+    } catch (err) {
+      console.error("[ActivityTimeline] getLeadActivities ← FAILED", err?.response?.status, err?.message);
       setActivities([]);
     }
     setIsLoading(false);
@@ -57,10 +60,14 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
     if (!newNote.trim()) return;
     setIsSaving(true);
     try {
-      await base44.functions.invoke("addLeadNote", { lead_id: leadId, content: newNote.trim() });
+      console.log("[ActivityTimeline] addLeadNote →", { lead_id: leadId, content_length: newNote.length });
+      const res = await base44.functions.invoke("addLeadNote", { lead_id: leadId, content: newNote.trim() });
+      console.log("[ActivityTimeline] addLeadNote ← success", res?.status);
       setNewNote("");
       await loadActivities();
       onActivityAdded?.();
+    } catch (err) {
+      console.error("[ActivityTimeline] addLeadNote ← FAILED", err?.response?.status, err?.message);
     } finally {
       setIsSaving(false);
     }
