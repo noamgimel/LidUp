@@ -137,8 +137,12 @@ function FollowupPanel({ client, onUpdate }) {
     if (!nextDate) return;
     setIsSaving(true);
     try {
-      await base44.functions.invoke("scheduleFollowup", { lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
+      console.log("[FollowupPanel] scheduleFollowup →", { action: "schedule followup from panel", lead_id: client.id, datetime: new Date(nextDate).toISOString() });
+      const res = await scheduleFollowup({ lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
+      console.log("[FollowupPanel] scheduleFollowup ← success", res?.status, res?.data);
       onUpdate?.();
+    } catch (err) {
+      console.error("[FollowupPanel] scheduleFollowup ← FAILED", err?.response?.status, err?.message);
     } finally {
       setIsSaving(false);
     }
@@ -147,9 +151,13 @@ function FollowupPanel({ client, onUpdate }) {
   const markDone = async () => {
     setIsSaving(true);
     try {
-      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
+      console.log("[FollowupPanel] markFollowupDone →", { action: "mark followup done from panel", lead_id: client.id });
+      const res = await markFollowupDone({ lead_id: client.id });
+      console.log("[FollowupPanel] markFollowupDone ← success", res?.status, res?.data);
       setShowNextPrompt(true);
       onUpdate?.();
+    } catch (err) {
+      console.error("[FollowupPanel] markFollowupDone ← FAILED", err?.response?.status, err?.message);
     } finally {
       setIsSaving(false);
     }
