@@ -135,8 +135,10 @@ function FollowupPanel({ client, onUpdate }) {
     if (!nextDate) return;
     setIsSaving(true);
     try {
-      await base44.functions.invoke("scheduleFollowup", { lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
-      onUpdate?.();
+      console.log("[FollowupPanel] scheduleFollowup →", { clientId: client.id, datetime: nextDate });
+      const res = await base44.asServiceRole.functions.invoke("scheduleFollowup", { lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
+      console.log("[FollowupPanel] scheduleFollowup ←", { ok: res?.ok, error: res?.error });
+      if (res?.ok) onUpdate?.();
     } finally {
       setIsSaving(false);
     }
@@ -145,9 +147,13 @@ function FollowupPanel({ client, onUpdate }) {
   const markDone = async () => {
     setIsSaving(true);
     try {
-      await base44.functions.invoke("markFollowupDone", { lead_id: client.id });
-      setShowNextPrompt(true);
-      onUpdate?.();
+      console.log("[FollowupPanel] markFollowupDone →", { clientId: client.id });
+      const res = await base44.asServiceRole.functions.invoke("markFollowupDone", { lead_id: client.id });
+      console.log("[FollowupPanel] markFollowupDone ←", { ok: res?.ok, error: res?.error });
+      if (res?.ok) {
+        setShowNextPrompt(true);
+        onUpdate?.();
+      }
     } finally {
       setIsSaving(false);
     }
