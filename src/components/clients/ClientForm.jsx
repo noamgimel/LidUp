@@ -21,6 +21,7 @@ const PRIORITY_OPTIONS = [
 
 export default function ClientForm({ client, onSubmit, onCancel }) {
   const { userWorkStages, isLoading: workStagesLoading } = useUserWorkStages();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
