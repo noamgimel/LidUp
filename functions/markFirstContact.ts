@@ -9,13 +9,10 @@ Deno.serve(async (req) => {
         const { lead_id } = await req.json();
         if (!lead_id) return Response.json({ error: 'Missing lead_id' }, { status: 400 });
 
-        // Fetch lead via service role (handles webhook leads too)
-        let lead;
-        try {
-            lead = await base44.asServiceRole.entities.Client.get(lead_id);
-        } catch {
-            return Response.json({ error: 'Lead not found' }, { status: 404 });
-        }
+        // Use filter instead of get — get() has a known issue with asServiceRole
+        const leads = await base44.asServiceRole.entities.Client.filter({ id: lead_id });
+        const lead = leads?.[0];
+
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
 
         // Ownership check
@@ -28,17 +25,13 @@ Deno.serve(async (req) => {
         }
 
         const now = new Date().toISOString();
-        const followupOverdue = lead.next_followup_at && new Date(lead.next_followup_at) <= new Date();
-        const newPriority = lead.priority === 'overdue' && !followupOverdue ? 'warm' : (lead.priority === 'overdue' ? 'warm' : lead.priority);
-        // Only update work_stage if lead is still at the initial 'new_lead' stage.
-        // If user already manually set a more advanced stage, don't override it.
         const isAtInitialStage = !lead.work_stage || lead.work_stage === 'new_lead';
         const stageUpdate = isAtInitialStage ? { work_stage: 'first_contact' } : {};
 
         await base44.asServiceRole.entities.Client.update(lead_id, {
             first_response_at: now,
             last_activity_at: now,
-            priority: newPriority,
+            priority: lead.priority === 'overdue' ? 'warm' : lead.priority,
             ...stageUpdate
         });
 
@@ -49,7 +42,7 @@ Deno.serve(async (req) => {
             created_by_email: user.email
         });
 
-        return Response.json({ ok: true, first_response_at: now, priority: newPriority, ...stageUpdate });
+        return Response.json({ ok: true, first_response_at: now, priority: lead.priority === 'overdue' ? 'warm' : lead.priority, ...stageUpdate });
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
     }

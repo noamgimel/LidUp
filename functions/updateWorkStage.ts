@@ -9,29 +9,22 @@ Deno.serve(async (req) => {
         const { lead_id, stage_id, stage_label } = await req.json();
         if (!lead_id || !stage_id) return Response.json({ error: 'Missing lead_id or stage_id' }, { status: 400 });
 
-        // Fetch lead via service role (handles webhook leads with owner_email)
-        let lead;
-        try {
-            lead = await base44.asServiceRole.entities.Client.get(lead_id);
-        } catch {
-            return Response.json({ error: 'Lead not found' }, { status: 404 });
-        }
+        // Use filter instead of get — get() has a known issue with asServiceRole
+        const leads = await base44.asServiceRole.entities.Client.filter({ id: lead_id });
+        const lead = leads?.[0];
+
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
 
-        // Ownership check
         if (lead.owner_email !== user.email && lead.created_by !== user.email) {
             return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
 
         const now = new Date().toISOString();
-
-        // Update work_stage using service role to bypass RLS for webhook leads
         await base44.asServiceRole.entities.Client.update(lead_id, {
             work_stage: stage_id,
             last_activity_at: now
         });
 
-        // Log the activity
         await base44.asServiceRole.entities.LeadActivity.create({
             lead_id,
             event_type: 'stage_change',

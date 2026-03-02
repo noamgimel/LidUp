@@ -9,13 +9,12 @@ Deno.serve(async (req) => {
         const { lead_id, content } = await req.json();
         if (!lead_id || !content) return Response.json({ error: 'Missing lead_id or content' }, { status: 400 });
 
-        let lead;
-        try {
-            lead = await base44.asServiceRole.entities.Client.get(lead_id);
-        } catch {
-            return Response.json({ error: 'Lead not found' }, { status: 404 });
-        }
+        // Use filter instead of get — get() has a known issue with asServiceRole
+        const leads = await base44.asServiceRole.entities.Client.filter({ id: lead_id });
+        const lead = leads?.[0];
+
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
+
         if (lead.owner_email !== user.email && lead.created_by !== user.email) {
             return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
@@ -27,7 +26,10 @@ Deno.serve(async (req) => {
             content,
             created_by_email: user.email
         });
-        await base44.asServiceRole.entities.Client.update(lead_id, { last_activity_at: now });
+
+        await base44.asServiceRole.entities.Client.update(lead_id, {
+            last_activity_at: now
+        });
 
         return Response.json({ ok: true });
     } catch (error) {
