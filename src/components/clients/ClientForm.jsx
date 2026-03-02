@@ -188,9 +188,9 @@ export default function ClientForm({ client, onSubmit, onCancel }) {
             </div>
 
             <div className="flex justify-start gap-3 pt-4">
-              <Button type="submit" className="bg-gradient-to-l from-blue-600 to-blue-700 gap-2">
+              <Button type="submit" disabled={isSubmitting} className="bg-gradient-to-l from-blue-600 to-blue-700 gap-2">
                 <Save className="w-4 h-4" />
-                <span>{client ? "עדכן" : "שמור"}</span>
+                <span>{isSubmitting ? "שומר..." : (client ? "עדכן" : "שמור")}</span>
               </Button>
               <Button type="button" variant="outline" onClick={onCancel} className="gap-2">
                 <X className="w-4 h-4" />
