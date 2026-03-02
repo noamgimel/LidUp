@@ -9,16 +9,11 @@ Deno.serve(async (req) => {
         const { lead_id } = await req.json();
         if (!lead_id) return Response.json({ error: 'Missing lead_id' }, { status: 400 });
 
-        // Find lead via full list scan (filter by id field doesn't work as id is built-in)
-        const allLeads = await base44.asServiceRole.entities.Client.list('-created_date', 500);
+        // Use user-scoped list (returns all leads this user owns, incl. new ones)
+        const allLeads = await base44.entities.Client.list('-created_date', 500);
         const lead = allLeads?.find(l => l.id === lead_id) || null;
 
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
-
-        // Ownership check
-        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
-            return Response.json({ error: 'Forbidden' }, { status: 403 });
-        }
 
         if (lead.first_response_at) {
             return Response.json({ ok: true, already_set: true, first_response_at: lead.first_response_at });
@@ -29,7 +24,6 @@ Deno.serve(async (req) => {
         const stageUpdate = isAtInitialStage ? { work_stage: 'first_contact' } : {};
         const newPriority = lead.priority === 'overdue' ? 'warm' : lead.priority;
 
-        // Use user-scoped update so RLS passes (user is authenticated owner)
         await base44.entities.Client.update(lead_id, {
             first_response_at: now,
             last_activity_at: now,
