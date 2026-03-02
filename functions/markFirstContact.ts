@@ -9,9 +9,15 @@ Deno.serve(async (req) => {
         const { lead_id } = await req.json();
         if (!lead_id) return Response.json({ error: 'Missing lead_id' }, { status: 400 });
 
-        // Use user-scoped list (returns all leads this user owns, incl. new ones)
+        // Try user-scoped list first, fallback to service role for form leads (owner_email)
         const allLeads = await base44.entities.Client.list('-created_date', 500);
-        const lead = allLeads?.find(l => l.id === lead_id) || null;
+        let lead = allLeads?.find(l => l.id === lead_id) || null;
+
+        if (!lead) {
+            // Form leads may be stored with owner_email instead of created_by
+            const byOwner = await base44.asServiceRole.entities.Client.filter({ owner_email: user.email }, '-created_date', 500);
+            lead = byOwner?.find(l => l.id === lead_id) || null;
+        }
 
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
 
@@ -24,7 +30,7 @@ Deno.serve(async (req) => {
         const stageUpdate = isAtInitialStage ? { work_stage: 'first_contact' } : {};
         const newPriority = lead.priority === 'overdue' ? 'warm' : lead.priority;
 
-        await base44.entities.Client.update(lead_id, {
+        await base44.asServiceRole.entities.Client.update(lead_id, {
             first_response_at: now,
             last_activity_at: now,
             priority: newPriority,
