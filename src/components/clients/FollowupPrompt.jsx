@@ -188,6 +188,12 @@ export default function FollowupPrompt({ leadId, onDone, onClose }) {
               />
             </div>
 
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                ⚠️ {error}
+              </div>
+            )}
+
             <div className="flex gap-2 pt-1">
               <Button variant="ghost" onClick={() => setStep(1)} className="flex-1 text-sm text-slate-500">חזרה</Button>
               <Button
