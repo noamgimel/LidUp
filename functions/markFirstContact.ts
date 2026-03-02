@@ -9,26 +9,16 @@ Deno.serve(async (req) => {
         const { lead_id } = await req.json();
         if (!lead_id) return Response.json({ error: 'Missing lead_id' }, { status: 400 });
 
-        // First try user-scoped (works for leads created by this user)
-        let lead = null;
-        try {
-            const userLeads = await base44.entities.Client.filter({ id: lead_id });
-            lead = userLeads?.[0] || null;
-        } catch(_e) { /* ignore */ }
-
-        // Fallback: service role list scan (for webhook/external leads with owner_email)
-        if (!lead) {
-            try {
-                const allLeads = await base44.asServiceRole.entities.Client.list('-created_date', 500);
-                lead = allLeads?.find(l => l.id === lead_id) || null;
-                // Ownership check for external leads
-                if (lead && lead.owner_email !== user.email && lead.created_by !== user.email) {
-                    return Response.json({ error: 'Forbidden' }, { status: 403 });
-                }
-            } catch(_e) { /* ignore */ }
-        }
+        // Find lead via full list scan (filter by id field doesn't work as id is built-in)
+        const allLeads = await base44.asServiceRole.entities.Client.list('-created_date', 500);
+        const lead = allLeads?.find(l => l.id === lead_id) || null;
 
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
+
+        // Ownership check
+        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
+            return Response.json({ error: 'Forbidden' }, { status: 403 });
+        }
 
         if (lead.first_response_at) {
             return Response.json({ ok: true, already_set: true, first_response_at: lead.first_response_at });
@@ -39,7 +29,8 @@ Deno.serve(async (req) => {
         const stageUpdate = isAtInitialStage ? { work_stage: 'first_contact' } : {};
         const newPriority = lead.priority === 'overdue' ? 'warm' : lead.priority;
 
-        await base44.asServiceRole.entities.Client.update(lead_id, {
+        // Use user-scoped update so RLS passes (user is authenticated owner)
+        await base44.entities.Client.update(lead_id, {
             first_response_at: now,
             last_activity_at: now,
             priority: newPriority,

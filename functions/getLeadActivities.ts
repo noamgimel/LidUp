@@ -9,25 +9,15 @@ Deno.serve(async (req) => {
         const { lead_id } = await req.json();
         if (!lead_id) return Response.json({ error: 'Missing lead_id' }, { status: 400 });
 
-        // Verify ownership: first try user-scoped
-        let lead = null;
-        try {
-            const userLeads = await base44.entities.Client.filter({ id: lead_id });
-            lead = userLeads?.[0] || null;
-        } catch(_e) { /* ignore */ }
-
-        // Fallback: service role list scan
-        if (!lead) {
-            try {
-                const allLeads = await base44.asServiceRole.entities.Client.list('-created_date', 500);
-                lead = allLeads?.find(l => l.id === lead_id) || null;
-                if (lead && lead.owner_email !== user.email && lead.created_by !== user.email) {
-                    return Response.json({ error: 'Forbidden' }, { status: 403 });
-                }
-            } catch(_e) { /* ignore */ }
-        }
+        // Find lead via full list scan to verify ownership
+        const allLeads = await base44.asServiceRole.entities.Client.list('-created_date', 500);
+        const lead = allLeads?.find(l => l.id === lead_id) || null;
 
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
+
+        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
+            return Response.json({ error: 'Forbidden' }, { status: 403 });
+        }
 
         const activities = await base44.asServiceRole.entities.LeadActivity.filter(
             { lead_id },
