@@ -265,9 +265,9 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (client.first_response_at || isMarkingContacted) return;
     setIsMarkingContacted(true);
     try {
-      console.log("[LeadDetails] markFirstContact →", { action: "mark first contact", lead_id: client.id });
+      console.log("[LeadDetails] markFirstContact →", { lead_id: client.id });
       const res = await markFirstContact({ lead_id: client.id });
-      console.log("[LeadDetails] markFirstContact ← success", res?.status, res?.data);
+      console.log("[LeadDetails] markFirstContact ←", res?.status, res?.data);
       const data = res?.data;
       if (data?.ok) {
         setClient(prev => ({
@@ -278,9 +278,15 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
         }));
         onRefresh?.();
         setShowFollowupPrompt(true);
+      } else {
+        const msg = data?.error || "שגיאה בסימון קשר ראשון";
+        console.error("[LeadDetails] markFirstContact error:", msg);
+        alert(`שגיאה: ${msg}`);
       }
     } catch (err) {
-      console.error("[LeadDetails] markFirstContact ← FAILED", err?.response?.status, err?.message);
+      const msg = err?.response?.data?.error || err?.message || "שגיאת שרת";
+      console.error("[LeadDetails] markFirstContact ← FAILED", err?.response?.status, msg);
+      alert(`שגיאה: ${msg}`);
     } finally {
       setIsMarkingContacted(false);
     }
