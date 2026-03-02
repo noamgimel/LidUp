@@ -9,9 +9,14 @@ Deno.serve(async (req) => {
         const { lead_id, content } = await req.json();
         if (!lead_id || !content) return Response.json({ error: 'Missing lead_id or content' }, { status: 400 });
 
-        // Verify ownership using user-scoped list
+        // Verify ownership - check both created_by and owner_email
         const allLeads = await base44.entities.Client.list('-created_date', 500);
-        const lead = allLeads?.find(l => l.id === lead_id) || null;
+        let lead = allLeads?.find(l => l.id === lead_id) || null;
+
+        if (!lead) {
+            const byOwner = await base44.asServiceRole.entities.Client.filter({ owner_email: user.email }, '-created_date', 500);
+            lead = byOwner?.find(l => l.id === lead_id) || null;
+        }
 
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
 
@@ -23,7 +28,7 @@ Deno.serve(async (req) => {
             created_by_email: user.email
         });
 
-        await base44.entities.Client.update(lead_id, {
+        await base44.asServiceRole.entities.Client.update(lead_id, {
             last_activity_at: now
         });
 
