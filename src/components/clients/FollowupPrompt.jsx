@@ -66,14 +66,26 @@ export default function FollowupPrompt({ leadId, onDone, onClose }) {
     const iso = buildIso();
     if (!iso) return;
     setIsSaving(true);
+    setError(null);
     try {
-      console.log("[FollowupPrompt] scheduleFollowup →", { action: "schedule followup", lead_id: leadId, datetime: iso, has_note: !!note });
+      console.log("[FollowupPrompt] scheduleFollowup →", { lead_id: leadId, datetime: iso, has_note: !!note });
       const res = await scheduleFollowup({ lead_id: leadId, datetime: iso, note });
       console.log("[FollowupPrompt] scheduleFollowup ← success", res?.status, res?.data);
+      const data = res?.data;
+      if (!data?.ok) {
+        const msg = data?.error || "שמירה נכשלה";
+        console.error("[FollowupPrompt] error response:", msg);
+        setError(msg);
+        setIsSaving(false);
+        return;
+      }
+      // SUCCESS — close and notify parent
+      setIsSaving(false);
       onDone?.(iso);
     } catch (err) {
-      console.error("[FollowupPrompt] scheduleFollowup ← FAILED", err?.response?.status, err?.message);
-    } finally {
+      const msg = err?.response?.data?.error || err?.message || "שגיאת שרת — אנא נסה שוב";
+      console.error("[FollowupPrompt] scheduleFollowup ← FAILED", err?.response?.status, msg);
+      setError(msg);
       setIsSaving(false);
     }
   };
