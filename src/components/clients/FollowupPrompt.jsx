@@ -34,6 +34,7 @@ export default function FollowupPrompt({ leadId, onDone, onClose }) {
   const [customTime, setCustomTime] = useState("");
   const [note, setNote] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState(null);
 
   const pickDay = (days) => {
     const d = addDays(new Date(), days);
