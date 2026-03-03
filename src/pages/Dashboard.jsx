@@ -7,6 +7,7 @@ import { createPageUrl } from "@/utils";
 import { Users, Calendar, TrendingUp, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { startOfMonth } from "date-fns";
+import { computeLeadPriority, isPast, isSlaBreached, SLA_MINUTES, endOfTodayUtcMs } from "@/components/utils/timeUtils";
 
 import StatsCard from "../components/dashboard/StatsCard";
 import RecentClients from "../components/dashboard/RecentClients";
@@ -15,17 +16,7 @@ import LeadsClientsTrendChart from "../components/reports/LeadsClientsTrendChart
 import ReportsWidget from "../components/dashboard/ReportsWidget";
 import WorkBlockList from "../components/dashboard/WorkBlockList";
 
-const SLA_MINUTES = 30;
-function computePriorityDash(c) {
-  const now = Date.now();
-  const lifecycle = c.lifecycle || "open";
-  if (lifecycle !== "open") return c.priority || "warm";
-  const createdMs = new Date(c.created_date).getTime();
-  const minutesSince = (now - createdMs) / 60000;
-  const followupMs = c.next_followup_at ? new Date(c.next_followup_at).getTime() : null;
-  if ((!c.first_response_at && minutesSince >= SLA_MINUTES) || (followupMs && followupMs <= now)) return "overdue";
-  return c.priority || "warm";
-}
+const computePriorityDash = computeLeadPriority;
 
 export default function Dashboard() {
   const [clients, setClients] = useState([]);
