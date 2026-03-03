@@ -142,7 +142,7 @@ const ClientList = ({ clients, isLoading, onView, onEdit, onDelete }) => {
                     {hasFollowup ? (
                       <span className={`text-xs font-medium flex items-center gap-1 ${followupOverdue ? "text-red-600" : "text-orange-600"}`}>
                         <Bell className="w-3 h-3" />
-                        {new Date(client.next_followup_at).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit" })}
+                        {formatIsraeliDateTimeShort(client.next_followup_at)}
                       </span>
                     ) : (
                       <span className="text-slate-300 text-xs">—</span>
