@@ -175,9 +175,13 @@ function FollowupPanel({ client, onUpdate }) {
 
   const quickSet = (days) => {
     const d = addDays(new Date(), days);
-    d.setHours(9, 0, 0, 0);
-    const iso = d.toISOString().slice(0, 16);
-    setDate(iso);
+    // Set 09:00 Israel time — display local time string for the input
+    // We store it as UTC when saving, but the input shows Israel time
+    const israeilStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jerusalem",
+      year: "numeric", month: "2-digit", day: "2-digit"
+    }).format(d);
+    setDate(`${israeilStr}T09:00`);
   };
 
   const isOverdue = client.next_followup_at && new Date(client.next_followup_at) <= new Date();
