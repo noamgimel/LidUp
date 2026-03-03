@@ -186,7 +186,7 @@ function FollowupPanel({ client, onUpdate }) {
     setDate(`${israeilStr}T09:00`);
   };
 
-  const isOverdue = client.next_followup_at && new Date(client.next_followup_at) <= new Date();
+  const isOverdue = client.next_followup_at && isPast(client.next_followup_at);
 
   return (
     <>
