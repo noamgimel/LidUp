@@ -147,8 +147,10 @@ function FollowupPanel({ client, onUpdate }) {
     if (!nextDate) return;
     setIsSaving(true);
     try {
-      console.log("[FollowupPanel] scheduleFollowup →", { action: "schedule followup from panel", lead_id: client.id, datetime: new Date(nextDate).toISOString() });
-      const res = await scheduleFollowup({ lead_id: client.id, datetime: new Date(nextDate).toISOString(), note: nextNote || "" });
+      // nextDate is a "YYYY-MM-DDTHH:mm" string in Israel local time — convert to UTC
+      const utcIso = localIsraelDatetimeToUtcIso(nextDate);
+      console.log("[FollowupPanel] scheduleFollowup →", { action: "schedule followup from panel", lead_id: client.id, datetime: utcIso });
+      const res = await scheduleFollowup({ lead_id: client.id, datetime: utcIso, note: nextNote || "" });
       console.log("[FollowupPanel] scheduleFollowup ← success", res?.status, res?.data);
       onUpdate?.();
     } catch (err) {
