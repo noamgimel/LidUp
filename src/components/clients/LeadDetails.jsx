@@ -24,17 +24,30 @@ import { getWorkStageColorClass } from "../utils/workStagesUtils";
 import { PRIORITY_CONFIG, LIFECYCLE_CONFIG } from "./LeadPriorityConfig";
 import AgeTimer from "./AgeTimer";
 
-import { formatIsraeliDateTime, getIsraelUtcOffsetMs, isPast } from "@/components/utils/timeUtils";
+import { formatIsraeliDateTime, israelLocalToUtcIso, isPast, getIsraelUtcOffsetForDate, TZ } from "@/components/utils/timeUtils";
 const formatIsraeliDate = formatIsraeliDateTime;
 
 /**
- * Converts a "YYYY-MM-DDTHH:mm" string that represents Israel local time → UTC ISO string.
+ * Converts a UTC ISO string → "YYYY-MM-DDTHH:mm" string in Israel local time.
+ * For populating datetime-local inputs.
  */
-function localIsraelDatetimeToUtcIso(localStr) {
-  if (!localStr) return null;
-  const asIfUtc = new Date(localStr + ":00Z");
-  const offsetMs = getIsraelUtcOffsetMs();
-  return new Date(asIfUtc.getTime() - offsetMs).toISOString();
+function utcIsoToIsraelLocalDatetime(utcStr) {
+  if (!utcStr) return "";
+  try {
+    const date = new Date(utcStr);
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: TZ,
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false
+    }).formatToParts(date);
+    const get = (type) => parts.find(p => p.type === type)?.value || "00";
+    let h = get("hour");
+    if (h === "24") h = "00";
+    return `${get("year")}-${get("month")}-${get("day")}T${h}:${get("minute")}`;
+  } catch {
+    return "";
+  }
 }
 
 function ActivityTimeline({ leadId, onActivityAdded }) {
