@@ -8,16 +8,8 @@ import { scheduleFollowup } from "@/functions/scheduleFollowup";
 
 const DEFAULT_TIMES = ["09:00", "12:00", "16:00", "19:00"];
 
-const formatIsraeliDate = (d) => {
-  if (!d) return null;
-  try {
-    return new Intl.DateTimeFormat("he-IL", {
-      timeZone: "Asia/Jerusalem",
-      day: "2-digit", month: "2-digit",
-      hour: "2-digit", minute: "2-digit", hour12: false,
-    }).format(new Date(d));
-  } catch { return null; }
-};
+import { formatIsraeliDateTimeShort } from "@/components/utils/timeUtils";
+const formatIsraeliDate = formatIsraeliDateTimeShort;
 
 /**
  * Props: leadId, onDone(iso|null), onClose
