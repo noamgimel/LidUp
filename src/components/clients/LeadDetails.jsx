@@ -24,8 +24,18 @@ import { getWorkStageColorClass } from "../utils/workStagesUtils";
 import { PRIORITY_CONFIG, LIFECYCLE_CONFIG } from "./LeadPriorityConfig";
 import AgeTimer from "./AgeTimer";
 
-import { formatIsraeliDateTime } from "@/components/utils/timeUtils";
+import { formatIsraeliDateTime, getIsraelUtcOffsetMs } from "@/components/utils/timeUtils";
 const formatIsraeliDate = formatIsraeliDateTime;
+
+/**
+ * Converts a "YYYY-MM-DDTHH:mm" string that represents Israel local time → UTC ISO string.
+ */
+function localIsraelDatetimeToUtcIso(localStr) {
+  if (!localStr) return null;
+  const asIfUtc = new Date(localStr + ":00Z");
+  const offsetMs = getIsraelUtcOffsetMs();
+  return new Date(asIfUtc.getTime() - offsetMs).toISOString();
+}
 
 function ActivityTimeline({ leadId, onActivityAdded }) {
   const [activities, setActivities] = useState([]);
