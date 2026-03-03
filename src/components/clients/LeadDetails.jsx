@@ -151,7 +151,7 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
 }
 
 function FollowupPanel({ client, onUpdate }) {
-  const [date, setDate] = useState(client.next_followup_at ? client.next_followup_at.slice(0, 16) : "");
+  const [date, setDate] = useState(client.next_followup_at ? utcIsoToIsraelLocalDatetime(client.next_followup_at) : "");
   const [note, setNote] = useState(client.next_followup_note || "");
   const [isSaving, setIsSaving] = useState(false);
   const [showNextPrompt, setShowNextPrompt] = useState(false);
