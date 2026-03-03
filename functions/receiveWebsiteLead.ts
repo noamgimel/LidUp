@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
             utm_content: extractField(payload, 'utm_content') || '',
             utm_term: extractField(payload, 'utm_term') || '',
             consent_marketing: payload.consent_marketing || false,
-            submission_date: new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" })).toISOString(),
+            submission_date: new Date().toISOString(), // UTC — always use server UTC
             ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '',
             owner_email: formConnection.owner_email,
             work_stage: "new_lead"
