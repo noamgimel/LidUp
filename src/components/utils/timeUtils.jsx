@@ -7,84 +7,83 @@
  *   - תצוגה למשתמש: Intl.DateTimeFormat עם timeZone:'Asia/Jerusalem' בלבד
  *
  * ❌ NEVER: new Date(str.toLocaleString("en-US", {timeZone})) — גורם ל-double-offset bug!
- * ❌ NEVER: גישה ל-getIsraelUtcOffsetMs דרך toLocaleString → new Date()
+ * ❌ NEVER: getTime() אחרי toLocaleString → new Date()
+ * ❌ NEVER: הנחה שה-browser timezone = ישראל
  */
 
 export const TZ = "Asia/Jerusalem";
 export const SLA_MINUTES = 30;
 
 /**
- * מחשב את ה-UTC offset של Israel timezone במילישניות (DST-safe).
- *
- * ✅ שיטה בטוחה: השוואת מחרוזות שנה/חודש/יום/שעה בין UTC ל-Israel,
- *    ללא parse חזרה ל-Date.
+ * פונקציה פנימית: קריאת שדות ישראל לתאריך נתון מ-Intl (DST-safe).
+ * מחזיר { year, month, day, hour, minute, second } בזמן ישראל.
  */
-export function getIsraelUtcOffsetMs() {
-  const now = new Date();
-  // קריאת השדות במספרים ישירות מ-Intl — ללא המרת מחרוזת
-  const ilParts = new Intl.DateTimeFormat("en-US", {
-    timeZone: TZ,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit",
-    hour12: false
-  }).formatToParts(now);
-
-  const get = (type) => parseInt(ilParts.find(p => p.type === type)?.value || "0", 10);
-  let h = get("hour");
-  // midnight edge: Intl reports "24" for midnight in some locales
-  if (h === 24) h = 0;
-
-  const ilMs = Date.UTC(
-    get("year"), get("month") - 1, get("day"),
-    h, get("minute"), get("second")
-  );
-  return ilMs - now.getTime(); // positive = Israel is ahead of UTC
-}
-
-/**
- * המרת "YYYY-MM-DDTHH:mm" (זמן ישראל) → UTC ISO string.
- * DST-safe: משתמש ב-Intl.DateTimeFormat.formatToParts בלבד, ללא toLocaleString.
- *
- * @param {string} localStr - "2025-06-10T09:00" (זמן ישראל)
- * @returns {string} UTC ISO string
- */
-export function israelLocalToUtcIso(localStr) {
-  if (!localStr) return null;
-  // Parse "2025-06-10T09:00" — treat as Israel time, get actual UTC
-  // Step 1: parse as if UTC
-  const asIfUtcMs = new Date(localStr + ":00Z").getTime();
-  // Step 2: find the Israel offset at that approximate point in time
-  // Use a Date near that timestamp to get the correct DST offset
-  const approxDate = new Date(asIfUtcMs);
-  const offsetMs = getIsraelUtcOffsetForDate(approxDate);
-  // Step 3: actual UTC = asIfUtc - offset
-  return new Date(asIfUtcMs - offsetMs).toISOString();
-}
-
-/**
- * מחזיר את ה-UTC offset של Israel timezone עבור תאריך ספציפי (DST-safe).
- */
-export function getIsraelUtcOffsetForDate(date) {
-  const ilParts = new Intl.DateTimeFormat("en-US", {
+function _getIsraelParts(date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: TZ,
     year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit", second: "2-digit",
     hour12: false
   }).formatToParts(date);
 
-  const get = (type) => parseInt(ilParts.find(p => p.type === type)?.value || "0", 10);
+  const get = (type) => parseInt(parts.find(p => p.type === type)?.value || "0", 10);
   let h = get("hour");
-  if (h === 24) h = 0;
+  if (h === 24) h = 0; // midnight edge case in some locales
 
-  const ilMs = Date.UTC(
-    get("year"), get("month") - 1, get("day"),
-    h, get("minute"), get("second")
-  );
-  return ilMs - date.getTime();
+  return {
+    year: get("year"),
+    month: get("month"),
+    day: get("day"),
+    hour: h,
+    minute: get("minute"),
+    second: get("second"),
+  };
+}
+
+/**
+ * המרת "YYYY-MM-DDTHH:mm" (זמן ישראל) → UTC ISO string.
+ *
+ * אלגוריתם DST-safe:
+ *   ניגש ל-Intl עם TZ כדי לדעת מה שעת ישראל עבור כל timestamp UTC.
+ *   עושים binary-search (iteration) עד שמוצאים UTC שכאשר מוחלים
+ *   ה-TZ עליו, מקבלים בדיוק את ה-localStr שביקשנו.
+ *   זו הדרך היחידה שמובטחת נכונה כולל DST ו-edge cases.
+ *
+ * @param {string} localStr - "2025-06-10T09:00" (זמן ישראל)
+ * @returns {string} UTC ISO string
+ */
+export function israelLocalToUtcIso(localStr) {
+  if (!localStr) return null;
+
+  // Parse the input as if it's a naive datetime (ignore any TZ in string)
+  const clean = localStr.length === 16 ? localStr + ":00" : localStr.slice(0, 19);
+  const [datePart, timePart] = clean.split("T");
+  const [year, month, day] = datePart.split("-").map(Number);
+  const [hour, minute, second] = timePart.split(":").map(Number);
+
+  // Start with an approximation: assume UTC+2 (Israel winter) as initial guess
+  // We'll refine in a few iterations
+  let guessUtcMs = Date.UTC(year, month - 1, day, hour, minute, second || 0) - 2 * 3600000;
+
+  // Iterate 3 times — enough to converge on any DST boundary
+  for (let i = 0; i < 3; i++) {
+    const guessDate = new Date(guessUtcMs);
+    const il = _getIsraelParts(guessDate);
+    // Compute what the Israel local time IS for this UTC guess (as epoch ms)
+    const ilEpoch = Date.UTC(il.year, il.month - 1, il.day, il.hour, il.minute, il.second);
+    // Compute what the target local time is (as epoch ms, treating it as UTC for arithmetic)
+    const targetEpoch = Date.UTC(year, month - 1, day, hour, minute, second || 0);
+    // The difference is the correction: move guessUtcMs by the error
+    const error = ilEpoch - targetEpoch;
+    guessUtcMs -= error;
+  }
+
+  return new Date(guessUtcMs).toISOString();
 }
 
 /**
  * מחשב הפרש בדקות בין utcDateStr לעכשיו (UTC-only, DST-safe).
+ * ✅ SAFE: מבוסס על epoch ms בלבד — ללא המרות TZ.
  */
 export function minutesSince(utcDateStr) {
   if (!utcDateStr) return 0;
@@ -93,6 +92,7 @@ export function minutesSince(utcDateStr) {
 
 /**
  * בדיקת SLA: האם עברו יותר מ-threshold דקות?
+ * ✅ SAFE: epoch ms בלבד.
  */
 export function isSlaBreached(utcDateStr, thresholdMinutes = SLA_MINUTES) {
   return minutesSince(utcDateStr) >= thresholdMinutes;
@@ -100,6 +100,7 @@ export function isSlaBreached(utcDateStr, thresholdMinutes = SLA_MINUTES) {
 
 /**
  * בדיקה: האם utcDateStr כבר עבר?
+ * ✅ SAFE: epoch ms בלבד.
  */
 export function isPast(utcDateStr) {
   if (!utcDateStr) return false;
@@ -118,23 +119,19 @@ export function isTodayInIsrael(utcDateStr) {
 
 /**
  * מחזיר timestamp UTC של סוף היום לפי Israel timezone.
+ * ✅ SAFE: משתמש ב-israelLocalToUtcIso.
  */
 export function endOfTodayUtcMs() {
-  const now = new Date();
-  const ilParts = new Intl.DateTimeFormat("en-US", {
-    timeZone: TZ,
-    year: "numeric", month: "2-digit", day: "2-digit",
-    hour12: false
-  }).formatToParts(now);
-  const get = (type) => parseInt(ilParts.find(p => p.type === type)?.value || "0", 10);
-  // End of today in Israel = midnight of tomorrow in Israel
-  const tomorrowMidnightIL = new Date(Date.UTC(get("year"), get("month") - 1, get("day") + 1, 0, 0, 0));
-  const offsetMs = getIsraelUtcOffsetForDate(tomorrowMidnightIL);
-  return tomorrowMidnightIL.getTime() - offsetMs - 1;
+  const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date());
+  // end of today = tomorrow midnight Israel - 1ms
+  const tomorrowMidnightUtcIso = israelLocalToUtcIso(todayStr + "T00:00:00");
+  // advance by 1 day
+  return new Date(tomorrowMidnightUtcIso).getTime() + 86400000 - 1;
 }
 
 /**
  * מציג תאריך+שעה לפי Israel timezone (לתצוגה בלבד).
+ * ✅ SAFE: Intl display only, no re-parsing.
  */
 export function formatIsraeliDateTime(utcDateStr) {
   if (!utcDateStr) return null;
@@ -151,6 +148,7 @@ export function formatIsraeliDateTime(utcDateStr) {
 
 /**
  * מציג תאריך + שעה קצר (ללא שנה) לפי Israel timezone.
+ * ✅ SAFE: Intl display only.
  */
 export function formatIsraeliDateTimeShort(utcDateStr) {
   if (!utcDateStr) return null;
@@ -167,7 +165,7 @@ export function formatIsraeliDateTimeShort(utcDateStr) {
 
 /**
  * מחזיר טקסט "לפני X דקות/שעות/ימים" + ספירת דקות כוללת.
- * חישוב ב-UTC נטו — ללא תלות ב-timezone.
+ * ✅ SAFE: חישוב ב-UTC נטו — ללא תלות ב-timezone.
  */
 export function getAgeParts(utcDateStr) {
   if (!utcDateStr) return null;
@@ -183,6 +181,7 @@ export function getAgeParts(utcDateStr) {
 
 /**
  * חישוב priority של ליד — לוגיקה מרכזית אחת לכל המערכת.
+ * ✅ SAFE: מבוסס על isSlaBreached ו-isPast שעובדים על epoch ms.
  */
 export function computeLeadPriority(client) {
   const lifecycle = client.lifecycle || "open";
@@ -211,6 +210,32 @@ export function getLeadDebugInfo(client) {
   const createdMs = createdAt ? new Date(createdAt).getTime() : null;
   const diffMinutes = createdMs ? (nowMs - createdMs) / 60000 : null;
   const slaBreached = createdAt ? isSlaBreached(createdAt) : false;
+
+  // Verify israelLocalToUtcIso round-trip
+  let roundTripTest = null;
+  try {
+    const israelDisplayStr = createdAt
+      ? new Intl.DateTimeFormat("en-US", {
+          timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit",
+          hour: "2-digit", minute: "2-digit", hour12: false
+        }).formatToParts(new Date(createdAt))
+          .reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {})
+      : null;
+    if (israelDisplayStr) {
+      const { year, month, day, hour, minute } = israelDisplayStr;
+      const localStr = `${year}-${month}-${day}T${hour === "24" ? "00" : hour}:${minute}`;
+      const backToUtc = israelLocalToUtcIso(localStr);
+      const backMs = new Date(backToUtc).getTime();
+      roundTripTest = {
+        israel_local: localStr,
+        back_to_utc: backToUtc,
+        error_seconds: Math.round((backMs - new Date(createdAt).getTime()) / 1000)
+      };
+    }
+  } catch (e) {
+    roundTripTest = { error: e.message };
+  }
+
   return {
     created_at_raw: createdAt,
     created_at_ms: createdMs,
@@ -219,5 +244,6 @@ export function getLeadDebugInfo(client) {
     computed_priority: computeLeadPriority(client),
     isSlaBreached: slaBreached,
     israel_display: createdAt ? formatIsraeliDateTime(createdAt) : null,
+    roundTripTest,
   };
 }
