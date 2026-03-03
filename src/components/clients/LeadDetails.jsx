@@ -528,7 +528,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
             {[
               { key: "activity", label: "פעילות" },
               { key: "meetings", label: `פגישות${upcomingMeetings.length ? ` (${upcomingMeetings.length})` : ""}` },
-              { key: "followup", label: "פולואפ" + (client.next_followup_at && new Date(client.next_followup_at) <= new Date() ? " ⚠️" : "") },
+              { key: "followup", label: "פולואפ" + (client.next_followup_at && isPast(client.next_followup_at) ? " ⚠️" : "") },
               { key: "details", label: "פרטים טכניים" },
             ].map(t => (
               <button
