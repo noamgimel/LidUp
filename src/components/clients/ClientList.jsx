@@ -67,7 +67,7 @@ const ClientList = ({ clients, isLoading, onView, onEdit, onDelete }) => {
             const priority = client.priority || "warm";
             const pCfg = PRIORITY_CONFIG[priority] || PRIORITY_CONFIG.warm;
             const hasFollowup = client.next_followup_at;
-            const followupOverdue = hasFollowup && new Date(client.next_followup_at) <= new Date();
+            const followupOverdue = hasFollowup && isPast(client.next_followup_at);
 
             return (
               <motion.div
