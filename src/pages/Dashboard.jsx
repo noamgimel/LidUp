@@ -53,14 +53,13 @@ export default function Dashboard() {
   const newLeadsThisMonth = enriched.filter(c => new Date(c.created_date) >= startOfThisMonth).length;
   const wonThisMonth = enriched.filter(c => c.lifecycle === 'won' && new Date(c.updated_date || c.created_date) >= startOfThisMonth).length;
 
-  // Work blocks
-  const now = new Date();
-  const endOfToday = new Date(now); endOfToday.setHours(23, 59, 59, 999);
+  // Work blocks — all comparisons in UTC
+  const endOfTodayMs = endOfTodayUtcMs();
   const overdueLeads = openLeads
     .filter(c => c.priority === 'overdue')
     .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
   const followupTodayLeads = openLeads
-    .filter(c => c.next_followup_at && new Date(c.next_followup_at) <= endOfToday)
+    .filter(c => c.next_followup_at && new Date(c.next_followup_at).getTime() <= endOfTodayMs)
     .sort((a, b) => new Date(a.next_followup_at) - new Date(b.next_followup_at));
   const newNoContactLeads = openLeads
     .filter(c => !c.first_response_at)
