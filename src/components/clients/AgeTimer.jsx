@@ -1,32 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Clock, AlertTriangle } from "lucide-react";
-
-const SLA_MINUTES = 30;
-
-function getAgeParts(dateStr) {
-  if (!dateStr) return null;
-  // Use Israel timezone for accurate local time comparison
-  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
-  const created = new Date(new Date(dateStr).toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
-  const diff = now.getTime() - created.getTime();
-  if (diff < 0) return { text: "עכשיו", minutes: 0 };
-  const totalMinutes = Math.floor(diff / 60000);
-  const hours = Math.floor(totalMinutes / 60);
-  const days = Math.floor(hours / 24);
-  if (days > 0) return { text: `${days} ימים`, minutes: totalMinutes };
-  if (hours > 0) return { text: `${hours} שע'`, minutes: totalMinutes };
-  return { text: `${totalMinutes} דק'`, minutes: totalMinutes };
-}
+import { getAgeParts, SLA_MINUTES } from "@/components/utils/timeUtils";
 
 export default function AgeTimer({ createdAt, firstResponseAt, compact = false }) {
   const [, tick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => tick(n => n + 1), 60000);
+    const id = setInterval(() => tick(n => n + 1), 30000);
     return () => clearInterval(id);
   }, []);
 
-  const ref = createdAt;
-  const age = getAgeParts(ref);
+  const age = getAgeParts(createdAt);
   if (!age) return null;
 
   const overSLA = !firstResponseAt && age.minutes >= SLA_MINUTES;
