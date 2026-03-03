@@ -19,20 +19,8 @@ import LeadDetails from "../components/clients/LeadDetails";
 import MeetingForm from "../components/meetings/MeetingForm";
 import WorkQueueTabs, { classifyLead } from "../components/clients/WorkQueueTabs";
 
-// Auto-compute priority based on SLA rules
-const SLA_MINUTES = 30;
-function computePriority(client) {
-  const now = Date.now();
-  const lifecycle = client.lifecycle || "open";
-  if (lifecycle !== "open") return client.priority || "warm";
-  const createdMs = new Date(client.created_date).getTime();
-  const minutesSince = (now - createdMs) / 60000;
-  const followupMs = client.next_followup_at ? new Date(client.next_followup_at).getTime() : null;
-  if ((!client.first_response_at && minutesSince >= SLA_MINUTES) || (followupMs && followupMs <= now)) {
-    return "overdue";
-  }
-  return client.priority || "warm";
-}
+import { computeLeadPriority } from "@/components/utils/timeUtils";
+const computePriority = computeLeadPriority;
 
 export default function Clients() {
   const [clients, setClients] = useState([]);
