@@ -43,17 +43,16 @@ export default function FollowupPrompt({ leadId, onDone, onClose }) {
 
   const buildIso = () => {
     if (isCustom) {
-      // datetime-local value is browser-local time — treat as Israel time
-      // Use Intl to get Israel offset and convert properly
       if (!customDatetime) return null;
-      return localIsraelDatetimeToUtcIso(customDatetime);
+      // datetime-local input — treat as Israel time, convert to UTC (DST-safe)
+      return israelLocalToUtcIso(customDatetime);
     }
     if (!selectedDate) return null;
     const time = selectedTime || customTime;
     if (!time) return null;
-    // Build Israel-local datetime string and convert to UTC
-    const dateStr = format(selectedDate, "yyyy-MM-dd");
-    return localIsraelDatetimeToUtcIso(`${dateStr}T${time}`);
+    // Build Israel-local datetime string and convert to UTC (DST-safe)
+    const dateStr = new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(selectedDate);
+    return israelLocalToUtcIso(`${dateStr}T${time}`);
   };
 
   const save = async () => {
