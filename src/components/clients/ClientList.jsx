@@ -9,6 +9,7 @@ import { useUserWorkStages } from "../hooks/useUserWorkStages";
 import { getWorkStageColorClass } from "../utils/workStagesUtils";
 import { PRIORITY_CONFIG } from "./LeadPriorityConfig";
 import AgeTimer from "./AgeTimer";
+import { isPast, formatIsraeliDateTimeShort } from "@/components/utils/timeUtils";
 
 const ClientList = ({ clients, isLoading, onView, onEdit, onDelete }) => {
   const { userWorkStages } = useUserWorkStages();
