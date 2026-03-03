@@ -1,21 +1,17 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Plus, Bell, Users, CheckCircle } from "lucide-react";
-
-// SLA: 30 min without first_response
-const SLA_MINUTES = 30;
+import { isSlaBreached, isPast, SLA_MINUTES } from "@/components/utils/timeUtils";
 
 export function classifyLead(c) {
-  const now = Date.now();
   const lifecycle = c.lifecycle || "open";
   if (lifecycle !== "open") return "closed";
 
-  const createdMs = new Date(c.created_date || c.created_at).getTime();
   const followupMs = c.next_followup_at ? new Date(c.next_followup_at).getTime() : null;
+  const now = Date.now();
 
-  // Overdue SLA: no first_response AND >30 min old
-  const minutesSinceCreated = (now - createdMs) / 60000;
-  const isSlaOverdue = !c.first_response_at && minutesSinceCreated >= SLA_MINUTES;
+  // Overdue SLA: no first_response AND >SLA_MINUTES old (UTC comparison)
+  const isSlaOverdue = !c.first_response_at && isSlaBreached(c.created_date || c.created_at);
   // Overdue followup
   const isFollowupOverdue = followupMs && followupMs <= now;
 
