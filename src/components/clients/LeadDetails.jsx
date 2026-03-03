@@ -24,7 +24,7 @@ import { getWorkStageColorClass } from "../utils/workStagesUtils";
 import { PRIORITY_CONFIG, LIFECYCLE_CONFIG } from "./LeadPriorityConfig";
 import AgeTimer from "./AgeTimer";
 
-import { formatIsraeliDateTime, israelLocalToUtcIso, isPast, getIsraelUtcOffsetForDate, TZ } from "@/components/utils/timeUtils";
+import { formatIsraeliDateTime, israelLocalToUtcIso, isPast, TZ } from "@/components/utils/timeUtils";
 const formatIsraeliDate = formatIsraeliDateTime;
 
 /**
