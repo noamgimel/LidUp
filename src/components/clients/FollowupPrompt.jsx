@@ -8,20 +8,8 @@ import { scheduleFollowup } from "@/functions/scheduleFollowup";
 
 const DEFAULT_TIMES = ["09:00", "12:00", "16:00", "19:00"];
 
-import { formatIsraeliDateTimeShort, getIsraelUtcOffsetMs } from "@/components/utils/timeUtils";
+import { formatIsraeliDateTimeShort, israelLocalToUtcIso, TZ } from "@/components/utils/timeUtils";
 const formatIsraeliDate = formatIsraeliDateTimeShort;
-
-/**
- * Converts a "YYYY-MM-DDTHH:mm" string that represents Israel local time → UTC ISO string.
- * DST-safe: uses current Israel UTC offset.
- */
-function localIsraelDatetimeToUtcIso(localStr) {
-  if (!localStr) return null;
-  // Parse as if it were UTC, then subtract the Israel offset to get real UTC
-  const asIfUtc = new Date(localStr + ":00Z");
-  const offsetMs = getIsraelUtcOffsetMs();
-  return new Date(asIfUtc.getTime() - offsetMs).toISOString();
-}
 
 /**
  * Props: leadId, onDone(iso|null), onClose
