@@ -20,6 +20,7 @@ import MeetingForm from "../components/meetings/MeetingForm";
 import WorkQueueTabs, { classifyLead } from "../components/clients/WorkQueueTabs";
 
 import { computeLeadPriority } from "@/components/utils/timeUtils";
+import DebugTimePanel from "@/components/clients/DebugTimePanel";
 const computePriority = computeLeadPriority;
 
 export default function Clients() {
