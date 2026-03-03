@@ -294,6 +294,9 @@ export default function Clients() {
           </div>
         </div>
 
+        {/* Debug Panel — only visible with ?debug=1 in URL */}
+        <DebugTimePanel clients={enrichedClients} />
+
         {/* Work Queue Tabs */}
         <WorkQueueTabs activeTab={activeTab} onTabChange={setActiveTab} counts={tabCounts} />
 
