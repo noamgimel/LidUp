@@ -3,24 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { AlertTriangle, Bell, UserPlus, ArrowLeft } from "lucide-react";
+import { formatAgeText, formatIsraeliDateTimeShort } from "@/components/utils/timeUtils";
 
-const formatAge = (createdDate) => {
-  if (!createdDate) return "";
-  const mins = Math.floor((Date.now() - new Date(createdDate).getTime()) / 60000);
-  if (mins < 60) return `לפני ${mins} דק׳`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `לפני ${hrs} ש׳`;
-  return `לפני ${Math.floor(hrs / 24)} ימים`;
-};
-
-const formatFollowupTime = (dt) => {
-  if (!dt) return "";
-  return new Intl.DateTimeFormat("he-IL", {
-    timeZone: "Asia/Jerusalem",
-    day: "2-digit", month: "2-digit",
-    hour: "2-digit", minute: "2-digit", hour12: false
-  }).format(new Date(dt));
-};
+const formatAge = formatAgeText;
+const formatFollowupTime = formatIsraeliDateTimeShort;
 
 function LeadRow({ client }) {
   return (
