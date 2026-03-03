@@ -43,15 +43,17 @@ export default function FollowupPrompt({ leadId, onDone, onClose }) {
 
   const buildIso = () => {
     if (isCustom) {
-      return customDatetime ? new Date(customDatetime).toISOString() : null;
+      // datetime-local value is browser-local time — treat as Israel time
+      // Use Intl to get Israel offset and convert properly
+      if (!customDatetime) return null;
+      return localIsraelDatetimeToUtcIso(customDatetime);
     }
     if (!selectedDate) return null;
     const time = selectedTime || customTime;
     if (!time) return null;
-    const [h, m] = time.split(":").map(Number);
-    const d = new Date(selectedDate);
-    d.setHours(h, m, 0, 0);
-    return d.toISOString();
+    // Build Israel-local datetime string and convert to UTC
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    return localIsraelDatetimeToUtcIso(`${dateStr}T${time}`);
   };
 
   const save = async () => {
