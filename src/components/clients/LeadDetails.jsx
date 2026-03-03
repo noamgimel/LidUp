@@ -24,16 +24,8 @@ import { getWorkStageColorClass } from "../utils/workStagesUtils";
 import { PRIORITY_CONFIG, LIFECYCLE_CONFIG } from "./LeadPriorityConfig";
 import AgeTimer from "./AgeTimer";
 
-const formatIsraeliDate = (d) => {
-  if (!d) return null;
-  try {
-    return new Intl.DateTimeFormat("he-IL", {
-      timeZone: "Asia/Jerusalem",
-      day: "2-digit", month: "2-digit", year: "numeric",
-      hour: "2-digit", minute: "2-digit", hour12: false,
-    }).format(new Date(d));
-  } catch { return null; }
-};
+import { formatIsraeliDateTime } from "@/components/utils/timeUtils";
+const formatIsraeliDate = formatIsraeliDateTime;
 
 function ActivityTimeline({ leadId, onActivityAdded }) {
   const [activities, setActivities] = useState([]);
