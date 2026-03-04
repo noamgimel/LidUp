@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Clock, AlertTriangle } from "lucide-react";
 import { getLeadReceivedAt, getAgeParts, SLA_MINUTES } from "@/components/utils/timeUtils";
+import { useServerTime } from "@/components/utils/ServerTimeContext";
 
 // createdAt is still supported for backward compat, but prefer passing client object
 export default function AgeTimer({ client, createdAt, firstResponseAt, compact = false }) {
   const [, tick] = useState(0);
+  const { getNowMs } = useServerTime();
+
   useEffect(() => {
     const id = setInterval(() => tick(n => n + 1), 30000);
     return () => clearInterval(id);
@@ -14,7 +17,7 @@ export default function AgeTimer({ client, createdAt, firstResponseAt, compact =
   const receivedAt = client ? getLeadReceivedAt(client) : createdAt;
   const resolvedFirstResponseAt = client ? client.first_response_at : firstResponseAt;
 
-  const age = getAgeParts(receivedAt);
+  const age = getAgeParts(receivedAt, getNowMs());
   if (!age) return null;
 
   const overSLA = !resolvedFirstResponseAt && age.minutes >= SLA_MINUTES;
