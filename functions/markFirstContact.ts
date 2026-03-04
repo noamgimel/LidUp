@@ -69,7 +69,8 @@ Deno.serve(async (req) => {
         const updatePayload = { first_response_at: now, last_activity_at: now, priority: newPriority, ...stageUpdate };
         console.log(`[markFirstContact][${traceId}] updating lead — payload:`, JSON.stringify(updatePayload));
 
-        await base44.asServiceRole.entities.Client.update(lead_id, updatePayload);
+        // Use user-scoped update — RLS write rule allows created_by OR owner_email
+        await base44.entities.Client.update(lead_id, updatePayload);
 
         await base44.asServiceRole.entities.LeadActivity.create({
             lead_id,
