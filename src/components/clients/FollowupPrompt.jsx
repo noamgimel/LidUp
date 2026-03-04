@@ -3,9 +3,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Bell, X } from "lucide-react";
 import { scheduleFollowup } from "@/functions/scheduleFollowup";
-import { markFirstContact } from "@/functions/markFirstContact";
-import { formatIsraeliDateTimeShort } from "@/components/utils/timeUtils";
-import FollowupForm from "./FollowupForm";
+   import { formatIsraeliDateTimeShort } from "@/components/utils/timeUtils";
+   import FollowupForm from "./FollowupForm";
 
 /**
  * FollowupPrompt — modal popup for scheduling a followup after "first contact" or "followup done"
@@ -15,12 +14,10 @@ import FollowupForm from "./FollowupForm";
  *   onDone(iso|null)  — called when followup is set (or skipped)
  *   onClose()
  */
-export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClose, showFirstContactQuestion = false }) {
-  const [mode, setMode] = useState(existingFollowup ? "existing" : "schedule"); // "existing" | "schedule"
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [showFirstContact, setShowFirstContact] = useState(showFirstContactQuestion);
-  const [savedFollowupIso, setSavedFollowupIso] = useState(null); // ✅ שמור ה-ISO שיצרנו
+export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClose }) {
+   const [mode, setMode] = useState(existingFollowup ? "existing" : "schedule"); // "existing" | "schedule"
+   const [isSaving, setIsSaving] = useState(false);
+   const [error, setError] = useState(null);
 
   const handleSave = async (iso, note) => {
     setIsSaving(true);
@@ -45,41 +42,7 @@ export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClo
     }
   };
 
-  const handleFirstContactYes = async () => {
-    console.group("[FollowupPrompt::handleFirstContactYes] START");
-    console.log("✨ Using markFirstContact v2");
-    console.log("🔹 leadId:", leadId);
-    console.log("🔹 leadId valid?:", !!leadId && leadId.length > 0);
-    try {
-      const res = await markFirstContact({ lead_id: leadId });
-      const data = res?.data;
-      
-      console.log("📤 RESPONSE from markFirstContact:");
-      console.log(JSON.stringify(data, null, 2));
-      console.log("🔍 traceId:", data?.traceId);
-      
-      if (!data?.ok) {
-        const msg = data?.message || data?.error || "שגיאה בסימון קשר ראשון";
-        console.error(`❌ FAILED: ${msg} | errorCode=${data?.errorCode} | traceId=${data?.traceId}`);
-        setError(msg);
-        return;
-      }
-      
-      console.log("✅ SUCCESS - closing dialog and refetching");
-      onDone?.(null);
-    } catch (err) {
-      const errMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || "שגיאת שרת";
-      console.error("💥 EXCEPTION:", { 
-        leadId, 
-        status: err?.response?.status,
-        error: errMsg,
-        stack: err?.stack 
-      });
-      setError(errMsg);
-    } finally {
-      console.groupEnd();
-    }
-  };
+
 
   return (
     <motion.div
