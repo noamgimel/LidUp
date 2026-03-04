@@ -312,13 +312,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
       setShowFollowupPrompt(true);
       return;
     }
-    // Also check initialClient in case local client state was reset
-    if (initialClient.first_response_at) {
-      setClient(prev => ({ ...prev, first_response_at: initialClient.first_response_at }));
-      setContactCycleOpen(true);
-      setShowFollowupPrompt(true);
-      return;
-    }
+
     setIsMarkingContacted(true);
     try {
       console.log("[LeadDetails] markFirstContact →", { lead_id: client.id });
