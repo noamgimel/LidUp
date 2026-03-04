@@ -30,7 +30,10 @@ export default function DebugTimePanel({ clients }) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex flex-wrap gap-3">
           <span className="text-yellow-400 font-bold">🔍 DEBUG MODE</span>
-          <span className="text-green-300">now_utc: {now.toISOString()}</span>
+          <span className="text-green-300">client_now_utc: {now.toISOString()}</span>
+          <span className="text-cyan-400">server_now_utc: {serverNow.toISOString()}</span>
+          <span className="text-orange-400">server_offset_ms: <span className={Math.abs(serverOffsetMs) > 300000 ? "text-red-400 font-bold" : "text-green-400"}>{Math.round(serverOffsetMs)}ms ({Math.round(serverOffsetMs/60000)} דק')</span></span>
+          <span className="text-purple-400">client_tz: {Intl.DateTimeFormat().resolvedOptions().timeZone}</span>
           <span className="text-cyan-400">now_israel: {israelNow}</span>
         </div>
         <button onClick={() => setExpanded(e => !e)} className="text-yellow-300 underline ml-4">
