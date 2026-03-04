@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, CheckCircle2, Edit2, X, AlertTriangle } from "lucide-react";
 import { scheduleFollowup } from "@/functions/scheduleFollowup";
 import { markFollowupDone } from "@/functions/markFollowupDone";
+import { cancelFollowup } from "@/functions/cancelFollowup";
 import { base44 } from "@/api/base44Client";
 import { formatIsraeliDateTime, isPast } from "@/components/utils/timeUtils";
 import FollowupForm from "./FollowupForm";
