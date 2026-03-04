@@ -3,7 +3,7 @@
  * Only visible when ?debug=1 is in the URL.
  */
 import React, { useState } from "react";
-import { getLeadDebugInfo, TZ } from "@/components/utils/timeUtils";
+import { getLeadDebugInfo, TZ, getLeadReceivedAt } from "@/components/utils/timeUtils";
 
 export default function DebugTimePanel({ clients }) {
   const [expanded, setExpanded] = useState(false);
