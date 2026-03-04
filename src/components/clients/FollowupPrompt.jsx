@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Bell, X } from "lucide-react";
 import { scheduleFollowup } from "@/functions/scheduleFollowup";
+import { markFirstContact } from "@/functions/markFirstContact";
 import { formatIsraeliDateTimeShort } from "@/components/utils/timeUtils";
 import FollowupForm from "./FollowupForm";
 
@@ -14,10 +15,11 @@ import FollowupForm from "./FollowupForm";
  *   onDone(iso|null)  — called when followup is set (or skipped)
  *   onClose()
  */
-export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClose }) {
+export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClose, showFirstContactQuestion = false }) {
   const [mode, setMode] = useState(existingFollowup ? "existing" : "schedule"); // "existing" | "schedule"
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [showFirstContact, setShowFirstContact] = useState(showFirstContactQuestion);
 
   const handleSave = async (iso, note) => {
     setIsSaving(true);
@@ -26,15 +28,35 @@ export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClo
       const res = await scheduleFollowup({ lead_id: leadId, datetime: iso, note });
       const data = res?.data;
       if (!data?.ok) {
-        setError(data?.error || "שמירה נכשלה");
+        setError(data?.message || data?.error || "שמירה נכשלה");
         setIsSaving(false);
         return;
       }
       setIsSaving(false);
-      onDone?.(iso);
+      // Show first contact question instead of closing
+      setShowFirstContact(true);
     } catch (err) {
-      setError(err?.response?.data?.error || err?.message || "שגיאת שרת");
+      const errMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || "שגיאת שרת";
+      console.error("[FollowupPrompt] scheduleFollowup error:", errMsg);
+      setError(errMsg);
       setIsSaving(false);
+    }
+  };
+
+  const handleFirstContactYes = async () => {
+    try {
+      const res = await markFirstContact({ lead_id: leadId });
+      const data = res?.data;
+      if (!data?.ok) {
+        console.error("[FollowupPrompt] markFirstContact failed:", data?.message || data?.error);
+        setError(data?.message || data?.error || "שגיאה בסימון קשר ראשון");
+        return;
+      }
+      onDone?.(null); // null signals to parent to refetch
+    } catch (err) {
+      const errMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || "שגיאת שרת";
+      console.error("[FollowupPrompt] markFirstContact exception:", { leadId, error: errMsg });
+      setError(errMsg);
     }
   };
 
@@ -91,27 +113,50 @@ export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClo
         )}
 
         {/* ── Schedule mode ── */}
-        {mode === "schedule" && (
-          <>
-            <FollowupForm
-              onSave={handleSave}
-              isSaving={isSaving}
-            />
-            {error && (
-              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                ⚠️ {error}
-              </div>
-            )}
-            {existingFollowup && (
-              <Button variant="ghost" onClick={() => setMode("existing")} className="w-full mt-2 text-sm text-slate-500">
-                חזרה
-              </Button>
-            )}
-            <Button variant="ghost" onClick={() => onClose?.()} className="w-full mt-1 text-sm text-slate-400">
-              לא עכשיו
-            </Button>
-          </>
-        )}
+         {mode === "schedule" && !showFirstContact && (
+           <>
+             <FollowupForm
+               onSave={handleSave}
+               isSaving={isSaving}
+             />
+             {error && (
+               <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                 ⚠️ {error}
+               </div>
+             )}
+             {existingFollowup && (
+               <Button variant="ghost" onClick={() => setMode("existing")} className="w-full mt-2 text-sm text-slate-500">
+                 חזרה
+               </Button>
+             )}
+             <Button variant="ghost" onClick={() => onClose?.()} className="w-full mt-1 text-sm text-slate-400">
+               לא עכשיו
+             </Button>
+           </>
+         )}
+
+         {/* ── First contact question ── */}
+         {showFirstContact && (
+           <div className="space-y-3">
+             <p className="text-sm text-slate-600 text-center">האם כבר נוצר קשר עם הליד?</p>
+             {error && (
+               <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                 ⚠️ {error}
+               </div>
+             )}
+             <Button onClick={handleFirstContactYes} disabled={isSaving} className="w-full bg-green-600 hover:bg-green-700 text-white">
+               {isSaving ? "סומן..." : "כן, סמן נוצר קשר"}
+             </Button>
+             <Button 
+               variant="ghost" 
+               onClick={() => onDone?.(null)}
+               disabled={isSaving}
+               className="w-full text-slate-500"
+             >
+               לא עדיין
+             </Button>
+           </div>
+         )}
       </div>
     </motion.div>
   );

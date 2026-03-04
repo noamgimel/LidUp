@@ -144,16 +144,18 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
             initialNote={client.next_followup_note}
             isReschedule
             onSave={async (iso, note) => {
-              setIsSaving(true);
-              try {
-                await rescheduleFollowup({ lead_id: client.id, datetime: iso, note: note || "" });
-                onUpdate?.({ next_followup_at: iso, next_followup_note: note });
-                setIsEditing(false);
-              } catch (err) {
-                console.error("[FollowupPanel] reschedule FAILED", err?.message);
-              } finally {
-                setIsSaving(false);
-              }
+             setIsSaving(true);
+             try {
+               const res = await rescheduleFollowup({ lead_id: client.id, datetime: iso, note: note || "" });
+               if (res?.data?.ok) {
+                 onUpdate?.({ next_followup_at: iso, next_followup_note: note });
+                 setIsEditing(false);
+               }
+             } catch (err) {
+               console.error("[FollowupPanel] reschedule FAILED", err?.message);
+             } finally {
+               setIsSaving(false);
+             }
             }}
             isSaving={isSaving}
           />
