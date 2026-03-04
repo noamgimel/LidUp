@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
 
         const now = new Date().toISOString();
-        await base44.asServiceRole.entities.Client.update(lead_id, {
+        await base44.entities.Client.update(lead_id, {
             next_followup_at: datetime,
             next_followup_note: note || '',
             last_activity_at: now
@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
             hour: '2-digit', minute: '2-digit', hour12: false
         }).format(new Date(datetime));
 
-        await base44.asServiceRole.entities.LeadActivity.create({
+        await base44.entities.LeadActivity.create({
             lead_id,
             event_type: 'followup_set',
             content: `פולואפ נקבע ל-${formattedDate}${note ? ` — ${note}` : ''}`,
