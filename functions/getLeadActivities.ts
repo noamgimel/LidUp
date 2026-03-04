@@ -26,7 +26,16 @@ Deno.serve(async (req) => {
             50
         );
 
-        return Response.json({ activities: activities || [] });
+        // Normalize created_date: ensure it ends with 'Z' so the browser treats it as UTC
+        const normalized = (activities || []).map(a => ({
+            ...a,
+            created_date: a.created_date
+                ? (String(a.created_date).endsWith('Z') || String(a.created_date).includes('+')
+                    ? a.created_date
+                    : a.created_date + 'Z')
+                : a.created_date
+        }));
+        return Response.json({ activities: normalized });
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
     }
