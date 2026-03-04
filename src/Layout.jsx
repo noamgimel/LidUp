@@ -308,5 +308,6 @@ export default function Layout({ children, currentPageName }) {
         <Toaster />
       </div>
     </div>
+    </ServerTimeProvider>
   );
 }
