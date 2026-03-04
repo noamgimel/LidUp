@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import {
   X, Edit, Phone, Mail, MessageCircle, Calendar, Clock,
@@ -15,41 +14,15 @@ import {
   Link2, ChevronDown, Send, Bell
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { addDays } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { markFirstContact } from "@/functions/markFirstContact";
 import { markFollowupDone } from "@/functions/markFollowupDone";
-
 import { useUserWorkStages } from "../hooks/useUserWorkStages";
-import { getWorkStageColorClass } from "../utils/workStagesUtils";
 import { PRIORITY_CONFIG, LIFECYCLE_CONFIG } from "./LeadPriorityConfig";
 import AgeTimer from "./AgeTimer";
+import { formatIsraeliDateTime, isPast, getLeadReceivedAt } from "@/components/utils/timeUtils";
 
-import { formatIsraeliDateTime, israelLocalToUtcIso, isPast, getLeadReceivedAt, TZ } from "@/components/utils/timeUtils";
 const formatIsraeliDate = formatIsraeliDateTime;
-
-/**
- * Converts a UTC ISO string → "YYYY-MM-DDTHH:mm" string in Israel local time.
- * For populating datetime-local inputs.
- */
-function utcIsoToIsraelLocalDatetime(utcStr) {
-  if (!utcStr) return "";
-  try {
-    const date = new Date(utcStr);
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: TZ,
-      year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit",
-      hour12: false
-    }).formatToParts(date);
-    const get = (type) => parts.find(p => p.type === type)?.value || "00";
-    let h = get("hour");
-    if (h === "24") h = "00";
-    return `${get("year")}-${get("month")}-${get("day")}T${h}:${get("minute")}`;
-  } catch {
-    return "";
-  }
-}
 
 function ActivityTimeline({ leadId, onActivityAdded }) {
   const [activities, setActivities] = useState([]);
@@ -79,7 +52,6 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
     try {
       await base44.functions.invoke("addLeadNote", { lead_id: leadId, content: noteContent });
       setNewNote("");
-      // Optimistic: add note immediately to top of list
       const optimisticActivity = {
         id: `temp-${Date.now()}`,
         event_type: "note",
@@ -89,12 +61,10 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
       setActivities(prev => [optimisticActivity, ...prev]);
       toast({ description: "הערה נוספה" });
       onActivityAdded?.();
-      // Refetch in background to get real id/date
       loadActivities();
     } catch (err) {
       console.error("[ActivityTimeline] addLeadNote ← FAILED", err?.response?.status, err?.message);
       toast({ description: "שגיאה בשמירת ההערה", variant: "destructive" });
-      // Don't clear text on failure
     } finally {
       setIsSaving(false);
     }
@@ -114,6 +84,7 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
     meeting_created: "נוצרה פגישה",
     meeting_updated: "פגישה עודכנה"
   };
+
   const eventTypeColor = {
     created: "text-blue-600 bg-blue-50 border-blue-200",
     note: "text-slate-600 bg-slate-50 border-slate-200",
@@ -165,8 +136,6 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
   );
 }
 
-// FollowupPanel is now in its own file: components/clients/FollowupPanel.jsx
-
 export default function LeadDetails({ client: initialClient, meetings, onClose, onEdit, onCreateMeeting, onRefresh }) {
   const [client, setClient] = useState(initialClient);
   const [activeTab, setActiveTab] = useState("activity");
@@ -175,16 +144,11 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   const [showWorkStagePrompt, setShowWorkStagePrompt] = useState(false);
   const { userWorkStages } = useUserWorkStages();
 
-  // Sync with parent only when switching to a different lead, or when parent has newer data we don't have locally
   useEffect(() => {
     setClient(prev => {
-      // If switching to a different lead — full replace
       if (prev.id !== initialClient.id) return initialClient;
-      // Otherwise, merge: keep local changes but accept any new fields from parent
-      // Parent's first_response_at is authoritative (set by server)
-      return { ...initialClient, ...prev,
-        // Always trust server for these fields if they were set (non-null overrides local null)
-        // Trust local state for these fields (may have been cleared optimistically)
+      return {
+        ...initialClient, ...prev,
         first_response_at: 'first_response_at' in prev ? prev.first_response_at : initialClient.first_response_at,
         next_followup_at: 'next_followup_at' in prev ? prev.next_followup_at : initialClient.next_followup_at,
       };
@@ -198,52 +162,36 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
   const workStage = userWorkStages.find(s => s.id === client.work_stage);
   const workStageLabel = workStage?.label || "";
-
   const upcomingMeetings = meetings?.filter(m => m.status === "scheduled") || [];
 
   const [isMarkingContacted, setIsMarkingContacted] = useState(false);
   const [isMarkingFollowupDone, setIsMarkingFollowupDone] = useState(false);
-  // contactCycleOpen: true = show "נוצר קשר" tag + followup-done btn, false = show "סמן נוצר קשר"
-  // Managed as independent state — NOT re-derived from DB on refresh to avoid race conditions.
-  // Only resets when switching to a different lead.
-  // contactCycleOpen is derived directly from client.first_response_at — no independent state needed.
-  // This eliminates ALL race conditions: the UI always reflects what's actually in the data.
 
   const contactCycleOpen = !!client.first_response_at;
 
   const handleFirstResponse = async () => {
     if (contactCycleOpen || isMarkingContacted) return;
     if (!client.id) { alert("שגיאה: לא נמצא מזהה ליד"); return; }
-    // first_response_at not set — proceed to mark it
-
-
     setIsMarkingContacted(true);
     try {
-      console.log("[LeadDetails] markFirstContact →", { lead_id: client.id });
       const res = await markFirstContact({ lead_id: client.id });
-      console.log("[LeadDetails] markFirstContact ←", res?.status, res?.data);
       const data = res?.data;
       if (data?.ok) {
-      setClient(prev => ({
-        ...prev,
-        first_response_at: data.first_response_at || new Date().toISOString(),
-        priority: data.priority || prev.priority,
-        ...(data.work_stage ? { work_stage: data.work_stage } : {})
-      }));
-      onRefresh?.();
+        setClient(prev => ({
+          ...prev,
+          first_response_at: data.first_response_at || new Date().toISOString(),
+          priority: data.priority || prev.priority,
+          ...(data.work_stage ? { work_stage: data.work_stage } : {})
+        }));
+        onRefresh?.();
         setShowFollowupPrompt(true);
       } else {
-        const traceInfo = data?.traceId ? ` (traceId: ${data.traceId})` : "";
         const msg = data?.message || data?.error || "שגיאה בסימון קשר ראשון";
-        console.error("[LeadDetails] markFirstContact error:", msg, data);
-        alert(`שגיאה: ${msg}${traceInfo}`);
+        alert(`שגיאה: ${msg}`);
       }
     } catch (err) {
-      const data = err?.response?.data;
-      const traceInfo = data?.traceId ? ` (traceId: ${data.traceId})` : "";
-      const msg = data?.message || data?.error || err?.message || "שגיאת שרת";
-      console.error("[LeadDetails] markFirstContact ← FAILED", err?.response?.status, msg);
-      alert(`שגיאה: ${msg}${traceInfo}`);
+      const msg = err?.response?.data?.message || err?.message || "שגיאת שרת";
+      alert(`שגיאה: ${msg}`);
     } finally {
       setIsMarkingContacted(false);
     }
@@ -254,25 +202,19 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     if (!client.id) { alert("שגיאה: לא נמצא מזהה ליד"); return; }
     setIsMarkingFollowupDone(true);
     try {
-      console.log("[LeadDetails] markFollowupDone →", { lead_id: client.id });
       const res = await markFollowupDone({ lead_id: client.id });
-      console.log("[LeadDetails] markFollowupDone ← success", res?.status, res?.data);
       const data = res?.data;
       if (data?.ok) {
         setClient(prev => ({ ...prev, first_response_at: null, next_followup_at: null, next_followup_note: "" }));
         onRefresh?.();
         setShowFollowupPrompt(true);
       } else {
-        const traceInfo = data?.traceId ? ` (traceId: ${data.traceId})` : "";
         const msg = data?.message || data?.error || "שגיאה בסימון פולואפ";
-        alert(`שגיאה: ${msg}${traceInfo}`);
+        alert(`שגיאה: ${msg}`);
       }
     } catch (err) {
-      const data = err?.response?.data;
-      const traceInfo = data?.traceId ? ` (traceId: ${data.traceId})` : "";
-      const msg = data?.message || data?.error || err?.message || "שגיאת שרת";
-      console.error("[LeadDetails] markFollowupDone ← FAILED", err?.response?.status, msg);
-      alert(`שגיאה: ${msg}${traceInfo}`);
+      const msg = err?.response?.data?.message || err?.message || "שגיאת שרת";
+      alert(`שגיאה: ${msg}`);
     } finally {
       setIsMarkingFollowupDone(false);
     }
@@ -288,10 +230,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   const handleLifecycleChange = async (newLifecycle) => {
     const user = await base44.auth.me();
     const now = new Date().toISOString();
-    await base44.entities.Client.update(client.id, {
-      lifecycle: newLifecycle,
-      last_activity_at: now
-    });
+    await base44.entities.Client.update(client.id, { lifecycle: newLifecycle, last_activity_at: now });
     await base44.entities.LeadActivity.create({
       lead_id: client.id,
       event_type: "lifecycle_changed",
@@ -313,8 +252,6 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
       data-client-details
     >
       <Card className="shadow-xl border-slate-200 overflow-hidden">
-
-        {/* ───── ACTION BAR HEADER ───── */}
         <div className={`p-4 border-b border-slate-200 ${pCfg.row}`}>
           <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex items-center gap-3 flex-wrap">
@@ -340,105 +277,105 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
           </div>
 
           <TooltipProvider delayDuration={200}>
-          <div className="flex items-center gap-1.5 mt-3 flex-wrap">
-            {phone && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <a href={`tel:${phone}`}>
-                    <Button size="icon" className="bg-green-600 hover:bg-green-700 text-white h-9 w-9 shadow-sm rounded-lg">
-                      <Phone className="w-4 h-4" />
+            <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+              {phone && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <a href={`tel:${phone}`}>
+                      <Button size="icon" className="bg-green-600 hover:bg-green-700 text-white h-9 w-9 shadow-sm rounded-lg">
+                        <Phone className="w-4 h-4" />
+                      </Button>
+                    </a>
+                  </TooltipTrigger>
+                  <TooltipContent>התקשר — {client.phone}</TooltipContent>
+                </Tooltip>
+              )}
+              {phone && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <a href={`https://wa.me/972${phone.replace(/^0/, "")}`} target="_blank" rel="noreferrer">
+                      <Button size="icon" className="bg-[#25D366] hover:bg-[#1db954] text-white h-9 w-9 shadow-sm rounded-lg">
+                        <MessageCircle className="w-4 h-4" />
+                      </Button>
+                    </a>
+                  </TooltipTrigger>
+                  <TooltipContent>וואטסאפ</TooltipContent>
+                </Tooltip>
+              )}
+              {client.email && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <a href={`mailto:${client.email}`}>
+                      <Button size="icon" variant="outline" className="h-9 w-9 bg-white border-slate-300 text-slate-600 hover:bg-slate-50 shadow-sm rounded-lg">
+                        <Mail className="w-4 h-4" />
+                      </Button>
+                    </a>
+                  </TooltipTrigger>
+                  <TooltipContent>שלח מייל</TooltipContent>
+                </Tooltip>
+              )}
+
+              <div className="w-px bg-slate-300 self-stretch mx-1" />
+
+              {contactCycleOpen ? (
+                <>
+                  <div className="flex items-center gap-1.5 h-9 px-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm font-semibold">
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    ✅ נוצר קשר — {formatIsraeliDate(client.first_response_at)}
+                  </div>
+                  {client.next_followup_at ? (
+                    <Button
+                      size="sm"
+                      onClick={handleFollowupDone}
+                      disabled={isMarkingFollowupDone}
+                      className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-teal-600 hover:bg-teal-700 text-white"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      {isMarkingFollowupDone ? "שומר..." : "בוצע פולואפ"}
                     </Button>
-                  </a>
-                </TooltipTrigger>
-                <TooltipContent>התקשר — {client.phone}</TooltipContent>
-              </Tooltip>
-            )}
-            {phone && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <a href={`https://wa.me/972${phone.replace(/^0/, "")}`} target="_blank" rel="noreferrer">
-                    <Button size="icon" className="bg-[#25D366] hover:bg-[#1db954] text-white h-9 w-9 shadow-sm rounded-lg">
-                      <MessageCircle className="w-4 h-4" />
+                  ) : (
+                    <Button
+                      size="sm"
+                      onClick={() => setShowFollowupPrompt(true)}
+                      className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white"
+                    >
+                      <Bell className="w-4 h-4" />קבע פולואפ
                     </Button>
-                  </a>
-                </TooltipTrigger>
-                <TooltipContent>וואטסאפ</TooltipContent>
-              </Tooltip>
-            )}
-            {client.email && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <a href={`mailto:${client.email}`}>
-                    <Button size="icon" variant="outline" className="h-9 w-9 bg-white border-slate-300 text-slate-600 hover:bg-slate-50 shadow-sm rounded-lg">
-                      <Mail className="w-4 h-4" />
-                    </Button>
-                  </a>
-                </TooltipTrigger>
-                <TooltipContent>שלח מייל</TooltipContent>
-              </Tooltip>
-            )}
-
-            <div className="w-px bg-slate-300 self-stretch mx-1" />
-
-            {contactCycleOpen ? (
-              <>
-                <div className="flex items-center gap-1.5 h-9 px-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm font-semibold">
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
-                  ✅ נוצר קשר — {formatIsraeliDate(client.first_response_at)}
-                </div>
-                {client.next_followup_at ? (
-                  <Button
-                    size="sm"
-                    onClick={handleFollowupDone}
-                    disabled={isMarkingFollowupDone}
-                    className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-teal-600 hover:bg-teal-700 text-white"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    {isMarkingFollowupDone ? "שומר..." : "בוצע פולואפ"}
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={() => setShowFollowupPrompt(true)}
-                    className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white"
-                  >
-                    <Bell className="w-4 h-4" />קבע פולואפ
-                  </Button>
-                )}
-              </>
-            ) : (
-              <Button
-                size="sm"
-                onClick={handleFirstResponse}
-                disabled={isMarkingContacted}
-                className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Handshake className="w-4 h-4" />
-                {isMarkingContacted ? "שומר..." : "סמן 'נוצר קשר'"}
-              </Button>
-            )}
-
-            <Button size="sm" variant="outline" onClick={() => onCreateMeeting(client)} className="gap-1.5 h-9 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm rounded-lg">
-              <Calendar className="w-4 h-4" />פגישה
-            </Button>
-
-            <div className="w-px bg-slate-300 self-stretch mx-1" />
-
-            {lifecycle === "open" ? (
-              <>
-                <Button size="sm" onClick={() => handleLifecycleChange("won")} className="gap-1.5 h-9 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm rounded-lg">
-                  <CheckCircle2 className="w-4 h-4" />סגור ✅
+                  )}
+                </>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={handleFirstResponse}
+                  disabled={isMarkingContacted}
+                  className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Handshake className="w-4 h-4" />
+                  {isMarkingContacted ? "שומר..." : "סמן 'נוצר קשר'"}
                 </Button>
-                <Button size="sm" onClick={() => handleLifecycleChange("lost")} variant="outline" className="gap-1.5 h-9 text-sm font-semibold border-red-300 text-red-600 hover:bg-red-50 bg-white shadow-sm rounded-lg">
-                  <XCircle className="w-4 h-4" />לא רלוונטי
-                </Button>
-              </>
-            ) : (
-              <Button size="sm" onClick={() => handleLifecycleChange("open")} variant="outline" className="gap-1.5 h-9 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm rounded-lg">
-                החזר לפעיל
+              )}
+
+              <Button size="sm" variant="outline" onClick={() => onCreateMeeting(client)} className="gap-1.5 h-9 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm rounded-lg">
+                <Calendar className="w-4 h-4" />פגישה
               </Button>
-            )}
-          </div>
+
+              <div className="w-px bg-slate-300 self-stretch mx-1" />
+
+              {lifecycle === "open" ? (
+                <>
+                  <Button size="sm" onClick={() => handleLifecycleChange("won")} className="gap-1.5 h-9 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm rounded-lg">
+                    <CheckCircle2 className="w-4 h-4" />סגור ✅
+                  </Button>
+                  <Button size="sm" onClick={() => handleLifecycleChange("lost")} variant="outline" className="gap-1.5 h-9 text-sm font-semibold border-red-300 text-red-600 hover:bg-red-50 bg-white shadow-sm rounded-lg">
+                    <XCircle className="w-4 h-4" />לא רלוונטי
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" onClick={() => handleLifecycleChange("open")} variant="outline" className="gap-1.5 h-9 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm rounded-lg">
+                  החזר לפעיל
+                </Button>
+              )}
+            </div>
           </TooltipProvider>
         </div>
 
