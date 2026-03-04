@@ -188,11 +188,17 @@ export function getAgeParts(utcDateStr) {
 
 /**
  * מקור אמת אחיד לזמן קליטת הליד.
- * תמיד מחזיר created_date (שנוצר ע"י ה-DB בשרת, אין תלות בשעון המשתמש).
- * fallback ל-submission_date / created_at רק אם created_date חסר (לידים ישנים).
+ * בודק את כל שמות השדה האפשריים ב-Base44 (created_date, created_at, createdAt).
+ * ✅ תמיד מעדיף שדה שנוצר ע"י השרת — ללא תלות בשעון הדפדפן.
  */
 export function getLeadReceivedAt(client) {
-  return client.created_date || client.submission_date || client.created_at || null;
+  // Base44 יכול להשתמש בכל אחד מהשמות האלה — נבדוק את כולם
+  const raw = client.created_date || client.created_at || client.createdAt || client.submission_date || null;
+  if (!raw) return null;
+  // וודא שמסתיים ב-Z (UTC) — אם לא, הוסף כדי שלא יפורש כ-local
+  const str = String(raw);
+  if (str.endsWith('Z') || str.includes('+') || str.includes('-', 10)) return str;
+  return str + 'Z';
 }
 
 /**
