@@ -300,7 +300,8 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
   // Only reset when switching to a different lead
   useEffect(() => {
-    setContactCycleOpen(!!initialClient.first_response_at && !!initialClient.next_followup_at);
+    // cycle is open if first_response_at exists (regardless of whether there's a followup scheduled)
+    setContactCycleOpen(!!initialClient.first_response_at);
   }, [initialClient.id]);
 
   const handleFirstResponse = async () => {
