@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
 import {
   X, Edit, Phone, Mail, MessageCircle, Calendar, Clock,
   Plus, ChevronUp, CheckCircle2, XCircle, Handshake,
