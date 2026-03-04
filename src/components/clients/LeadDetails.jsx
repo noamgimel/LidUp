@@ -304,7 +304,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   }, [initialClient.id]);
 
   const handleFirstResponse = async () => {
-    if (contactCycleOpen || isMarkingContacted) return;
+    if (contactCycleOpen || isMarkingContacted || client.first_response_at) return;
     if (!client.id) { alert("שגיאה: לא נמצא מזהה ליד"); return; }
     setIsMarkingContacted(true);
     try {
