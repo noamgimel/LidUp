@@ -35,8 +35,9 @@ export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClo
       }
       setIsSaving(false);
       setSavedFollowupIso(iso);
-      // ❌ לא מעלים Prompt "האם נוצר קשר?" כאן — זה יופיע רק בזרימה אחרת
-      // סוגרים את הפופאפ + מחזירים את ה-ISO שנשמר בדיוק
+      console.log("[FollowupPrompt] SUCCESS:", { leadId, iso, note, responseData: data });
+      // ✅ סוגרים ופותחים refetch מלא - onDone צריך להגיד ל-LeadDetails לעשות refetch
+      // העברנו את iso כדי שה-parent תוכל להשתמש בו
       onDone?.(iso);
     } catch (err) {
       const errMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || "שגיאת שרת";
