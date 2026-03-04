@@ -342,6 +342,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
       const data = res?.data;
       if (data?.ok) {
         setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
+        setContactCycleOpen(false); // cycle closed — show "סמן נוצר קשר" again
         onRefresh?.();
         setShowFollowupPrompt(true);
       } else {
