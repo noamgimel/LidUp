@@ -79,16 +79,18 @@ export default function Clients() {
   // Tab counts
   const tabCounts = useMemo(() => {
     const counts = { overdue: 0, new: 0, followup: 0, active: 0, closed: 0 };
+    const now = getNowMs();
     enrichedClients.forEach(c => {
-      const tab = classifyLead(c);
+      const tab = classifyLead(c, now);
       if (counts[tab] !== undefined) counts[tab]++;
     });
     return counts;
-  }, [enrichedClients]);
+  }, [enrichedClients, serverOffsetMs]);
 
   // Filter + sort per tab
   const filteredClients = useMemo(() => {
-    let list = enrichedClients.filter(c => classifyLead(c) === activeTab);
+    const now = getNowMs();
+    let list = enrichedClients.filter(c => classifyLead(c, now) === activeTab);
 
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
