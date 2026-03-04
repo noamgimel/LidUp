@@ -531,7 +531,10 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
             {activeTab === "followup" && (
               <FollowupPanel
                 client={client}
-                onUpdate={() => { onRefresh?.(); }}
+                onUpdate={(fields) => {
+                  if (fields) setClient(prev => ({ ...prev, ...fields }));
+                  onRefresh?.();
+                }}
                 onFollowupDone={() => {
                   setClient(prev => ({ ...prev, first_response_at: null, next_followup_at: null, next_followup_note: "" }));
                   onRefresh?.();
