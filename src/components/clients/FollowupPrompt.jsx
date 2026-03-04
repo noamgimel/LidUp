@@ -44,19 +44,38 @@ export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClo
   };
 
   const handleFirstContactYes = async () => {
+    console.group("[FollowupPrompt::handleFirstContactYes] START");
+    console.log("✨ Using markFirstContact v2");
+    console.log("🔹 leadId:", leadId);
+    console.log("🔹 leadId valid?:", !!leadId && leadId.length > 0);
     try {
       const res = await markFirstContact({ lead_id: leadId });
       const data = res?.data;
+      
+      console.log("📤 RESPONSE from markFirstContact:");
+      console.log(JSON.stringify(data, null, 2));
+      console.log("🔍 traceId:", data?.traceId);
+      
       if (!data?.ok) {
-        console.error("[FollowupPrompt] markFirstContact failed:", data?.message || data?.error);
-        setError(data?.message || data?.error || "שגיאה בסימון קשר ראשון");
+        const msg = data?.message || data?.error || "שגיאה בסימון קשר ראשון";
+        console.error(`❌ FAILED: ${msg} | errorCode=${data?.errorCode} | traceId=${data?.traceId}`);
+        setError(msg);
         return;
       }
-      onDone?.(null); // null signals to parent to refetch
+      
+      console.log("✅ SUCCESS - closing dialog and refetching");
+      onDone?.(null);
     } catch (err) {
       const errMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || "שגיאת שרת";
-      console.error("[FollowupPrompt] markFirstContact exception:", { leadId, error: errMsg });
+      console.error("💥 EXCEPTION:", { 
+        leadId, 
+        status: err?.response?.status,
+        error: errMsg,
+        stack: err?.stack 
+      });
       setError(errMsg);
+    } finally {
+      console.groupEnd();
     }
   };
 
