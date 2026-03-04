@@ -639,7 +639,14 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
             )}
 
             {activeTab === "followup" && (
-              <FollowupPanel client={client} onUpdate={() => { onRefresh?.(); }} />
+              <FollowupPanel
+                client={client}
+                onUpdate={() => { onRefresh?.(); }}
+                onFollowupDone={() => {
+                  setClient(prev => ({ ...prev, first_response_at: null, next_followup_at: null, next_followup_note: "" }));
+                  onRefresh?.();
+                }}
+              />
             )}
 
             {activeTab === "details" && (
