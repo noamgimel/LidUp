@@ -310,15 +310,13 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   // contactCycleOpen is derived directly from client.first_response_at — no independent state needed.
   // This eliminates ALL race conditions: the UI always reflects what's actually in the data.
 
+  const contactCycleOpen = !!client.first_response_at;
+
   const handleFirstResponse = async () => {
     if (contactCycleOpen || isMarkingContacted) return;
     if (!client.id) { alert("שגיאה: לא נמצא מזהה ליד"); return; }
-    // If first_response_at already set (reopened after followup done), skip server call — just open the cycle
-    if (client.first_response_at) {
-      setContactCycleOpen(true);
-      setShowFollowupPrompt(true);
-      return;
-    }
+    // first_response_at not set — proceed to mark it
+
 
     setIsMarkingContacted(true);
     try {
