@@ -291,16 +291,17 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
   const [isMarkingContacted, setIsMarkingContacted] = useState(false);
   const [isMarkingFollowupDone, setIsMarkingFollowupDone] = useState(false);
-  // contactCycleOpen: true = show "נוצר קשר" badge, false = show "סמן נוצר קשר" button
-  // Starts true if first_response_at is set and no followup is pending (i.e., cycle is still open)
   // contactCycleOpen: true = show "נוצר קשר" tag + followup-done btn, false = show "סמן נוצר קשר"
-  // Logic: contacted AND has a pending followup = cycle open. No followup = cycle closed (ready for next contact).
-  const deriveContactCycleOpen = (c) => !!c.first_response_at && !!c.next_followup_at;
-  const [contactCycleOpen, setContactCycleOpen] = useState(deriveContactCycleOpen(initialClient));
+  // Managed as independent state — NOT re-derived from DB on refresh to avoid race conditions.
+  // Only resets when switching to a different lead.
+  const [contactCycleOpen, setContactCycleOpen] = useState(
+    !!initialClient.first_response_at && !!initialClient.next_followup_at
+  );
 
+  // Only reset when switching to a different lead
   useEffect(() => {
-    setContactCycleOpen(deriveContactCycleOpen(initialClient));
-  }, [initialClient.id, initialClient.first_response_at, initialClient.next_followup_at]);
+    setContactCycleOpen(!!initialClient.first_response_at && !!initialClient.next_followup_at);
+  }, [initialClient.id]);
 
   const handleFirstResponse = async () => {
     if (contactCycleOpen || isMarkingContacted) return;
