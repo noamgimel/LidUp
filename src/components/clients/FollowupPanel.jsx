@@ -90,40 +90,29 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
   };
 
   const handleFirstContact = async () => {
+    // סוגר הפופאפ מייד — לא מחכה לקריאה async
+    setShowFirstContactPrompt(false);
+    
     console.group("[FollowupPanel::handleFirstContact] START");
     console.log("🔹 leadId:", client.id);
-    console.log("🔹 client.id type:", typeof client.id);
-    console.log("🔹 client.id valid?:", !!client.id && client.id.length > 0);
     try {
-      console.log("✅ markFirstContact v2 static import");
-      
+      console.log("✅ markFirstContact v2 calling");
       const res = await markFirstContact({ lead_id: client.id });
       const data = res?.data;
       
-      console.log("📤 RESPONSE from markFirstContact:");
-      console.log(JSON.stringify(data, null, 2));
-      console.log("📊 status code:", res?.status);
-      console.log("🔍 traceId:", data?.traceId);
+      console.log("📤 RESPONSE:", JSON.stringify(data, null, 2));
       
       if (!data?.ok) {
-        console.error(`❌ FAILED: ${data?.message || data?.error || "unknown"} | errorCode=${data?.errorCode} | traceId=${data?.traceId}`);
-        setShowFirstContactPrompt(false);
+        console.error(`❌ FAILED: ${data?.message} | errorCode=${data?.errorCode}`);
         return;
       }
       
-      console.log("✅ SUCCESS - updating client state");
+      console.log("✅ SUCCESS");
       onUpdate?.({ first_response_at: data.first_response_at || new Date().toISOString() });
     } catch (err) {
-      console.error("💥 EXCEPTION:", { 
-        message: err?.message, 
-        code: err?.code,
-        status: err?.response?.status,
-        data: err?.response?.data,
-        leadId: client.id 
-      });
+      console.error("💥 EXCEPTION:", err?.message);
     } finally {
       console.groupEnd();
-      setShowFirstContactPrompt(false);
     }
   };
 
