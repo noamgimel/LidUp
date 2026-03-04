@@ -56,15 +56,14 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
   const [newNote, setNewNote] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => { loadActivities(); }, [leadId]);
 
   const loadActivities = async () => {
     setIsLoading(true);
     try {
-      console.log("[ActivityTimeline] getLeadActivities →", { lead_id: leadId });
       const res = await base44.functions.invoke("getLeadActivities", { lead_id: leadId });
-      console.log("[ActivityTimeline] getLeadActivities ← success", res?.status);
       setActivities(res?.data?.activities || []);
     } catch (err) {
       console.error("[ActivityTimeline] getLeadActivities ← FAILED", err?.response?.status, err?.message);
@@ -76,15 +75,26 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
   const addNoteHandler = async () => {
     if (!newNote.trim()) return;
     setIsSaving(true);
+    const noteContent = newNote.trim();
     try {
-      console.log("[ActivityTimeline] addLeadNote →", { lead_id: leadId, content_length: newNote.length });
-      const res = await base44.functions.invoke("addLeadNote", { lead_id: leadId, content: newNote.trim() });
-      console.log("[ActivityTimeline] addLeadNote ← success", res?.status);
+      await base44.functions.invoke("addLeadNote", { lead_id: leadId, content: noteContent });
       setNewNote("");
-      await loadActivities();
+      // Optimistic: add note immediately to top of list
+      const optimisticActivity = {
+        id: `temp-${Date.now()}`,
+        event_type: "note",
+        content: noteContent,
+        created_date: new Date().toISOString()
+      };
+      setActivities(prev => [optimisticActivity, ...prev]);
+      toast({ description: "הערה נוספה" });
       onActivityAdded?.();
+      // Refetch in background to get real id/date
+      loadActivities();
     } catch (err) {
       console.error("[ActivityTimeline] addLeadNote ← FAILED", err?.response?.status, err?.message);
+      toast({ description: "שגיאה בשמירת ההערה", variant: "destructive" });
+      // Don't clear text on failure
     } finally {
       setIsSaving(false);
     }
