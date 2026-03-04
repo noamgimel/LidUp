@@ -118,9 +118,8 @@ export default function Clients() {
 
   const handleSubmit = async (clientData) => {
     try {
-      const now = new Date().toISOString();
       if (editingClient) {
-        await base44.entities.Client.update(editingClient.id, { ...clientData, last_activity_at: now });
+        await base44.entities.Client.update(editingClient.id, { ...clientData });
         await base44.entities.LeadActivity.create({
           lead_id: editingClient.id,
           event_type: "stage_change",
@@ -128,7 +127,7 @@ export default function Clients() {
           created_by_email: (await base44.auth.me())?.email || ""
         });
       } else {
-        const newLead = await base44.entities.Client.create({ ...clientData, work_stage: clientData.work_stage || "new_lead", last_activity_at: now });
+        const newLead = await base44.entities.Client.create({ ...clientData, work_stage: clientData.work_stage || "new_lead" });
         await base44.entities.LeadActivity.create({
           lead_id: newLead.id,
           event_type: "created",
