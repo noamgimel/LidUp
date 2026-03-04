@@ -9,15 +9,12 @@ Deno.serve(async (req) => {
         const { lead_id } = await req.json();
         if (!lead_id) return Response.json({ error: 'Missing lead_id' }, { status: 400 });
 
-        // Try user-scoped list first, fallback to service role for form leads (owner_email)
-        const allLeads = await base44.entities.Client.list('-created_date', 500);
-        let lead = allLeads?.find(l => l.id === lead_id) || null;
-
-        if (!lead) {
-            // Form leads may be stored with owner_email instead of created_by
-            const byOwner = await base44.asServiceRole.entities.Client.filter({ owner_email: user.email }, '-created_date', 500);
-            lead = byOwner?.find(l => l.id === lead_id) || null;
-        }
+        // Verify ownership via user-scoped read (RLS covers created_by + owner_email for reads)
+        let lead = null;
+        try {
+            const allLeads = await base44.entities.Client.list('-created_date', 500);
+            lead = allLeads?.find(l => l.id === lead_id) || null;
+        } catch (_) {}
 
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
 
@@ -30,14 +27,15 @@ Deno.serve(async (req) => {
         const stageUpdate = isAtInitialStage ? { work_stage: 'first_contact' } : {};
         const newPriority = lead.priority === 'overdue' ? 'warm' : lead.priority;
 
-        await base44.entities.Client.update(lead_id, {
+        // Use service role for update — ownership already verified above
+        await base44.asServiceRole.entities.Client.update(lead_id, {
             first_response_at: now,
             last_activity_at: now,
             priority: newPriority,
             ...stageUpdate
         });
 
-        await base44.entities.LeadActivity.create({
+        await base44.asServiceRole.entities.LeadActivity.create({
             lead_id,
             event_type: 'first_response',
             content: 'נוצר קשר ראשון עם הליד',
