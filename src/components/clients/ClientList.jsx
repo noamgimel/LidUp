@@ -168,7 +168,7 @@ const ClientList = ({ clients, isLoading, onView, onEdit, onDelete }) => {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-slate-900 text-sm">{client.name}</p>
                       <Badge className={`${pCfg.badge} border text-xs`}>{pCfg.label}</Badge>
-                      <AgeTimer createdAt={client.created_date} firstResponseAt={client.first_response_at} compact />
+                      <AgeTimer client={client} compact />
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">{client.phone || client.email}</p>
                     {client.work_stage && workStageLabels[client.work_stage] && (
