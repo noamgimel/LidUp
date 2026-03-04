@@ -286,8 +286,9 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
       // Parent's first_response_at is authoritative (set by server)
       return { ...initialClient, ...prev,
         // Always trust server for these fields if they were set (non-null overrides local null)
-        first_response_at: initialClient.first_response_at || prev.first_response_at,
-        next_followup_at: prev.next_followup_at !== undefined ? prev.next_followup_at : initialClient.next_followup_at,
+        // Trust local state for these fields (may have been cleared optimistically)
+        first_response_at: 'first_response_at' in prev ? prev.first_response_at : initialClient.first_response_at,
+        next_followup_at: 'next_followup_at' in prev ? prev.next_followup_at : initialClient.next_followup_at,
       };
     });
   }, [initialClient]);
