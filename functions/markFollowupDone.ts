@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
         });
 
         console.log(`[markFollowupDone][${traceId}] SUCCESS`);
-        return Response.json({ ok: true, traceId, leadId: lead_id });
+        return Response.json({ ok: true, traceId, leadId: lead_id, first_response_at: null });
 
     } catch (error) {
         console.error(`[markFollowupDone][${traceId}] UNEXPECTED ERROR:`, error.stack || error.message);
