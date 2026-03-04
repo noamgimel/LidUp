@@ -190,8 +190,12 @@ function FollowupPanel({ client, onUpdate }) {
       console.log("[FollowupPanel] markFollowupDone →", { action: "mark followup done from panel", lead_id: client.id });
       const res = await markFollowupDone({ lead_id: client.id });
       console.log("[FollowupPanel] markFollowupDone ← success", res?.status, res?.data);
-      setShowNextPrompt(true);
-      onUpdate?.();
+      const data = res?.data;
+      if (data?.ok) {
+        onFollowupDone?.();
+        setShowNextPrompt(true);
+        onUpdate?.();
+      }
     } catch (err) {
       console.error("[FollowupPanel] markFollowupDone ← FAILED", err?.response?.status, err?.message);
     } finally {
