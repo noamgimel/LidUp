@@ -184,7 +184,8 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
           ...(data.work_stage ? { work_stage: data.work_stage } : {})
         }));
         onRefresh?.();
-        setShowFollowupPrompt(true);
+        // ❌ הסרנו את setShowFollowupPrompt(true) — הוא מפעיל את ה-Prompt בלי צורך
+        // הכפתור "קבע פולואפ" יופיע בשורה 339 כשנוצר קשר כבר
       } else {
         const msg = data?.message || data?.error || "שגיאה בסימון קשר ראשון";
         alert(`שגיאה: ${msg}`);
