@@ -71,7 +71,7 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
         next_followup_note: null,
         last_activity_at: now
       });
-      await base44.asServiceRole.entities.LeadActivity.create({
+      await base44.entities.LeadActivity.create({
         lead_id: client.id,
         event_type: "followup_canceled",
         content: "פולואפ בוטל",
