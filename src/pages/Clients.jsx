@@ -177,7 +177,9 @@ export default function Clients() {
   };
 
   const handleViewDetails = (client) => {
-    setViewingClient(client);
+    // Always use the enriched/fresh version so we get the latest next_followup_at etc.
+    const fresh = enrichedClients.find(c => c.id === client.id) || client;
+    setViewingClient(fresh);
     setShowForm(false);
     setEditingClient(null);
     setTimeout(() => {
