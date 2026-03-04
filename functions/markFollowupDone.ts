@@ -54,8 +54,10 @@ Deno.serve(async (req) => {
         console.log(`[markFollowupDone][${traceId}] lead found: name=${lead.name}`);
 
         const now = new Date().toISOString();
-        // Use user-scoped update — RLS write rule allows created_by OR owner_email
+        // Reset the contact cycle: clear first_response_at + followup fields.
+        // This is the source of truth — UI derives contactCycleOpen from !!first_response_at.
         await base44.entities.Client.update(lead_id, {
+            first_response_at: null,
             next_followup_at: null,
             next_followup_note: '',
             last_activity_at: now
