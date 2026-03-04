@@ -30,14 +30,14 @@ Deno.serve(async (req) => {
         const stageUpdate = isAtInitialStage ? { work_stage: 'first_contact' } : {};
         const newPriority = lead.priority === 'overdue' ? 'warm' : lead.priority;
 
-        await base44.asServiceRole.entities.Client.update(lead_id, {
+        await base44.entities.Client.update(lead_id, {
             first_response_at: now,
             last_activity_at: now,
             priority: newPriority,
             ...stageUpdate
         });
 
-        await base44.asServiceRole.entities.LeadActivity.create({
+        await base44.entities.LeadActivity.create({
             lead_id,
             event_type: 'first_response',
             content: 'נוצר קשר ראשון עם הליד',
