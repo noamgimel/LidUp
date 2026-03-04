@@ -325,14 +325,13 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
       console.log("[LeadDetails] markFirstContact ←", res?.status, res?.data);
       const data = res?.data;
       if (data?.ok) {
-        setClient(prev => ({
-          ...prev,
-          first_response_at: data.first_response_at || new Date().toISOString(),
-          priority: data.priority || prev.priority,
-          ...(data.work_stage ? { work_stage: data.work_stage } : {})
-        }));
-        setContactCycleOpen(true);
-        onRefresh?.();
+      setClient(prev => ({
+        ...prev,
+        first_response_at: data.first_response_at || new Date().toISOString(),
+        priority: data.priority || prev.priority,
+        ...(data.work_stage ? { work_stage: data.work_stage } : {})
+      }));
+      onRefresh?.();
         setShowFollowupPrompt(true);
       } else {
         const traceInfo = data?.traceId ? ` (traceId: ${data.traceId})` : "";
