@@ -130,11 +130,7 @@ const ClientList = ({ clients, isLoading, onView, onEdit, onDelete }) => {
 
                   {/* Age Timer */}
                   <div className="col-span-2">
-                    <AgeTimer
-                      createdAt={client.created_date || client.submission_date}
-                      firstResponseAt={client.first_response_at}
-                      compact={false}
-                    />
+                    <AgeTimer client={client} compact={false} />
                   </div>
 
                   {/* Next Followup */}
