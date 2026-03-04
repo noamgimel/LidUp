@@ -56,19 +56,7 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
   const handleCancel = async () => {
     setIsSaving(true);
     try {
-      const user = await base44.auth.me();
-      const now = new Date().toISOString();
-      await base44.entities.Client.update(client.id, {
-        next_followup_at: null,
-        next_followup_note: null,
-        last_activity_at: now
-      });
-      await base44.entities.LeadActivity.create({
-        lead_id: client.id,
-        event_type: "followup_canceled",
-        content: "פולואפ בוטל",
-        created_by_email: user?.email || ""
-      });
+      await cancelFollowup({ lead_id: client.id });
       onUpdate?.({ next_followup_at: null, next_followup_note: null });
       setShowCancelConfirm(false);
     } catch (err) {
