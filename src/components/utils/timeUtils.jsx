@@ -169,18 +169,12 @@ export function formatIsraeliDateTimeShort(utcDateStr) {
 
 /**
  * מחזיר טקסט "לפני X דקות/שעות/ימים" + ספירת דקות כוללת.
- * ✅ SAFE: חישוב ב-UTC נטו — ללא תלות ב-timezone.
+ * @param {string} utcDateStr
+ * @param {number} [nowMs] — server-synced now (העדף להעביר)
  */
-/**
- * גרסה המקבלת client object ישירות — משתמשת ב-getLeadReceivedAt.
- */
-export function getLeadAgeParts(client) {
-  return getAgeParts(getLeadReceivedAt(client));
-}
-
-export function getAgeParts(utcDateStr) {
+export function getAgeParts(utcDateStr, nowMs) {
   if (!utcDateStr) return null;
-  const diffMs = Date.now() - new Date(utcDateStr).getTime();
+  const diffMs = (nowMs ?? Date.now()) - new Date(utcDateStr).getTime();
   if (diffMs < 0) return { text: "עכשיו", minutes: 0 };
   const totalMinutes = Math.floor(diffMs / 60000);
   const hours = Math.floor(totalMinutes / 60);
@@ -188,6 +182,13 @@ export function getAgeParts(utcDateStr) {
   if (days > 0) return { text: `${days} ימים`, minutes: totalMinutes };
   if (hours > 0) return { text: `${hours} שע'`, minutes: totalMinutes };
   return { text: `${totalMinutes} דק'`, minutes: totalMinutes };
+}
+
+/**
+ * גרסה המקבלת client object ישירות — משתמשת ב-getLeadReceivedAt.
+ */
+export function getLeadAgeParts(client, nowMs) {
+  return getAgeParts(getLeadReceivedAt(client), nowMs);
 }
 
 /**
