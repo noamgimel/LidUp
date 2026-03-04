@@ -442,6 +442,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
           {showFollowupPrompt && (
             <FollowupPrompt
               leadId={client.id}
+              existingFollowup={client.next_followup_at || null}
               onDone={handleFollowupPromptDone}
               onClose={() => setShowFollowupPrompt(false)}
             />
