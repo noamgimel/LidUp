@@ -82,29 +82,33 @@ export function israelLocalToUtcIso(localStr) {
 }
 
 /**
- * מחשב הפרש בדקות בין utcDateStr לעכשיו (UTC-only, DST-safe).
- * ✅ SAFE: מבוסס על epoch ms בלבד — ללא המרות TZ.
+ * מחשב הפרש בדקות בין utcDateStr לעכשיו.
+ * @param {string} utcDateStr
+ * @param {number} [nowMs] — אם לא מועבר, משתמש ב-Date.now() (fallback). העדף להעביר server-synced nowMs.
  */
-export function minutesSince(utcDateStr) {
+export function minutesSince(utcDateStr, nowMs) {
   if (!utcDateStr) return 0;
-  return (Date.now() - new Date(utcDateStr).getTime()) / 60000;
+  return ((nowMs ?? Date.now()) - new Date(utcDateStr).getTime()) / 60000;
 }
 
 /**
  * בדיקת SLA: האם עברו יותר מ-threshold דקות?
- * ✅ SAFE: epoch ms בלבד.
+ * @param {string} utcDateStr
+ * @param {number} [thresholdMinutes]
+ * @param {number} [nowMs] — server-synced now
  */
-export function isSlaBreached(utcDateStr, thresholdMinutes = SLA_MINUTES) {
-  return minutesSince(utcDateStr) >= thresholdMinutes;
+export function isSlaBreached(utcDateStr, thresholdMinutes = SLA_MINUTES, nowMs) {
+  return minutesSince(utcDateStr, nowMs) >= thresholdMinutes;
 }
 
 /**
  * בדיקה: האם utcDateStr כבר עבר?
- * ✅ SAFE: epoch ms בלבד.
+ * @param {string} utcDateStr
+ * @param {number} [nowMs] — server-synced now
  */
-export function isPast(utcDateStr) {
+export function isPast(utcDateStr, nowMs) {
   if (!utcDateStr) return false;
-  return new Date(utcDateStr).getTime() <= Date.now();
+  return new Date(utcDateStr).getTime() <= (nowMs ?? Date.now());
 }
 
 /**
