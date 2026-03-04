@@ -20,6 +20,7 @@ export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClo
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [showFirstContact, setShowFirstContact] = useState(showFirstContactQuestion);
+  const [savedFollowupIso, setSavedFollowupIso] = useState(null); // ✅ שמור ה-ISO שיצרנו
 
   const handleSave = async (iso, note) => {
     setIsSaving(true);
@@ -33,8 +34,10 @@ export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClo
         return;
       }
       setIsSaving(false);
-      // Show first contact question instead of closing
-      setShowFirstContact(true);
+      setSavedFollowupIso(iso);
+      // ❌ לא מעלים Prompt "האם נוצר קשר?" כאן — זה יופיע רק בזרימה אחרת
+      // סוגרים את הפופאפ + מחזירים את ה-ISO שנשמר בדיוק
+      onDone?.(iso);
     } catch (err) {
       const errMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || "שגיאת שרת";
       console.error("[FollowupPrompt] scheduleFollowup error:", errMsg);
