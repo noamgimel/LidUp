@@ -221,9 +221,28 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
     }
   };
 
-  const handleFollowupPromptDone = (iso) => {
+  const handleFollowupPromptDone = async (iso) => {
     setShowFollowupPrompt(false);
-    if (iso) setClient(prev => ({ ...prev, next_followup_at: iso }));
+    console.log("[LeadDetails::handleFollowupPromptDone] iso=", iso);
+    
+    // ✅ אחרי קביעת פולואפ, רענן את הנתונים מ-DB להבטחת consistency
+    if (iso) {
+      try {
+        console.log("[LeadDetails] Refetching lead after followup schedule...");
+        const updated = await base44.entities.Client.get(client.id);
+        if (updated) {
+          console.log("[LeadDetails] Refetched client:", { 
+            next_followup_at: updated.next_followup_at,
+            next_followup_note: updated.next_followup_note 
+          });
+          setClient(updated);
+        }
+      } catch (err) {
+        console.error("[LeadDetails] Refetch failed:", err?.message);
+        // Fallback: עדכן מה-state עם iso לפחות
+        setClient(prev => ({ ...prev, next_followup_at: iso }));
+      }
+    }
     onRefresh?.();
     setShowWorkStagePrompt(true);
   };
