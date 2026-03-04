@@ -277,7 +277,20 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   const [showWorkStagePrompt, setShowWorkStagePrompt] = useState(false);
   const { userWorkStages } = useUserWorkStages();
 
-  useEffect(() => { setClient(initialClient); }, [initialClient]);
+  // Sync with parent only when switching to a different lead, or when parent has newer data we don't have locally
+  useEffect(() => {
+    setClient(prev => {
+      // If switching to a different lead — full replace
+      if (prev.id !== initialClient.id) return initialClient;
+      // Otherwise, merge: keep local changes but accept any new fields from parent
+      // Parent's first_response_at is authoritative (set by server)
+      return { ...initialClient, ...prev,
+        // Always trust server for these fields if they were set (non-null overrides local null)
+        first_response_at: initialClient.first_response_at || prev.first_response_at,
+        next_followup_at: prev.next_followup_at !== undefined ? prev.next_followup_at : initialClient.next_followup_at,
+      };
+    });
+  }, [initialClient]);
 
   const priority = client.priority || "warm";
   const pCfg = PRIORITY_CONFIG[priority] || PRIORITY_CONFIG.warm;
