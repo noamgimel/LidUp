@@ -361,7 +361,6 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
       const data = res?.data;
       if (data?.ok) {
         setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
-        // Keep contactCycleOpen=true — first_response_at still exists, just need to set next followup
         onRefresh?.();
         setShowFollowupPrompt(true);
       } else {
