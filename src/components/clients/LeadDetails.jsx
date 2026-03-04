@@ -170,33 +170,33 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   const contactCycleOpen = !!client.first_response_at;
 
   const handleFirstResponse = async () => {
-    if (contactCycleOpen || isMarkingContacted) return;
-    if (!client.id) { alert("שגיאה: לא נמצא מזהה ליד"); return; }
-    setIsMarkingContacted(true);
-    try {
-      const res = await markFirstContact({ lead_id: client.id });
-      const data = res?.data;
-      if (data?.ok) {
-        setClient(prev => ({
-          ...prev,
-          first_response_at: data.first_response_at || new Date().toISOString(),
-          priority: data.priority || prev.priority,
-          ...(data.work_stage ? { work_stage: data.work_stage } : {})
-        }));
-        onRefresh?.();
-        // ❌ הסרנו את setShowFollowupPrompt(true) — הוא מפעיל את ה-Prompt בלי צורך
-        // הכפתור "קבע פולואפ" יופיע בשורה 339 כשנוצר קשר כבר
-      } else {
-        const msg = data?.message || data?.error || "שגיאה בסימון קשר ראשון";
-        alert(`שגיאה: ${msg}`);
-      }
-    } catch (err) {
-      const msg = err?.response?.data?.message || err?.message || "שגיאת שרת";
-      alert(`שגיאה: ${msg}`);
-    } finally {
-      setIsMarkingContacted(false);
-    }
-  };
+     if (contactCycleOpen || isMarkingContacted) return;
+     if (!client.id) { alert("שגיאה: לא נמצא מזהה ליד"); return; }
+     setIsMarkingContacted(true);
+     try {
+       const res = await markFirstContact({ lead_id: client.id });
+       const data = res?.data;
+       if (data?.ok) {
+         setClient(prev => ({
+           ...prev,
+           first_response_at: data.first_response_at || new Date().toISOString(),
+           priority: data.priority || prev.priority,
+           ...(data.work_stage ? { work_stage: data.work_stage } : {})
+         }));
+         onRefresh?.();
+         // ✅ פתחנו FollowupForm — Step A done, moving to Step B
+         setShowFollowupPrompt(true);
+       } else {
+         const msg = data?.message || data?.error || "שגיאה בסימון קשר ראשון";
+         alert(`שגיאה: ${msg}`);
+       }
+     } catch (err) {
+       const msg = err?.response?.data?.message || err?.message || "שגיאת שרת";
+       alert(`שגיאה: ${msg}`);
+     } finally {
+       setIsMarkingContacted(false);
+     }
+   };
 
   const handleFollowupDone = async () => {
     if (isMarkingFollowupDone) return;

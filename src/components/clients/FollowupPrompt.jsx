@@ -34,10 +34,8 @@ export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClo
         return;
       }
       setIsSaving(false);
-      setSavedFollowupIso(iso);
       console.log("[FollowupPrompt] SUCCESS:", { leadId, iso, note, responseData: data });
-      // ✅ סוגרים ופותחים refetch מלא - onDone צריך להגיד ל-LeadDetails לעשות refetch
-      // העברנו את iso כדי שה-parent תוכל להשתמש בו
+      // ✅ סוגרים והמודאל ייסגר, ואחרי כן ייפתח WorkStagePrompt מ-handleFollowupPromptDone
       onDone?.(iso);
     } catch (err) {
       const errMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || "שגיאת שרת";
@@ -136,7 +134,7 @@ export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClo
         )}
 
         {/* ── Schedule mode ── */}
-         {mode === "schedule" && !showFirstContact && (
+         {mode === "schedule" && (
            <>
              <FollowupForm
                onSave={handleSave}
@@ -156,29 +154,6 @@ export default function FollowupPrompt({ leadId, existingFollowup, onDone, onClo
                לא עכשיו
              </Button>
            </>
-         )}
-
-         {/* ── First contact question ── */}
-         {showFirstContact && (
-           <div className="space-y-3">
-             <p className="text-sm text-slate-600 text-center">האם כבר נוצר קשר עם הליד?</p>
-             {error && (
-               <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                 ⚠️ {error}
-               </div>
-             )}
-             <Button onClick={handleFirstContactYes} disabled={isSaving} className="w-full bg-green-600 hover:bg-green-700 text-white">
-               {isSaving ? "סומן..." : "כן, סמן נוצר קשר"}
-             </Button>
-             <Button 
-               variant="ghost" 
-               onClick={() => onDone?.(null)}
-               disabled={isSaving}
-               className="w-full text-slate-500"
-             >
-               לא עדיין
-             </Button>
-           </div>
          )}
       </div>
     </motion.div>

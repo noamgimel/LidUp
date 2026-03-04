@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, CheckCircle2, Edit2, X, AlertTriangle } from "lucide-react";
 import { scheduleFollowup } from "@/functions/scheduleFollowup";
-import { markFollowupDone } from "@/functions/markFollowupDone";
-import { cancelFollowup } from "@/functions/cancelFollowup";
-import { rescheduleFollowup } from "@/functions/rescheduleFollowup";
-import { markFirstContact } from "@/functions/markFirstContact";
+   import { markFollowupDone } from "@/functions/markFollowupDone";
+   import { cancelFollowup } from "@/functions/cancelFollowup";
+   import { rescheduleFollowup } from "@/functions/rescheduleFollowup";
 import { base44 } from "@/api/base44Client";
 import { formatIsraeliDateTime, isPast } from "@/components/utils/timeUtils";
 import FollowupForm from "./FollowupForm";
@@ -15,28 +14,24 @@ import FollowupPrompt from "./FollowupPrompt";
 
 export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [showNextPrompt, setShowNextPrompt] = useState(false);
-  const [showFirstContactPrompt, setShowFirstContactPrompt] = useState(false);
+   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+   const [isSaving, setIsSaving] = useState(false);
+   const [showNextPrompt, setShowNextPrompt] = useState(false);
 
   const hasActive = !!client.next_followup_at;
   const isOverdue = hasActive && isPast(client.next_followup_at);
 
   const handleSchedule = async (iso, note) => {
-    setIsSaving(true);
-    try {
-      await scheduleFollowup({ lead_id: client.id, datetime: iso, note: note || "" });
-      onUpdate?.({ next_followup_at: iso, next_followup_note: note });
-      if (!client.first_response_at) {
-        setShowFirstContactPrompt(true);
-      }
-    } catch (err) {
-      console.error("[FollowupPanel] scheduleFollowup FAILED", err?.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+     setIsSaving(true);
+     try {
+       await scheduleFollowup({ lead_id: client.id, datetime: iso, note: note || "" });
+       onUpdate?.({ next_followup_at: iso, next_followup_note: note });
+     } catch (err) {
+       console.error("[FollowupPanel] scheduleFollowup FAILED", err?.message);
+     } finally {
+       setIsSaving(false);
+     }
+   };
 
   const handleMarkDone = async () => {
     setIsSaving(true);
@@ -83,29 +78,7 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
     }
   };
 
-  const handleFirstContact = async () => {
-    // סוגר הפופאפ מייד — רק סימון קשר, ללא Prompt נוסף
-    setShowFirstContactPrompt(false);
-    
-    console.group("[FollowupPanel::handleFirstContact] START");
-    console.log("🔹 Direct mark first contact - no prompt");
-    try {
-      const res = await markFirstContact({ lead_id: client.id });
-      const data = res?.data;
-      
-      if (!data?.ok) {
-        console.error(`❌ FAILED: ${data?.message}`);
-        return;
-      }
-      
-      console.log("✅ SUCCESS - first_contact marked");
-      onUpdate?.({ first_response_at: data.first_response_at || new Date().toISOString() });
-    } catch (err) {
-      console.error("💥 EXCEPTION:", err?.message);
-    } finally {
-      console.groupEnd();
-    }
-  };
+
 
   return (
     <div className="space-y-3">
@@ -211,37 +184,7 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {showFirstContactPrompt && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          >
-            <div className="absolute inset-0 bg-black/30" onClick={() => setShowFirstContactPrompt(false)} />
-            <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm rtl-text z-10">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Bell className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900">האם כבר נוצר קשר?</h3>
-                  <p className="text-xs text-slate-500">הפולואפ נקבע בהצלחה</p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Button onClick={handleFirstContact} className="bg-blue-600 hover:bg-blue-700 text-white">
-                  כן, סמן נוצר קשר
-                </Button>
-                <Button variant="ghost" onClick={() => setShowFirstContactPrompt(false)} className="text-slate-500">
-                  לא עדיין
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
     </div>
   );
 }
