@@ -161,7 +161,7 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
   );
 }
 
-function FollowupPanel({ client, onUpdate }) {
+function FollowupPanel({ client, onUpdate, onFollowupDone }) {
   const [date, setDate] = useState(client.next_followup_at ? utcIsoToIsraelLocalDatetime(client.next_followup_at) : "");
   const [note, setNote] = useState(client.next_followup_note || "");
   const [isSaving, setIsSaving] = useState(false);
