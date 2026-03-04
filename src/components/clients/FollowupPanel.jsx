@@ -94,7 +94,6 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
     console.log("🔹 client.id type:", typeof client.id);
     console.log("🔹 client.id valid?:", !!client.id && client.id.length > 0);
     try {
-      const { markFirstContact } = await import("@/functions/markFirstContact");
       console.log("✅ markFirstContact v2 imported");
       
       const res = await markFirstContact({ lead_id: client.id });
@@ -122,7 +121,6 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
       });
     } finally {
       console.groupEnd();
-      setShowFirstContactPrompt(false);
     }
   };
 
