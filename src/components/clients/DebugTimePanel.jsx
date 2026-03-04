@@ -43,7 +43,7 @@ export default function DebugTimePanel({ clients }) {
 
       {(expanded ? sample : sample.slice(0, 5)).map(c => {
         const dbg = getLeadDebugInfo(c);
-        const now = Date.now();
+        const now = getNowMs(); // server-synced!
 
         // created_date diff (server-set — source of truth)
         const createdDateMs = c.created_date ? new Date(c.created_date).getTime() : null;
