@@ -56,9 +56,14 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
   const handleCancel = async () => {
     setIsSaving(true);
     try {
-      await cancelFollowup({ lead_id: client.id });
-      onUpdate?.({ next_followup_at: null, next_followup_note: null });
-      setShowCancelConfirm(false);
+      const res = await cancelFollowup({ lead_id: client.id });
+      const data = res?.data;
+      if (data?.ok) {
+        // Clear followup + refetch + reset UI
+        onUpdate?.({ next_followup_at: null, next_followup_note: null });
+        setShowCancelConfirm(false);
+        setIsEditing(false);
+      }
     } catch (err) {
       console.error("[FollowupPanel] cancel FAILED", err?.message);
     } finally {
@@ -70,11 +75,19 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
     try {
       const { markFirstContact } = await import("@/functions/markFirstContact");
       const res = await markFirstContact({ lead_id: client.id });
-      if (res?.data?.ok) {
-        onUpdate?.({ first_response_at: res.data.first_response_at || new Date().toISOString() });
+      const data = res?.data;
+      
+      // Debug log
+      console.log("[FollowupPanel::handleFirstContact] response:", { leadId: client.id, ok: data?.ok, error: data?.error || data?.message, traceId: data?.traceId });
+      
+      if (!data?.ok) {
+        console.error(`[FollowupPanel] markFirstContact failed: ${data?.message || data?.error || "unknown"} (${data?.traceId})`);
+        return;
       }
+      
+      onUpdate?.({ first_response_at: data.first_response_at || new Date().toISOString() });
     } catch (err) {
-      console.error("[FollowupPanel] markFirstContact FAILED", err?.message);
+      console.error("[FollowupPanel] markFirstContact exception:", { message: err?.message, leadId: client.id });
     } finally {
       setShowFirstContactPrompt(false);
     }
