@@ -291,9 +291,12 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
   const [isMarkingContacted, setIsMarkingContacted] = useState(false);
   const [isMarkingFollowupDone, setIsMarkingFollowupDone] = useState(false);
+  // contactCycleOpen: true = show "נוצר קשר" badge, false = show "סמן נוצר קשר" button
+  // Starts true if first_response_at is set and no followup is pending (i.e., cycle is still open)
+  const [contactCycleOpen, setContactCycleOpen] = useState(!!initialClient.first_response_at);
 
   const handleFirstResponse = async () => {
-    if (client.first_response_at || isMarkingContacted) return;
+    if (contactCycleOpen || isMarkingContacted) return;
     if (!client.id) { alert("שגיאה: לא נמצא מזהה ליד"); return; }
     setIsMarkingContacted(true);
     try {
