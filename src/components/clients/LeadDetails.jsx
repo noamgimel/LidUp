@@ -293,7 +293,12 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   const [isMarkingFollowupDone, setIsMarkingFollowupDone] = useState(false);
   // contactCycleOpen: true = show "נוצר קשר" badge, false = show "סמן נוצר קשר" button
   // Starts true if first_response_at is set and no followup is pending (i.e., cycle is still open)
-  const [contactCycleOpen, setContactCycleOpen] = useState(!!initialClient.first_response_at);
+  const [contactCycleOpen, setContactCycleOpen] = useState(!!initialClient.first_response_at && !initialClient.next_followup_at);
+
+  // sync contactCycleOpen when parent refreshes the client
+  useEffect(() => {
+    setContactCycleOpen(!!initialClient.first_response_at && !initialClient.next_followup_at);
+  }, [initialClient.id, initialClient.first_response_at, initialClient.next_followup_at]);
 
   const handleFirstResponse = async () => {
     if (contactCycleOpen || isMarkingContacted) return;

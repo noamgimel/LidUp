@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
             created_by_email: user.email
         });
 
-        await base44.asServiceRole.entities.Client.update(lead_id, {
+        await base44.entities.Client.update(lead_id, {
             last_activity_at: now
         });
 
