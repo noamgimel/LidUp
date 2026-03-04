@@ -25,38 +25,33 @@ Deno.serve(async (req) => {
 
         console.log(`[markFirstContact][${traceId}] ✅ user=${user.email} | lead_id=${lead_id}`);
 
-        // Fetch lead directly by id using filter — avoids full list scan + timeout
-        let lead = null;
-        let fetchMethod = "none";
-        try {
-            // Try as current user first (RLS: created_by OR owner_email)
-            const results = await base44.entities.Client.filter({ id: lead_id }, '-created_date', 1);
-            lead = results?.[0] || null;
-            if (lead) fetchMethod = "user-scoped";
-        } catch (e) {
-            console.warn(`[markFirstContact][${traceId}] ⚠️ user-scoped filter failed: ${e.message}`);
-        }
+        // ✅ Use direct get() instead of filter — avoids CPU timeout
+         let lead = null;
+         try {
+             // Try as current user first
+             lead = await base44.entities.Client.get(lead_id);
+             console.log(`[markFirstContact][${traceId}] ✅ lead fetched via user-scoped get`);
+         } catch (e) {
+             console.warn(`[markFirstContact][${traceId}] ⚠️ user-scoped get failed: ${e.message}`);
+         }
 
-        // Fallback: try owner_email match via service role
-        if (!lead) {
-            try {
-                const results = await base44.asServiceRole.entities.Client.filter({ id: lead_id }, '-created_date', 1);
-                const found = results?.[0];
-                if (found) {
-                    console.log(`[markFirstContact][${traceId}] 🔍 lead found via service-role | owner_email=${found.owner_email} created_by=${found.created_by}`);
-                    if (found.owner_email === user.email || found.created_by === user.email) {
-                        lead = found;
-                        fetchMethod = "service-role";
-                        console.log(`[markFirstContact][${traceId}] ✅ ownership check PASSED`);
-                    } else {
-                        console.warn(`[markFirstContact][${traceId}] ❌ ownership check FAILED — user=${user.email}`);
-                        return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
-                    }
-                }
-            } catch (e) {
-                console.error(`[markFirstContact][${traceId}] 💥 service-role filter failed: ${e.message}`);
-            }
-        }
+         // Fallback: try service role
+         if (!lead) {
+             try {
+                 lead = await base44.asServiceRole.entities.Client.get(lead_id);
+                 if (lead) {
+                     console.log(`[markFirstContact][${traceId}] 🔍 lead found via service-role | owner_email=${lead.owner_email} created_by=${lead.created_by}`);
+                     if (lead.owner_email === user.email || lead.created_by === user.email) {
+                         console.log(`[markFirstContact][${traceId}] ✅ ownership check PASSED`);
+                     } else {
+                         console.warn(`[markFirstContact][${traceId}] ❌ ownership check FAILED — user=${user.email}`);
+                         return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
+                     }
+                 }
+             } catch (e) {
+                 console.error(`[markFirstContact][${traceId}] 💥 service-role get failed: ${e.message}`);
+             }
+         }
 
         if (!lead) {
             console.error(`[markFirstContact][${traceId}] ❌ LEAD_NOT_FOUND — lead_id=${lead_id} fetchMethod=${fetchMethod}`);
