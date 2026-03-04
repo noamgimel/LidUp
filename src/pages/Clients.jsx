@@ -21,9 +21,12 @@ import WorkQueueTabs, { classifyLead } from "../components/clients/WorkQueueTabs
 
 import { computeLeadPriority } from "@/components/utils/timeUtils";
 import DebugTimePanel from "@/components/clients/DebugTimePanel";
-const computePriority = computeLeadPriority;
+import { useServerTime } from "@/components/utils/ServerTimeContext";
 
 export default function Clients() {
+  const { getNowMs, serverOffsetMs } = useServerTime();
+  const computePriority = (c) => computeLeadPriority(c, getNowMs());
+
   const [clients, setClients] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [showForm, setShowForm] = useState(false);
