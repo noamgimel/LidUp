@@ -101,6 +101,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
+    <ServerTimeProvider>
     <div dir="rtl" className="font-['Heebo',sans-serif] min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <style>
         {`
