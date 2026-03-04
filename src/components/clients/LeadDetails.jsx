@@ -526,7 +526,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
               { label: "מקור", value: client.source === "website_form" && client.form_name ? `טופס אתר: ${client.form_name}` : (client.source || "—") },
               { label: "שלב מכירה", value: workStageLabel || "לא מוגדר" },
               { label: "פולואפ הבא", value: client.next_followup_at ? formatIsraeliDate(client.next_followup_at) : "—" },
-              { label: "כניסה למערכת", value: formatIsraeliDate(client.created_date) || "—" },
+              { label: "כניסה למערכת", value: formatIsraeliDate(getLeadReceivedAt(client)) || "—" },
             ].map(f => (
               <div key={f.label} className="bg-white p-3">
                 <p className="text-xs text-slate-400 mb-0.5">{f.label}</p>
