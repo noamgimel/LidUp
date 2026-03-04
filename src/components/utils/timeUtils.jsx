@@ -195,7 +195,8 @@ export function getLeadReceivedAt(client) {
 export function computeLeadPriority(client) {
   const lifecycle = client.lifecycle || "open";
   if (lifecycle !== "open") return client.priority || "warm";
-  if (!client.first_response_at && isSlaBreached(client.created_date, SLA_MINUTES)) return "overdue";
+  const receivedAt = getLeadReceivedAt(client);
+  if (!client.first_response_at && isSlaBreached(receivedAt, SLA_MINUTES)) return "overdue";
   if (client.next_followup_at && isPast(client.next_followup_at)) return "overdue";
   return client.priority || "warm";
 }
