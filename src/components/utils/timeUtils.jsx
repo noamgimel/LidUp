@@ -223,8 +223,8 @@ export function computeLeadPriority(client, nowMs) {
 /**
  * טקסט "לפני X" קצר לתצוגה ב-lists
  */
-export function formatAgeText(utcDateStr) {
-  const parts = getAgeParts(utcDateStr);
+export function formatAgeText(utcDateStr, nowMs) {
+  const parts = getAgeParts(utcDateStr, nowMs);
   if (!parts) return "";
   if (parts.minutes === 0) return "עכשיו";
   return `לפני ${parts.text}`;
