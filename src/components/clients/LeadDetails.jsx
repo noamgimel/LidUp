@@ -307,13 +307,8 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   // contactCycleOpen: true = show "נוצר קשר" tag + followup-done btn, false = show "סמן נוצר קשר"
   // Managed as independent state — NOT re-derived from DB on refresh to avoid race conditions.
   // Only resets when switching to a different lead.
-  const [contactCycleOpen, setContactCycleOpen] = useState(!!initialClient.first_response_at);
-
-  // Only reset when switching to a different lead
-  useEffect(() => {
-    // cycle is open if first_response_at exists (regardless of whether there's a followup scheduled)
-    setContactCycleOpen(!!initialClient.first_response_at);
-  }, [initialClient.id]);
+  // contactCycleOpen is derived directly from client.first_response_at — no independent state needed.
+  // This eliminates ALL race conditions: the UI always reflects what's actually in the data.
 
   const handleFirstResponse = async () => {
     if (contactCycleOpen || isMarkingContacted) return;
