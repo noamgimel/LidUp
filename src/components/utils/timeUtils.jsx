@@ -180,6 +180,15 @@ export function getAgeParts(utcDateStr) {
 }
 
 /**
+ * מקור אמת אחיד לזמן קליטת הליד.
+ * תמיד מחזיר created_date (שנוצר ע"י ה-DB בשרת, אין תלות בשעון המשתמש).
+ * fallback ל-submission_date / created_at רק אם created_date חסר (לידים ישנים).
+ */
+export function getLeadReceivedAt(client) {
+  return client.created_date || client.submission_date || client.created_at || null;
+}
+
+/**
  * חישוב priority של ליד — לוגיקה מרכזית אחת לכל המערכת.
  * ✅ SAFE: מבוסס על isSlaBreached ו-isPast שעובדים על epoch ms.
  */
