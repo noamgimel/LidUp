@@ -306,8 +306,15 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   const handleFirstResponse = async () => {
     if (contactCycleOpen || isMarkingContacted) return;
     if (!client.id) { alert("שגיאה: לא נמצא מזהה ליד"); return; }
-    // If first_response_at already set (reopened after followup done), skip server call
+    // If first_response_at already set (reopened after followup done), skip server call — just open the cycle
     if (client.first_response_at) {
+      setContactCycleOpen(true);
+      setShowFollowupPrompt(true);
+      return;
+    }
+    // Also check initialClient in case local client state was reset
+    if (initialClient.first_response_at) {
+      setClient(prev => ({ ...prev, first_response_at: initialClient.first_response_at }));
       setContactCycleOpen(true);
       setShowFollowupPrompt(true);
       return;
