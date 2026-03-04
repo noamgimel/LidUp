@@ -4,13 +4,16 @@
  */
 import React, { useState } from "react";
 import { getLeadDebugInfo, TZ, getLeadReceivedAt } from "@/components/utils/timeUtils";
+import { useServerTime } from "@/components/utils/ServerTimeContext";
 
 export default function DebugTimePanel({ clients }) {
   const [expanded, setExpanded] = useState(false);
+  const { serverOffsetMs, getNowMs } = useServerTime();
 
   if (!window.location.search.includes("debug=1")) return null;
 
   const now = new Date();
+  const serverNow = new Date(getNowMs());
   const israelNow = new Intl.DateTimeFormat("he-IL", {
     timeZone: TZ,
     day: "2-digit", month: "2-digit", year: "numeric",
