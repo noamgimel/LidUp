@@ -9,14 +9,12 @@ Deno.serve(async (req) => {
         const { lead_id } = await req.json();
         if (!lead_id) return Response.json({ error: 'Missing lead_id' }, { status: 400 });
 
-        // Verify ownership - check both created_by and owner_email
-        const allLeads = await base44.entities.Client.list('-created_date', 500);
-        let lead = allLeads?.find(l => l.id === lead_id) || null;
-
-        if (!lead) {
-            const byOwner = await base44.asServiceRole.entities.Client.filter({ owner_email: user.email }, '-created_date', 500);
-            lead = byOwner?.find(l => l.id === lead_id) || null;
-        }
+        // Verify ownership via user-scoped read (RLS covers created_by + owner_email for reads)
+        let lead = null;
+        try {
+            const allLeads = await base44.entities.Client.list('-created_date', 500);
+            lead = allLeads?.find(l => l.id === lead_id) || null;
+        } catch (_) {}
 
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
 
