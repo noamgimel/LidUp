@@ -62,8 +62,11 @@ export default function Clients() {
         base44.functions.invoke("getMyClients"),
         Meeting.list()
       ]);
-      setClients(clientsResponse?.data?.clients || []);
+      const freshClients = clientsResponse?.data?.clients || [];
+      setClients(freshClients);
       setMeetings(meetingsData || []);
+      // Keep viewingClient in sync so LeadDetails gets fresh initialClient
+      setViewingClient(prev => prev ? (freshClients.find(c => c.id === prev.id) || prev) : null);
     } catch (error) {
       console.error("[Clients] error:", error);
     }
