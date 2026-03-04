@@ -39,9 +39,10 @@ export default function Dashboard() {
     setIsLoading(false);
   };
 
-  // --- Calculations ---
-  const startOfThisMonth = startOfMonth(new Date());
-  const enriched = clients.map(c => ({ ...c, priority: computePriorityDash(c) }));
+  // --- Calculations (server-synced now) ---
+  const nowMs = getNowMs();
+  const startOfThisMonth = startOfMonth(new Date(nowMs));
+  const enriched = useMemo(() => clients.map(c => ({ ...c, priority: computeLeadPriority(c, getNowMs()) })), [clients, serverOffsetMs]);
   const openLeads = enriched.filter(c => (c.lifecycle || 'open') === 'open');
   const leadsCount = openLeads.length;
   const hotLeads = openLeads.filter(c => c.priority === 'hot' || c.priority === 'overdue').length;
@@ -49,7 +50,7 @@ export default function Dashboard() {
   const newLeadsThisMonth = enriched.filter(c => new Date(c.created_date) >= startOfThisMonth).length;
   const wonThisMonth = enriched.filter(c => c.lifecycle === 'won' && new Date(c.updated_date || c.created_date) >= startOfThisMonth).length;
 
-  // Work blocks — all comparisons in UTC
+  // Work blocks — all comparisons with server-synced now
   const endOfTodayMs = endOfTodayUtcMs();
   const overdueLeads = openLeads
     .filter(c => c.priority === 'overdue')
