@@ -208,14 +208,15 @@ export function getLeadReceivedAt(client) {
 
 /**
  * חישוב priority של ליד — לוגיקה מרכזית אחת לכל המערכת.
- * ✅ SAFE: מבוסס על isSlaBreached ו-isPast שעובדים על epoch ms.
+ * @param {object} client
+ * @param {number} [nowMs] — server-synced now. אם לא מועבר — fallback ל-Date.now().
  */
-export function computeLeadPriority(client) {
+export function computeLeadPriority(client, nowMs) {
   const lifecycle = client.lifecycle || "open";
   if (lifecycle !== "open") return client.priority || "warm";
   const receivedAt = getLeadReceivedAt(client);
-  if (!client.first_response_at && isSlaBreached(receivedAt, SLA_MINUTES)) return "overdue";
-  if (client.next_followup_at && isPast(client.next_followup_at)) return "overdue";
+  if (!client.first_response_at && isSlaBreached(receivedAt, SLA_MINUTES, nowMs)) return "overdue";
+  if (client.next_followup_at && isPast(client.next_followup_at, nowMs)) return "overdue";
   return client.priority || "warm";
 }
 
