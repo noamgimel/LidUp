@@ -23,35 +23,9 @@ Deno.serve(async (req) => {
 
         console.log(`[markFollowupDone][${traceId}] user=${user.email} lead_id=${lead_id}`);
 
-        // Fetch lead directly by id
-        let lead = null;
-        try {
-            const results = await base44.entities.Client.filter({ id: lead_id }, '-created_date', 1);
-            lead = results?.[0] || null;
-        } catch (e) {
-            console.warn(`[markFollowupDone][${traceId}] user-scoped filter failed: ${e.message}`);
-        }
-
-        if (!lead) {
-            try {
-                const results = await base44.asServiceRole.entities.Client.filter({ id: lead_id }, '-created_date', 1);
-                const found = results?.[0];
-                if (found && (found.owner_email === user.email || found.created_by === user.email)) {
-                    lead = found;
-                } else if (found) {
-                    return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
-                }
-            } catch (e) {
-                console.error(`[markFollowupDone][${traceId}] service-role filter failed: ${e.message}`);
-            }
-        }
-
-        if (!lead) {
-            console.error(`[markFollowupDone][${traceId}] LEAD_NOT_FOUND — lead_id=${lead_id} user=${user.email}`);
-            return Response.json({ ok: false, traceId, errorCode: "LEAD_NOT_FOUND", message: "Lead not found" }, { status: 404 });
-        }
-
-        console.log(`[markFollowupDone][${traceId}] lead found: name=${lead.name}`);
+        // Skip fetching lead — just update directly (RLS write allows created_by OR owner_email).
+        // If the lead doesn't belong to this user, the update will throw/return empty and we catch it.
+        console.log(`[markFollowupDone][${traceId}] proceeding with update for lead_id=${lead_id}`);
 
         const now = new Date().toISOString();
         // Reset the contact cycle: clear first_response_at + followup fields.
