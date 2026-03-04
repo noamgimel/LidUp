@@ -11,7 +11,11 @@ import { computeLeadPriority, isPast, isSlaBreached, SLA_MINUTES, endOfTodayUtcM
 import { useServerTime } from "@/components/utils/ServerTimeContext";
 
 import StatsCard from "../components/dashboard/StatsCard";
-...
+import RecentClients from "../components/dashboard/RecentClients";
+import UpcomingMeetings from "../components/dashboard/UpcomingMeetings";
+import LeadsClientsTrendChart from "../components/reports/LeadsClientsTrendChart";
+import ReportsWidget from "../components/dashboard/ReportsWidget";
+import WorkBlockList from "../components/dashboard/WorkBlockList";
 
 export default function Dashboard() {
   const { getNowMs, serverOffsetMs } = useServerTime();
