@@ -360,7 +360,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
       console.log("[LeadDetails] markFollowupDone ← success", res?.status, res?.data);
       const data = res?.data;
       if (data?.ok) {
-        setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
+        setClient(prev => ({ ...prev, first_response_at: null, next_followup_at: null, next_followup_note: "" }));
         onRefresh?.();
         setShowFollowupPrompt(true);
       } else {
