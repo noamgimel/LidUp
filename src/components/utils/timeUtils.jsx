@@ -167,6 +167,13 @@ export function formatIsraeliDateTimeShort(utcDateStr) {
  * מחזיר טקסט "לפני X דקות/שעות/ימים" + ספירת דקות כוללת.
  * ✅ SAFE: חישוב ב-UTC נטו — ללא תלות ב-timezone.
  */
+/**
+ * גרסה המקבלת client object ישירות — משתמשת ב-getLeadReceivedAt.
+ */
+export function getLeadAgeParts(client) {
+  return getAgeParts(getLeadReceivedAt(client));
+}
+
 export function getAgeParts(utcDateStr) {
   if (!utcDateStr) return null;
   const diffMs = Date.now() - new Date(utcDateStr).getTime();
