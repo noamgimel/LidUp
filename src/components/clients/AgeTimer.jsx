@@ -17,7 +17,7 @@ export default function AgeTimer({ client, createdAt, firstResponseAt, compact =
   const age = getAgeParts(receivedAt);
   if (!age) return null;
 
-  const overSLA = !firstResponseAt && age.minutes >= SLA_MINUTES;
+  const overSLA = !resolvedFirstResponseAt && age.minutes >= SLA_MINUTES;
 
   if (compact) {
     return (
