@@ -7,6 +7,7 @@ import { scheduleFollowup } from "@/functions/scheduleFollowup";
 import { markFollowupDone } from "@/functions/markFollowupDone";
 import { cancelFollowup } from "@/functions/cancelFollowup";
 import { rescheduleFollowup } from "@/functions/rescheduleFollowup";
+import { markFirstContact } from "@/functions/markFirstContact";
 import { base44 } from "@/api/base44Client";
 import { formatIsraeliDateTime, isPast } from "@/components/utils/timeUtils";
 import FollowupForm from "./FollowupForm";
@@ -94,7 +95,7 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
     console.log("🔹 client.id type:", typeof client.id);
     console.log("🔹 client.id valid?:", !!client.id && client.id.length > 0);
     try {
-      console.log("✅ markFirstContact v2 imported");
+      console.log("✅ markFirstContact v2 static import");
       
       const res = await markFirstContact({ lead_id: client.id });
       const data = res?.data;
@@ -106,6 +107,7 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
       
       if (!data?.ok) {
         console.error(`❌ FAILED: ${data?.message || data?.error || "unknown"} | errorCode=${data?.errorCode} | traceId=${data?.traceId}`);
+        setShowFirstContactPrompt(false);
         return;
       }
       
@@ -121,6 +123,7 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
       });
     } finally {
       console.groupEnd();
+      setShowFirstContactPrompt(false);
     }
   };
 
