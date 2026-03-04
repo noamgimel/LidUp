@@ -378,7 +378,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
               </div>
               <Badge className={`${pCfg.badge} border text-sm px-3 py-1`}>{pCfg.label}</Badge>
               {lifecycle !== "open" && <Badge className={`${lCfg.badge} border text-sm`}>{lCfg.label}</Badge>}
-              <AgeTimer createdAt={client.created_date || client.submission_date} firstResponseAt={client.first_response_at} />
+              <AgeTimer client={client} firstResponseAt={client.first_response_at} />
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <Button size="sm" onClick={onEdit} variant="outline" className="gap-1 h-8">
