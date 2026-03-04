@@ -159,7 +159,7 @@ export default function Clients() {
         content: `פגישה נוצרה: ${meetingData.title}`,
         created_by_email: user?.email || ""
       });
-      await base44.entities.Client.update(selectedClientForMeeting.id, { last_activity_at: new Date().toISOString() });
+      // last_activity_at is set server-side only — no frontend timestamp writes
       setShowMeetingForm(false);
       setSelectedClientForMeeting(null);
       loadData();
