@@ -1,22 +1,57 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+const genTraceId = () => Math.random().toString(36).slice(2, 10).toUpperCase();
+
 Deno.serve(async (req) => {
+    const traceId = genTraceId();
     const base44 = createClientFromRequest(req);
     try {
         const user = await base44.auth.me();
-        if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        if (!user) {
+            console.error(`[markFollowupDone][${traceId}] Unauthorized — no user`);
+            return Response.json({ ok: false, traceId, errorCode: "UNAUTHORIZED" }, { status: 401 });
+        }
 
-        const { lead_id } = await req.json();
-        if (!lead_id) return Response.json({ error: 'Missing lead_id' }, { status: 400 });
+        let body;
+        try { body = await req.json(); } catch (_) { body = {}; }
+        const { lead_id } = body;
 
-        // Verify ownership via user-scoped read (RLS covers created_by + owner_email for reads)
+        if (!lead_id) {
+            console.error(`[markFollowupDone][${traceId}] BAD_REQUEST — missing lead_id`);
+            return Response.json({ ok: false, traceId, errorCode: "BAD_REQUEST", message: "Missing lead_id" }, { status: 400 });
+        }
+
+        console.log(`[markFollowupDone][${traceId}] user=${user.email} lead_id=${lead_id}`);
+
+        // Fetch lead directly by id
         let lead = null;
         try {
-            const allLeads = await base44.entities.Client.list('-created_date', 500);
-            lead = allLeads?.find(l => l.id === lead_id) || null;
-        } catch (_) {}
+            const results = await base44.entities.Client.filter({ id: lead_id }, '-created_date', 1);
+            lead = results?.[0] || null;
+        } catch (e) {
+            console.warn(`[markFollowupDone][${traceId}] user-scoped filter failed: ${e.message}`);
+        }
 
-        if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
+        if (!lead) {
+            try {
+                const results = await base44.asServiceRole.entities.Client.filter({ id: lead_id }, '-created_date', 1);
+                const found = results?.[0];
+                if (found && (found.owner_email === user.email || found.created_by === user.email)) {
+                    lead = found;
+                } else if (found) {
+                    return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
+                }
+            } catch (e) {
+                console.error(`[markFollowupDone][${traceId}] service-role filter failed: ${e.message}`);
+            }
+        }
+
+        if (!lead) {
+            console.error(`[markFollowupDone][${traceId}] LEAD_NOT_FOUND — lead_id=${lead_id} user=${user.email}`);
+            return Response.json({ ok: false, traceId, errorCode: "LEAD_NOT_FOUND", message: "Lead not found" }, { status: 404 });
+        }
+
+        console.log(`[markFollowupDone][${traceId}] lead found: name=${lead.name}`);
 
         const now = new Date().toISOString();
         await base44.asServiceRole.entities.Client.update(lead_id, {
@@ -32,8 +67,11 @@ Deno.serve(async (req) => {
             created_by_email: user.email
         });
 
-        return Response.json({ ok: true });
+        console.log(`[markFollowupDone][${traceId}] SUCCESS`);
+        return Response.json({ ok: true, traceId, leadId: lead_id });
+
     } catch (error) {
-        return Response.json({ error: error.message }, { status: 500 });
+        console.error(`[markFollowupDone][${traceId}] UNEXPECTED ERROR:`, error.stack || error.message);
+        return Response.json({ ok: false, traceId, errorCode: "SERVER_ERROR", message: error.message }, { status: 500 });
     }
 });
