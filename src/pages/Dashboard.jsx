@@ -8,17 +8,13 @@ import { Users, Calendar, TrendingUp, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { startOfMonth } from "date-fns";
 import { computeLeadPriority, isPast, isSlaBreached, SLA_MINUTES, endOfTodayUtcMs } from "@/components/utils/timeUtils";
+import { useServerTime } from "@/components/utils/ServerTimeContext";
 
 import StatsCard from "../components/dashboard/StatsCard";
-import RecentClients from "../components/dashboard/RecentClients";
-import UpcomingMeetings from "../components/dashboard/UpcomingMeetings";
-import LeadsClientsTrendChart from "../components/reports/LeadsClientsTrendChart";
-import ReportsWidget from "../components/dashboard/ReportsWidget";
-import WorkBlockList from "../components/dashboard/WorkBlockList";
-
-const computePriorityDash = computeLeadPriority;
+...
 
 export default function Dashboard() {
+  const { getNowMs, serverOffsetMs } = useServerTime();
   const [clients, setClients] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
