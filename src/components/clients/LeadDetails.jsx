@@ -294,9 +294,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   // contactCycleOpen: true = show "נוצר קשר" tag + followup-done btn, false = show "סמן נוצר קשר"
   // Managed as independent state — NOT re-derived from DB on refresh to avoid race conditions.
   // Only resets when switching to a different lead.
-  const [contactCycleOpen, setContactCycleOpen] = useState(
-    !!initialClient.first_response_at && !!initialClient.next_followup_at
-  );
+  const [contactCycleOpen, setContactCycleOpen] = useState(!!initialClient.first_response_at);
 
   // Only reset when switching to a different lead
   useEffect(() => {
