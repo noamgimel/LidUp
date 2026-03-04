@@ -192,7 +192,7 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
                   day: "2-digit", month: "2-digit", year: "numeric",
                   hour: "2-digit", minute: "2-digit", hour12: false
                 }).format(new Date(iso));
-                await base44.asServiceRole.entities.LeadActivity.create({
+                await base44.entities.LeadActivity.create({
                   lead_id: client.id,
                   event_type: "followup_rescheduled",
                   content: `פולואפ עודכן ל-${formattedDate}${note ? ` — ${note}` : ""}`,
