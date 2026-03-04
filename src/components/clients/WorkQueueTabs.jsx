@@ -3,15 +3,19 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Plus, Bell, Users, CheckCircle } from "lucide-react";
 import { isSlaBreached, isPast, SLA_MINUTES, getLeadReceivedAt } from "@/components/utils/timeUtils";
 
-export function classifyLead(c) {
+/**
+ * @param {object} c - lead/client object
+ * @param {number} [nowMs] - server-synced now (from useServerTime)
+ */
+export function classifyLead(c, nowMs) {
+  const now = nowMs ?? Date.now();
   const lifecycle = c.lifecycle || "open";
   if (lifecycle !== "open") return "closed";
 
   const followupMs = c.next_followup_at ? new Date(c.next_followup_at).getTime() : null;
-  const now = Date.now();
 
-  // Overdue SLA: no first_response AND >SLA_MINUTES old (UTC comparison, always using server-set created_date)
-  const isSlaOverdue = !c.first_response_at && isSlaBreached(getLeadReceivedAt(c));
+  // Overdue SLA: no first_response AND >SLA_MINUTES old (UTC, server-synced now)
+  const isSlaOverdue = !c.first_response_at && isSlaBreached(getLeadReceivedAt(c), SLA_MINUTES, now);
   // Overdue followup
   const isFollowupOverdue = followupMs && followupMs <= now;
 
