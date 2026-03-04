@@ -283,6 +283,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
   const handleFirstResponse = async () => {
     if (client.first_response_at || isMarkingContacted) return;
+    if (!client.id) { alert("שגיאה: לא נמצא מזהה ליד"); return; }
     setIsMarkingContacted(true);
     try {
       console.log("[LeadDetails] markFirstContact →", { lead_id: client.id });
@@ -299,14 +300,17 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
         onRefresh?.();
         setShowFollowupPrompt(true);
       } else {
-        const msg = data?.error || "שגיאה בסימון קשר ראשון";
-        console.error("[LeadDetails] markFirstContact error:", msg);
-        alert(`שגיאה: ${msg}`);
+        const traceInfo = data?.traceId ? ` (traceId: ${data.traceId})` : "";
+        const msg = data?.message || data?.error || "שגיאה בסימון קשר ראשון";
+        console.error("[LeadDetails] markFirstContact error:", msg, data);
+        alert(`שגיאה: ${msg}${traceInfo}`);
       }
     } catch (err) {
-      const msg = err?.response?.data?.error || err?.message || "שגיאת שרת";
+      const data = err?.response?.data;
+      const traceInfo = data?.traceId ? ` (traceId: ${data.traceId})` : "";
+      const msg = data?.message || data?.error || err?.message || "שגיאת שרת";
       console.error("[LeadDetails] markFirstContact ← FAILED", err?.response?.status, msg);
-      alert(`שגיאה: ${msg}`);
+      alert(`שגיאה: ${msg}${traceInfo}`);
     } finally {
       setIsMarkingContacted(false);
     }
@@ -314,16 +318,28 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
   const handleFollowupDone = async () => {
     if (isMarkingFollowupDone) return;
+    if (!client.id) { alert("שגיאה: לא נמצא מזהה ליד"); return; }
     setIsMarkingFollowupDone(true);
     try {
-      console.log("[LeadDetails] markFollowupDone →", { action: "mark followup done", lead_id: client.id });
+      console.log("[LeadDetails] markFollowupDone →", { lead_id: client.id });
       const res = await markFollowupDone({ lead_id: client.id });
       console.log("[LeadDetails] markFollowupDone ← success", res?.status, res?.data);
-      setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
-      onRefresh?.();
-      setShowFollowupPrompt(true);
+      const data = res?.data;
+      if (data?.ok) {
+        setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
+        onRefresh?.();
+        setShowFollowupPrompt(true);
+      } else {
+        const traceInfo = data?.traceId ? ` (traceId: ${data.traceId})` : "";
+        const msg = data?.message || data?.error || "שגיאה בסימון פולואפ";
+        alert(`שגיאה: ${msg}${traceInfo}`);
+      }
     } catch (err) {
-      console.error("[LeadDetails] markFollowupDone ← FAILED", err?.response?.status, err?.message);
+      const data = err?.response?.data;
+      const traceInfo = data?.traceId ? ` (traceId: ${data.traceId})` : "";
+      const msg = data?.message || data?.error || err?.message || "שגיאת שרת";
+      console.error("[LeadDetails] markFollowupDone ← FAILED", err?.response?.status, msg);
+      alert(`שגיאה: ${msg}${traceInfo}`);
     } finally {
       setIsMarkingFollowupDone(false);
     }
