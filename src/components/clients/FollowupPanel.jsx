@@ -45,7 +45,7 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
       if (res?.data?.ok) {
         onFollowupDone?.();
         onUpdate?.({ next_followup_at: null, next_followup_note: null, first_response_at: null });
-        setShowNextPrompt(true);
+        setShowNextPrompt(true);  // רק Prompt לפולואפ הבא - לא Prompt "האם נוצר קשר"
       }
     } catch (err) {
       console.error("[FollowupPanel] markFollowupDone FAILED", err?.message);
@@ -57,32 +57,26 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
   const handleCancel = async () => {
     console.group("[FollowupPanel::handleCancel] START");
     console.log("🔹 leadId:", client.id);
-    console.log("🔹 before:", { next_followup_at: client.next_followup_at, next_followup_note: client.next_followup_note });
+    console.log("🔹 before:", { next_followup_at: client.next_followup_at });
     setIsSaving(true);
     try {
       const res = await cancelFollowup({ lead_id: client.id });
       const data = res?.data;
       
-      console.log("📤 RESPONSE from cancelFollowup:");
-      console.log(JSON.stringify(data, null, 2));
-      console.log("📊 status code:", res?.status);
-      console.log("🔍 traceId:", data?.traceId);
+      console.log("📤 RESPONSE from cancelFollowup:", JSON.stringify(data, null, 2));
       
       if (data?.ok) {
         console.log("✅ SUCCESS - clearing followup state");
+        // עדכון state + refetch נתונים לעקביות
         onUpdate?.({ next_followup_at: null, next_followup_note: null });
         setShowCancelConfirm(false);
         setIsEditing(false);
+        // הערה: כפתור "סמן נוצר קשר" נשאר מוסתר - משום שהכלל: חוזר רק אחרי followup_done
       } else {
-        console.error(`❌ FAILED: ${data?.message || data?.error} | traceId=${data?.traceId}`);
+        console.error(`❌ FAILED: ${data?.message} | traceId=${data?.traceId}`);
       }
     } catch (err) {
-      console.error("💥 EXCEPTION:", { 
-        message: err?.message, 
-        status: err?.response?.status,
-        data: err?.response?.data,
-        leadId: client.id 
-      });
+      console.error("💥 EXCEPTION:", err?.message);
     } finally {
       console.groupEnd();
       setIsSaving(false);
@@ -90,24 +84,21 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
   };
 
   const handleFirstContact = async () => {
-    // סוגר הפופאפ מייד — לא מחכה לקריאה async
+    // סוגר הפופאפ מייד — רק סימון קשר, ללא Prompt נוסף
     setShowFirstContactPrompt(false);
     
     console.group("[FollowupPanel::handleFirstContact] START");
-    console.log("🔹 leadId:", client.id);
+    console.log("🔹 Direct mark first contact - no prompt");
     try {
-      console.log("✅ markFirstContact v2 calling");
       const res = await markFirstContact({ lead_id: client.id });
       const data = res?.data;
       
-      console.log("📤 RESPONSE:", JSON.stringify(data, null, 2));
-      
       if (!data?.ok) {
-        console.error(`❌ FAILED: ${data?.message} | errorCode=${data?.errorCode}`);
+        console.error(`❌ FAILED: ${data?.message}`);
         return;
       }
       
-      console.log("✅ SUCCESS");
+      console.log("✅ SUCCESS - first_contact marked");
       onUpdate?.({ first_response_at: data.first_response_at || new Date().toISOString() });
     } catch (err) {
       console.error("💥 EXCEPTION:", err?.message);
