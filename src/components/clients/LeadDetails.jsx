@@ -311,6 +311,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
           priority: data.priority || prev.priority,
           ...(data.work_stage ? { work_stage: data.work_stage } : {})
         }));
+        setContactCycleOpen(true);
         onRefresh?.();
         setShowFollowupPrompt(true);
       } else {
