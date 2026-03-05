@@ -8,7 +8,6 @@ Deno.serve(async (req) => {
     try {
         const user = await base44.auth.me();
         if (!user) {
-            console.error(`[markFirstContact][${traceId}] Unauthorized — no user`);
             return Response.json({ ok: false, traceId, errorCode: "UNAUTHORIZED" }, { status: 401 });
         }
 
@@ -16,82 +15,95 @@ Deno.serve(async (req) => {
         try { body = await req.json(); } catch (_) { body = {}; }
         const { lead_id } = body;
 
-        console.log(`[markFirstContact][${traceId}] REQUEST BODY:`, JSON.stringify(body));
-
         if (!lead_id || typeof lead_id !== 'string' || lead_id.trim() === '') {
-            console.error(`[markFirstContact][${traceId}] BAD_REQUEST — lead_id missing or invalid | received: ${JSON.stringify(lead_id)}`);
             return Response.json({ ok: false, traceId, errorCode: "BAD_REQUEST", message: "Missing or invalid lead_id" }, { status: 400 });
         }
 
-        console.log(`[markFirstContact][${traceId}] ✅ user=${user.email} | lead_id=${lead_id}`);
+        console.log(`[markFirstContact][${traceId}] user=${user.email} lead_id=${lead_id}`);
 
-        // ✅ Use direct get() instead of filter — avoids CPU timeout
-         let lead = null;
-         try {
-             // Try as current user first
-             lead = await base44.entities.Client.get(lead_id);
-             console.log(`[markFirstContact][${traceId}] ✅ lead fetched via user-scoped get`);
-         } catch (e) {
-             console.warn(`[markFirstContact][${traceId}] ⚠️ user-scoped get failed: ${e.message}`);
-         }
-
-         // Fallback: try service role
-         if (!lead) {
-             try {
-                 lead = await base44.asServiceRole.entities.Client.get(lead_id);
-                 if (lead) {
-                     console.log(`[markFirstContact][${traceId}] 🔍 lead found via service-role | owner_email=${lead.owner_email} created_by=${lead.created_by}`);
-                     if (lead.owner_email === user.email || lead.created_by === user.email) {
-                         console.log(`[markFirstContact][${traceId}] ✅ ownership check PASSED`);
-                     } else {
-                         console.warn(`[markFirstContact][${traceId}] ❌ ownership check FAILED — user=${user.email}`);
-                         return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
-                     }
-                 }
-             } catch (e) {
-                 console.error(`[markFirstContact][${traceId}] 💥 service-role get failed: ${e.message}`);
-             }
-         }
-
+        // Fetch lead
+        let lead = null;
+        try {
+            lead = await base44.entities.Client.get(lead_id);
+        } catch (e) {
+            console.warn(`[markFirstContact][${traceId}] user-scoped get failed: ${e.message}`);
+        }
         if (!lead) {
-            console.error(`[markFirstContact][${traceId}] ❌ LEAD_NOT_FOUND — lead_id=${lead_id} fetchMethod=${fetchMethod}`);
+            try {
+                lead = await base44.asServiceRole.entities.Client.get(lead_id);
+                if (lead && lead.owner_email !== user.email && lead.created_by !== user.email) {
+                    return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
+                }
+            } catch (e) {
+                console.error(`[markFirstContact][${traceId}] service-role get failed: ${e.message}`);
+            }
+        }
+        if (!lead) {
             return Response.json({ ok: false, traceId, errorCode: "LEAD_NOT_FOUND", message: "Lead not found" }, { status: 404 });
         }
 
-        console.log(`[markFirstContact][${traceId}] 📌 lead found: id=${lead.id} name=${lead.name} first_response_at=${lead.first_response_at}`);
+        const now = new Date().toISOString();
+        const isFirstContact = !lead.first_response_at;
 
-        if (lead.first_response_at) {
-            console.log(`[markFirstContact][${traceId}] ℹ️ already_set — skipping update`);
-            return Response.json({ ok: true, traceId, leadId: lead_id, already_set: true, first_response_at: lead.first_response_at });
+        console.log(`[markFirstContact][${traceId}] isFirstContact=${isFirstContact} first_response_at=${lead.first_response_at}`);
+
+        if (isFirstContact) {
+            // ── קשר ראשון: מגדירים first_response_at + last_contact_at ──
+            const isAtInitialStage = !lead.work_stage || lead.work_stage === 'new_lead';
+            const stageUpdate = isAtInitialStage ? { work_stage: 'first_contact' } : {};
+            const newPriority = lead.priority === 'overdue' ? 'warm' : (lead.priority || 'warm');
+
+            const updatePayload = {
+                first_response_at: now,
+                last_contact_at: now,
+                last_activity_at: now,
+                priority: newPriority,
+                ...stageUpdate
+            };
+            await base44.entities.Client.update(lead_id, updatePayload);
+
+            await base44.asServiceRole.entities.LeadActivity.create({
+                lead_id,
+                event_type: 'first_response',
+                content: 'נוצר קשר ראשון עם הליד',
+                created_by_email: user.email
+            });
+
+            console.log(`[markFirstContact][${traceId}] ✅ FIRST CONTACT marked`);
+            return Response.json({
+                ok: true, traceId, leadId: lead_id,
+                is_first: true,
+                first_response_at: now,
+                last_contact_at: now,
+                priority: newPriority,
+                ...stageUpdate
+            });
+
+        } else {
+            // ── קשר נוסף: רק last_contact_at מתעדכן, first_response_at נשאר קבוע ──
+            await base44.entities.Client.update(lead_id, {
+                last_contact_at: now,
+                last_activity_at: now
+            });
+
+            await base44.asServiceRole.entities.LeadActivity.create({
+                lead_id,
+                event_type: 'contact',
+                content: 'נוצר קשר נוסף עם הליד',
+                created_by_email: user.email
+            });
+
+            console.log(`[markFirstContact][${traceId}] ✅ ADDITIONAL CONTACT marked`);
+            return Response.json({
+                ok: true, traceId, leadId: lead_id,
+                is_first: false,
+                first_response_at: lead.first_response_at,
+                last_contact_at: now
+            });
         }
 
-        const now = new Date().toISOString();
-        const isAtInitialStage = !lead.work_stage || lead.work_stage === 'new_lead';
-        const stageUpdate = isAtInitialStage ? { work_stage: 'first_contact' } : {};
-        const newPriority = lead.priority === 'overdue' ? 'warm' : (lead.priority || 'warm');
-
-        const updatePayload = { first_response_at: now, last_activity_at: now, priority: newPriority, ...stageUpdate };
-        console.log(`[markFirstContact][${traceId}] 📝 UPDATE PAYLOAD:`, JSON.stringify(updatePayload));
-
-        // Use user-scoped update — RLS write rule allows created_by OR owner_email
-        await base44.entities.Client.update(lead_id, updatePayload);
-        console.log(`[markFirstContact][${traceId}] ✅ lead updated`);
-
-        await base44.asServiceRole.entities.LeadActivity.create({
-            lead_id,
-            event_type: 'first_response',
-            content: 'נוצר קשר ראשון עם הליד',
-            created_by_email: user.email
-        });
-        console.log(`[markFirstContact][${traceId}] ✅ LeadActivity created (first_response)`);
-
-        console.log(`[markFirstContact][${traceId}] ✅✅✅ SUCCESS — returning ok:true`);
-        return Response.json({ ok: true, traceId, leadId: lead_id, first_response_at: now, priority: newPriority, ...stageUpdate });
-
     } catch (error) {
-        console.error(`[markFirstContact][${traceId}] 💥 UNEXPECTED ERROR:`, error.stack || error.message);
-        const response = { ok: false, traceId, errorCode: "SERVER_ERROR", message: error.message };
-        console.log(`[markFirstContact][${traceId}] 📤 ERROR RESPONSE:`, JSON.stringify(response));
-        return Response.json(response, { status: 500 });
+        console.error(`[markFirstContact][${traceId}] 💥 ERROR:`, error.stack || error.message);
+        return Response.json({ ok: false, traceId, errorCode: "SERVER_ERROR", message: error.message }, { status: 500 });
     }
 });

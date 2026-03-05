@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 const genTraceId = () => Math.random().toString(36).slice(2, 10).toUpperCase();
 
@@ -8,7 +8,6 @@ Deno.serve(async (req) => {
     try {
         const user = await base44.auth.me();
         if (!user) {
-            console.error(`[markFollowupDone][${traceId}] Unauthorized — no user`);
             return Response.json({ ok: false, traceId, errorCode: "UNAUTHORIZED" }, { status: 401 });
         }
 
@@ -17,21 +16,15 @@ Deno.serve(async (req) => {
         const { lead_id } = body;
 
         if (!lead_id) {
-            console.error(`[markFollowupDone][${traceId}] BAD_REQUEST — missing lead_id`);
             return Response.json({ ok: false, traceId, errorCode: "BAD_REQUEST", message: "Missing lead_id" }, { status: 400 });
         }
 
         console.log(`[markFollowupDone][${traceId}] user=${user.email} lead_id=${lead_id}`);
 
-        // Skip fetching lead — just update directly (RLS write allows created_by OR owner_email).
-        // If the lead doesn't belong to this user, the update will throw/return empty and we catch it.
-        console.log(`[markFollowupDone][${traceId}] proceeding with update for lead_id=${lead_id}`);
-
         const now = new Date().toISOString();
-        // Reset the contact cycle: clear first_response_at + followup fields.
-        // User-scoped update — RLS write allows created_by OR owner_email.
+
+        // ✅ מאפס רק next_followup_* — אסור לגעת ב-first_response_at ו-last_contact_at
         await base44.entities.Client.update(lead_id, {
-            first_response_at: null,
             next_followup_at: null,
             next_followup_note: '',
             last_activity_at: now
@@ -44,11 +37,11 @@ Deno.serve(async (req) => {
             created_by_email: user.email
         });
 
-        console.log(`[markFollowupDone][${traceId}] SUCCESS`);
-        return Response.json({ ok: true, traceId, leadId: lead_id, first_response_at: null });
+        console.log(`[markFollowupDone][${traceId}] ✅ SUCCESS`);
+        return Response.json({ ok: true, traceId, leadId: lead_id });
 
     } catch (error) {
-        console.error(`[markFollowupDone][${traceId}] UNEXPECTED ERROR:`, error.stack || error.message);
+        console.error(`[markFollowupDone][${traceId}] 💥 ERROR:`, error.stack || error.message);
         return Response.json({ ok: false, traceId, errorCode: "SERVER_ERROR", message: error.message }, { status: 500 });
     }
 });
