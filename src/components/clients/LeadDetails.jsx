@@ -81,6 +81,7 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
     followup_canceled: "פולואפ בוטל",
     followup_done: "פולואפ בוצע",
     first_response: "נוצר קשר ראשון",
+    contact: "נוצר קשר נוסף",
     meeting_created: "נוצרה פגישה",
     meeting_updated: "פגישה עודכנה"
   };
@@ -89,6 +90,7 @@ function ActivityTimeline({ leadId, onActivityAdded }) {
     created: "text-blue-600 bg-blue-50 border-blue-200",
     note: "text-slate-600 bg-slate-50 border-slate-200",
     first_response: "text-green-600 bg-green-50 border-green-200",
+    contact: "text-blue-600 bg-blue-50 border-blue-200",
     lifecycle_changed: "text-purple-600 bg-purple-50 border-purple-200",
     followup_set: "text-orange-600 bg-orange-50 border-orange-200",
     followup_rescheduled: "text-blue-600 bg-blue-50 border-blue-200",
@@ -150,6 +152,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
       return {
         ...initialClient, ...prev,
         first_response_at: 'first_response_at' in prev ? prev.first_response_at : initialClient.first_response_at,
+        last_contact_at: 'last_contact_at' in prev ? prev.last_contact_at : initialClient.last_contact_at,
         next_followup_at: 'next_followup_at' in prev ? prev.next_followup_at : initialClient.next_followup_at,
       };
     });

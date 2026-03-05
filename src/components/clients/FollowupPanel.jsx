@@ -39,8 +39,9 @@ export default function FollowupPanel({ client, onUpdate, onFollowupDone }) {
       const res = await markFollowupDone({ lead_id: client.id });
       if (res?.data?.ok) {
         onFollowupDone?.();
-        onUpdate?.({ next_followup_at: null, next_followup_note: null, first_response_at: null });
-        setShowNextPrompt(true);  // רק Prompt לפולואפ הבא - לא Prompt "האם נוצר קשר"
+        // ✅ לא מאפסים first_response_at
+        onUpdate?.({ next_followup_at: null, next_followup_note: null });
+        setShowNextPrompt(true);
       }
     } catch (err) {
       console.error("[FollowupPanel] markFollowupDone FAILED", err?.message);
