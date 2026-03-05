@@ -181,14 +181,15 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
        const res = await markFirstContact({ lead_id: client.id });
        const data = res?.data;
        if (data?.ok) {
-         setClient(prev => ({
-           ...prev,
-           first_response_at: data.first_response_at || prev.first_response_at,
+         const updatedFields = {
+           first_response_at: data.first_response_at || client.first_response_at,
            last_contact_at: data.last_contact_at || new Date().toISOString(),
-           priority: data.priority || prev.priority,
+           priority: data.priority || client.priority,
            ...(data.work_stage ? { work_stage: data.work_stage } : {})
-         }));
-         onRefresh?.();
+         };
+         setClient(prev => ({ ...prev, ...updatedFields }));
+         // עדכן גם את ה-clients state ב-parent כדי ש-enrichedClients יהיה מעודכן
+         onRefresh?.(updatedFields);
          // פעם ראשונה → פתח FollowupPrompt; קשר נוסף → אין פופאפ
          if (data.is_first) {
            setShowFollowupPrompt(true);
