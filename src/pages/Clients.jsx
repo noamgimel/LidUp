@@ -179,7 +179,17 @@ export default function Clients() {
   const handleViewDetails = (client) => {
     // Always use the enriched/fresh version so we get the latest next_followup_at etc.
     const fresh = enrichedClients.find(c => c.id === client.id) || client;
-    setViewingClient(fresh);
+    // שמור first_response_at ו-last_contact_at אם כבר הוגדרו בסשן הנוכחי
+    setViewingClient(prev => {
+      if (prev?.id === fresh.id) {
+        return {
+          ...fresh,
+          first_response_at: prev.first_response_at || fresh.first_response_at,
+          last_contact_at: prev.last_contact_at || fresh.last_contact_at,
+        };
+      }
+      return fresh;
+    });
     setShowForm(false);
     setEditingClient(null);
     setTimeout(() => {
