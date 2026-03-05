@@ -167,10 +167,8 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   const [isMarkingContacted, setIsMarkingContacted] = useState(false);
   const [isMarkingFollowupDone, setIsMarkingFollowupDone] = useState(false);
 
-  const contactCycleOpen = !!client.first_response_at;
-
   const handleFirstResponse = async () => {
-     if (contactCycleOpen || isMarkingContacted) return;
+     if (isMarkingContacted) return;
      if (!client.id) { alert("שגיאה: לא נמצא מזהה ליד"); return; }
      setIsMarkingContacted(true);
      try {
@@ -179,15 +177,18 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
        if (data?.ok) {
          setClient(prev => ({
            ...prev,
-           first_response_at: data.first_response_at || new Date().toISOString(),
+           first_response_at: data.first_response_at || prev.first_response_at,
+           last_contact_at: data.last_contact_at || new Date().toISOString(),
            priority: data.priority || prev.priority,
            ...(data.work_stage ? { work_stage: data.work_stage } : {})
          }));
          onRefresh?.();
-         // ✅ פתחנו FollowupForm — Step A done, moving to Step B
-         setShowFollowupPrompt(true);
+         // פעם ראשונה → פתח FollowupPrompt; קשר נוסף → אין פופאפ
+         if (data.is_first) {
+           setShowFollowupPrompt(true);
+         }
        } else {
-         const msg = data?.message || data?.error || "שגיאה בסימון קשר ראשון";
+         const msg = data?.message || data?.error || "שגיאה בסימון קשר";
          alert(`שגיאה: ${msg}`);
        }
      } catch (err) {
@@ -206,7 +207,8 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
       const res = await markFollowupDone({ lead_id: client.id });
       const data = res?.data;
       if (data?.ok) {
-        setClient(prev => ({ ...prev, first_response_at: null, next_followup_at: null, next_followup_note: "" }));
+        // ✅ לא מאפסים first_response_at — רק followup fields
+        setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
         onRefresh?.();
         setShowFollowupPrompt(true);
       } else {
@@ -337,42 +339,52 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
               <div className="w-px bg-slate-300 self-stretch mx-1" />
 
-              {contactCycleOpen ? (
-                <>
-                  <div className="flex items-center gap-1.5 h-9 px-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm font-semibold">
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    ✅ נוצר קשר — {formatIsraeliDate(client.first_response_at)}
-                  </div>
-                  {client.next_followup_at ? (
-                    <Button
-                      size="sm"
-                      onClick={handleFollowupDone}
-                      disabled={isMarkingFollowupDone}
-                      className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-teal-600 hover:bg-teal-700 text-white"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      {isMarkingFollowupDone ? "שומר..." : "בוצע פולואפ"}
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      onClick={() => setShowFollowupPrompt(true)}
-                      className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white"
-                    >
-                      <Bell className="w-4 h-4" />קבע פולואפ
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={handleFirstResponse}
-                  disabled={isMarkingContacted}
-                  className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Handshake className="w-4 h-4" />
-                  {isMarkingContacted ? "שומר..." : "סמן 'נוצר קשר'"}
-                </Button>
+              {/* ── תגי קשר ── */}
+              {client.first_response_at && (
+                <div className="flex items-center gap-1.5 h-9 px-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-xs font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                  קשר ראשון: {formatIsraeliDate(client.first_response_at)}
+                </div>
+              )}
+              {client.last_contact_at && client.last_contact_at !== client.first_response_at && (
+                <div className="flex items-center gap-1.5 h-9 px-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-xs font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
+                  קשר אחרון: {formatIsraeliDate(client.last_contact_at)}
+                </div>
+              )}
+
+              {/* ── כפתור "סמן נוצר קשר" — תמיד זמין ── */}
+              <Button
+                size="sm"
+                onClick={handleFirstResponse}
+                disabled={isMarkingContacted}
+                className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Handshake className="w-4 h-4" />
+                {isMarkingContacted ? "שומר..." : "סמן נוצר קשר"}
+              </Button>
+
+              {/* ── כפתורי פולואפ (רק אם יש first_response_at) ── */}
+              {client.first_response_at && (
+                client.next_followup_at ? (
+                  <Button
+                    size="sm"
+                    onClick={handleFollowupDone}
+                    disabled={isMarkingFollowupDone}
+                    className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-teal-600 hover:bg-teal-700 text-white"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    {isMarkingFollowupDone ? "שומר..." : "בוצע פולואפ"}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => setShowFollowupPrompt(true)}
+                    className="gap-1.5 h-9 text-sm font-semibold shadow-sm rounded-lg bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    <Bell className="w-4 h-4" />קבע פולואפ
+                  </Button>
+                )
               )}
 
               <Button size="sm" variant="outline" onClick={() => onCreateMeeting(client)} className="gap-1.5 h-9 text-sm font-semibold bg-white border-slate-300 text-slate-700 hover:bg-slate-50 shadow-sm rounded-lg">
@@ -498,7 +510,8 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
                   onRefresh?.();
                 }}
                 onFollowupDone={() => {
-                  setClient(prev => ({ ...prev, first_response_at: null, next_followup_at: null, next_followup_note: "" }));
+                  // ✅ לא מאפסים first_response_at — רק followup fields
+                  setClient(prev => ({ ...prev, next_followup_at: null, next_followup_note: "" }));
                   onRefresh?.();
                 }}
               />
