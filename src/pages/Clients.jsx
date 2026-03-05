@@ -348,7 +348,15 @@ export default function Clients() {
               onClose={() => setViewingClient(null)}
               onEdit={() => handleEdit(viewingClient)}
               onCreateMeeting={handleCreateMeeting}
-              onRefresh={loadData}
+              onRefresh={(updatedFields) => {
+          if (updatedFields && viewingClient?.id) {
+            // עדכן מיידית את clients state כדי ש-enrichedClients יהיה מעודכן
+            setClients(prev => prev.map(c =>
+              c.id === viewingClient.id ? { ...c, ...updatedFields } : c
+            ));
+          }
+          loadData();
+        }}
             />
           )}
         </AnimatePresence>
