@@ -6,7 +6,9 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { lead_id } = await req.json();
+    const body = await req.json();
+    // תמיכה גם בקריאה ישירה (lead_id) וגם מ-automation payload (event.entity_id)
+    const lead_id = body.lead_id || body.event?.entity_id || body.data?.id;
     if (!lead_id) return Response.json({ error: 'lead_id required' }, { status: 400 });
 
     const nowUtc = new Date().toISOString();
