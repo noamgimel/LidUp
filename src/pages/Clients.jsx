@@ -40,9 +40,13 @@ export default function Clients() {
   const [activeTab, setActiveTab] = useState("overdue"); // default: overdue SLA
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [whatsappTemplate, setWhatsappTemplate] = useState(null);
   const { toast } = useToast();
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+    base44.auth.me().then(u => { if (u?.whatsapp_template) setWhatsappTemplate(u.whatsapp_template); });
+  }, []);
 
   useEffect(() => {
     if (clients.length > 0) {
@@ -407,6 +411,7 @@ export default function Clients() {
             onView={handleViewDetails}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            whatsappTemplate={whatsappTemplate}
           />
         </div>
 
