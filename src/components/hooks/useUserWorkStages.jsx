@@ -102,11 +102,5 @@ export function useUserWorkStages() {
     }
   };
 
-  return { 
-    userWorkStages, 
-    isLoading, 
-    loadUserWorkStages, 
-    addUserWorkStage,
-    saveUserWorkStages 
-  };
+  return { userWorkStages, isLoading, loadUserWorkStages, addUserWorkStage, saveUserWorkStages };
 }
