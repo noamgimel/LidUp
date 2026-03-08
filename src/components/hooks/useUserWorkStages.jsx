@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
-import { UserCustomWorkStages } from "@/entities/UserCustomWorkStages";
-import { User } from "@/entities/User";
+import { base44 } from "@/api/base44Client";
 import { DEFAULT_WORK_STAGES } from "../utils/workStagesUtils";
 
 export function useUserWorkStages() {
   const [userWorkStages, setUserWorkStages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     loadUserWorkStages();
@@ -15,22 +13,24 @@ export function useUserWorkStages() {
   const loadUserWorkStages = async () => {
     setIsLoading(true);
     try {
-      const user = await User.me();
-      setCurrentUser(user);
-      
-      const customWorkStages = await UserCustomWorkStages.filter({ user_email: user.email });
-      
-      if (customWorkStages.length > 0 && customWorkStages[0].custom_work_stages) {
-        // Validate that all stages have required fields
-        const validStages = customWorkStages[0].custom_work_stages.filter(stage => 
-          stage && stage.id && stage.label
-        );
+      const user = await base44.auth.me();
+      if (!user?.email) {
+        setUserWorkStages(DEFAULT_WORK_STAGES);
+        setIsLoading(false);
+        return;
+      }
+
+      const records = await base44.entities.UserCustomWorkStages.filter({ user_email: user.email });
+      console.log("[useUserWorkStages] fetched records:", records?.length, records?.[0]?.custom_work_stages?.length);
+
+      if (records?.length > 0 && records[0].custom_work_stages?.length > 0) {
+        const validStages = records[0].custom_work_stages.filter(s => s?.id && s?.label);
         setUserWorkStages(validStages);
       } else {
         setUserWorkStages(DEFAULT_WORK_STAGES);
       }
     } catch (error) {
-      console.error("שגיאה בטעינת שלבי מכירה:", error);
+      console.error("[useUserWorkStages] error:", error);
       setUserWorkStages(DEFAULT_WORK_STAGES);
     }
     setIsLoading(false);
