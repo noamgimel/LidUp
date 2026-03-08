@@ -84,14 +84,24 @@ export default function NotificationSettingsPage() {
   const handleSendTest = async () => {
     setIsSendingTest(true);
     setTestResult(null);
+    setTestError(null);
+    console.log('CALL sendTestEmail START', { email: user?.email });
     try {
       const res = await base44.functions.invoke('sendTestEmail', { email: user?.email, name: user?.full_name || '' });
-      setTestResult(res?.success ? 'success' : 'error');
-    } catch {
+      console.log('sendTestEmail response:', JSON.stringify(res));
+      if (res?.success) {
+        setTestResult('success');
+      } else {
+        setTestError(res?.error || 'שגיאה לא ידועה');
+        setTestResult('error');
+      }
+    } catch (err) {
+      console.error('sendTestEmail exception:', err);
+      setTestError(err?.message || 'שגיאת רשת');
       setTestResult('error');
     }
     setIsSendingTest(false);
-    setTimeout(() => setTestResult(null), 5000);
+    setTimeout(() => { setTestResult(null); setTestError(null); }, 8000);
   };
 
   const update = (field, value) => {
