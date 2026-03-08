@@ -92,23 +92,27 @@ export default function NotificationSettingsPage() {
     setIsSendingTest(true);
     setTestResult(null);
     setTestError(null);
-    console.log('CALL sendTestEmail START', { email: user?.email });
+    console.log('[sendTestEmail] START', { email: user?.email, name: user?.full_name });
     try {
       const res = await base44.functions.invoke('sendTestEmail', { email: user?.email, name: user?.full_name || '' });
-      console.log('sendTestEmail response:', JSON.stringify(res));
-      if (res?.success) {
+      console.log('[sendTestEmail] status: 200, body:', JSON.stringify(res));
+      // השרת מחזיר { ok: true } או { ok: false, message, traceId }
+      if (res?.ok === true) {
         setTestResult('success');
       } else {
-        setTestError(res?.error || 'שגיאה לא ידועה');
+        const msg = res?.message || JSON.stringify(res) || 'שגיאה לא ידועה';
+        const traceId = res?.traceId ? ` (traceId: ${res.traceId})` : '';
+        console.error('[sendTestEmail] FAILED:', msg, res);
+        setTestError(msg + traceId);
         setTestResult('error');
       }
     } catch (err) {
-      console.error('sendTestEmail exception:', err);
+      console.error('[sendTestEmail] exception:', err?.message, err);
       setTestError(err?.message || 'שגיאת רשת');
       setTestResult('error');
     }
     setIsSendingTest(false);
-    setTimeout(() => { setTestResult(null); setTestError(null); }, 8000);
+    setTimeout(() => { setTestResult(null); setTestError(null); }, 10000);
   };
 
   const update = (field, value) => {
