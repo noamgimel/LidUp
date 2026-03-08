@@ -49,12 +49,13 @@ export default function WorkStageManager() {
   const loadUserWorkStages = async () => {
     setIsLoading(true);
     try {
-      const user = await User.me();
+      const { base44 } = await import("@/api/base44Client");
+      const user = await base44.auth.me();
       setCurrentUser(user);
       
       const [customWorkStages, clients] = await Promise.all([
-        UserCustomWorkStages.filter({ user_email: user.email }),
-        Client.filter({ created_by: user.email })
+        base44.entities.UserCustomWorkStages.filter({ user_email: user.email }),
+        base44.entities.Client.filter({ created_by: user.email })
       ]);
       
       // Count clients in each stage
