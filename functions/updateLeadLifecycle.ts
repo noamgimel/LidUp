@@ -16,15 +16,15 @@ Deno.serve(async (req) => {
             return Response.json({ ok: false, errorCode: "BAD_REQUEST", message: "Invalid lifecycle value" }, { status: 400 });
         }
 
-        // Verify ownership via service role
-        const lead = await base44.asServiceRole.entities.Client.get(lead_id);
+        // Fetch via user-scoped call — RLS guarantees ownership
+        let lead = null;
+        try {
+            lead = await base44.entities.Client.get(lead_id);
+        } catch (e) {
+            console.error(`[updateLeadLifecycle][${traceId}] user-scoped get failed: ${e.message}`);
+        }
 
         if (!lead) return Response.json({ ok: false, errorCode: "LEAD_NOT_FOUND" }, { status: 404 });
-
-        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
-            console.warn(`[updateLeadLifecycle][${traceId}] FORBIDDEN: owner=${lead.owner_email} user=${user.email}`);
-            return Response.json({ ok: false, errorCode: "FORBIDDEN" }, { status: 403 });
-        }
 
         const now = new Date().toISOString();
         await base44.asServiceRole.entities.Client.update(lead_id, {

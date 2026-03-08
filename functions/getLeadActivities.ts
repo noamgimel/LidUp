@@ -9,14 +9,15 @@ Deno.serve(async (req) => {
         const { lead_id } = await req.json();
         if (!lead_id) return Response.json({ error: 'Missing lead_id' }, { status: 400 });
 
-        // Verify ownership via service role
-        const lead = await base44.asServiceRole.entities.Client.get(lead_id);
+        // Fetch via user-scoped call — RLS guarantees ownership
+        let lead = null;
+        try {
+            lead = await base44.entities.Client.get(lead_id);
+        } catch (e) {
+            // not found or no permission
+        }
 
         if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
-
-        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
-            return Response.json({ error: 'Permission denied' }, { status: 403 });
-        }
 
         const activities = await base44.asServiceRole.entities.LeadActivity.filter(
             { lead_id },

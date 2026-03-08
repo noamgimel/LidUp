@@ -13,15 +13,16 @@ Deno.serve(async (req) => {
             return Response.json({ ok: false, error: 'Missing client_id' }, { status: 400 });
         }
 
-        // Verify ownership via service role
-        const client = await base44.asServiceRole.entities.Client.get(client_id);
+        // Fetch via user-scoped call — RLS guarantees ownership
+        let client = null;
+        try {
+            client = await base44.entities.Client.get(client_id);
+        } catch (e) {
+            // not found or no permission
+        }
 
         if (!client) {
             return Response.json({ ok: false, error: 'Not found' }, { status: 404 });
-        }
-
-        if (client.owner_email !== user.email && client.created_by !== user.email) {
-            return Response.json({ ok: false, error: 'Forbidden' }, { status: 403 });
         }
 
         await base44.asServiceRole.entities.Client.delete(client_id);

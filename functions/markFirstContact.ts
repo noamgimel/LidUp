@@ -21,20 +21,17 @@ Deno.serve(async (req) => {
 
         console.log(`[markFirstContact][${traceId}] user=${user.email} lead_id=${lead_id}`);
 
-        // Fetch lead via service role and verify ownership
+        // Fetch lead via user-scoped call — RLS guarantees ownership (created_by OR owner_email)
         let lead = null;
         try {
-            lead = await base44.asServiceRole.entities.Client.get(lead_id);
+            lead = await base44.entities.Client.get(lead_id);
         } catch (e) {
-            console.error(`[markFirstContact][${traceId}] get failed: ${e.message}`);
+            console.error(`[markFirstContact][${traceId}] user-scoped get failed: ${e.message}`);
         }
+
         if (!lead) {
+            console.error(`[markFirstContact][${traceId}] LEAD_NOT_FOUND lead_id=${lead_id}`);
             return Response.json({ ok: false, traceId, errorCode: "LEAD_NOT_FOUND", message: "Lead not found" }, { status: 404 });
-        }
-        // בדוק בעלות: המשתמש חייב להיות owner_email או created_by
-        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
-            console.warn(`[markFirstContact][${traceId}] FORBIDDEN: owner=${lead.owner_email} created_by=${lead.created_by} user=${user.email}`);
-            return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
         }
 
         const now = new Date().toISOString();
@@ -43,7 +40,6 @@ Deno.serve(async (req) => {
         console.log(`[markFirstContact][${traceId}] isFirstContact=${isFirstContact} first_response_at=${lead.first_response_at}`);
 
         if (isFirstContact) {
-            // ── קשר ראשון: מגדירים first_response_at + last_contact_at ──
             const isAtInitialStage = !lead.work_stage || lead.work_stage === 'new_lead';
             const stageUpdate = isAtInitialStage ? { work_stage: 'first_contact' } : {};
             const newPriority = lead.priority === 'overdue' ? 'warm' : (lead.priority || 'warm');
@@ -56,7 +52,6 @@ Deno.serve(async (req) => {
                 ...stageUpdate
             };
             await base44.asServiceRole.entities.Client.update(lead_id, updatePayload);
-
             await base44.asServiceRole.entities.LeadActivity.create({
                 lead_id,
                 event_type: 'first_response',
@@ -75,12 +70,10 @@ Deno.serve(async (req) => {
             });
 
         } else {
-            // ── קשר נוסף: רק last_contact_at מתעדכן, first_response_at נשאר קבוע ──
             await base44.asServiceRole.entities.Client.update(lead_id, {
                 last_contact_at: now,
                 last_activity_at: now
             });
-
             await base44.asServiceRole.entities.LeadActivity.create({
                 lead_id,
                 event_type: 'contact',
