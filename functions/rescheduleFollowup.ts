@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
             created_by_email: user.email
         });
 
-        console.log(`[rescheduleFollowup][${traceId}] SUCCESS`);
+        console.log(`[rescheduleFollowup][${traceId}] ✅ SUCCESS`);
         return Response.json({ ok: true, traceId });
 
     } catch (error) {

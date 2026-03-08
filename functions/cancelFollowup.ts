@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
         });
         console.log(`[cancelFollowup][${traceId}] ✅ LeadActivity created (followup_canceled)`);
 
-        console.log(`[cancelFollowup][${traceId}] ✅✅✅ SUCCESS — returning ok:true`);
+        console.log(`[cancelFollowup][${traceId}] ✅ SUCCESS`);
         return Response.json({ ok: true, traceId });
 
     } catch (error) {
