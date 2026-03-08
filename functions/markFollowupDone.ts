@@ -21,6 +21,13 @@ Deno.serve(async (req) => {
 
         console.log(`[markFollowupDone][${traceId}] user=${user.email} lead_id=${lead_id}`);
 
+        // Verify ownership via service role
+        const lead = await base44.asServiceRole.entities.Client.get(lead_id);
+        if (!lead) return Response.json({ ok: false, traceId, errorCode: "LEAD_NOT_FOUND", message: "Lead not found" }, { status: 404 });
+        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
+            return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
+        }
+
         const now = new Date().toISOString();
 
         // ✅ מאפס רק next_followup_* — אסור לגעת ב-first_response_at ו-last_contact_at
