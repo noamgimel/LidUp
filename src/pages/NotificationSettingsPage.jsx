@@ -130,11 +130,7 @@ export default function NotificationSettingsPage() {
     );
   }
 
-  // RTL Switch fix — הסגנון הזה מתקן את translateX של Radix Switch ב-RTL
-  const switchStyle = {
-    direction: 'ltr',
-    flexShrink: 0
-  };
+
 
   return (
     <div className="px-4 pt-20 pb-8 sm:px-6 md:p-8 min-h-screen rtl-text" dir="rtl">
