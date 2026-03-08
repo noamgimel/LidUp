@@ -284,8 +284,12 @@ export default function Integrations() {
                 <CardHeader className="border-b border-slate-100 p-4 md:p-6">
                   <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      {typeof Icon === 'string' ? (
-                        <img src={Icon} alt={`${integration.name} logo`} className="w-12 h-12 rounded-lg" />
+                      {integration.icon === 'bell' ? (
+                        <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600">
+                          <Bell className="w-6 h-6 text-white" />
+                        </div>
+                      ) : typeof integration.icon === 'string' ? (
+                        <img src={integration.icon} alt={`${integration.name} logo`} className="w-12 h-12 rounded-lg" />
                       ) : (
                         <div className={`p-3 rounded-xl bg-gradient-to-br ${colorClasses.split(' ')[0]} ${colorClasses.split(' ')[1]}`}>
                           <Icon className="w-6 h-6 text-white" />
