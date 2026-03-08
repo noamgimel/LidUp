@@ -135,10 +135,12 @@ export default function NotificationSettingsPage() {
                 <p className="font-semibold text-slate-900 text-base">הפעל התראות</p>
                 <p className="text-sm text-slate-500 mt-0.5">הפעל או כבה את כל ההתראות</p>
               </div>
-              <Switch
-                checked={settings.enabled}
-                onCheckedChange={(val) => update('enabled', val)}
-              />
+              <div dir="ltr">
+                <Switch
+                  checked={settings.enabled}
+                  onCheckedChange={(val) => update('enabled', val)}
+                />
+              </div>
             </div>
             {isDisabled && (
               <div className="mt-4 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
