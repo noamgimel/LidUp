@@ -17,8 +17,7 @@ Deno.serve(async (req) => {
         }
 
         // Verify ownership via service role
-        const results = await base44.asServiceRole.entities.Client.filter({ id: lead_id }, '-created_date', 1);
-        const lead = results?.[0] || null;
+        const lead = await base44.asServiceRole.entities.Client.get(lead_id);
 
         if (!lead) return Response.json({ ok: false, errorCode: "LEAD_NOT_FOUND" }, { status: 404 });
 

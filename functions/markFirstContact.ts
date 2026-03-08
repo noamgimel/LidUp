@@ -24,10 +24,9 @@ Deno.serve(async (req) => {
         // Fetch lead via service role and verify ownership
         let lead = null;
         try {
-            const results = await base44.asServiceRole.entities.Client.filter({ id: lead_id }, '-created_date', 1);
-            lead = results?.[0] || null;
+            lead = await base44.asServiceRole.entities.Client.get(lead_id);
         } catch (e) {
-            console.error(`[markFirstContact][${traceId}] filter failed: ${e.message}`);
+            console.error(`[markFirstContact][${traceId}] get failed: ${e.message}`);
         }
         if (!lead) {
             return Response.json({ ok: false, traceId, errorCode: "LEAD_NOT_FOUND", message: "Lead not found" }, { status: 404 });
