@@ -83,7 +83,7 @@ export default function NotificationSettingsPage() {
     setIsSendingTest(true);
     setTestResult(null);
     try {
-      const res = await base44.functions.invoke('sendTestEmail', {});
+      const res = await base44.functions.invoke('sendTestEmail', { email: user?.email, name: user?.full_name || '' });
       setTestResult(res?.success ? 'success' : 'error');
     } catch {
       setTestResult('error');
