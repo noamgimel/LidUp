@@ -23,33 +23,21 @@ Deno.serve(async (req) => {
 
         console.log(`[rescheduleFollowup][${traceId}] user=${user.email} lead_id=${lead_id} datetime=${datetime}`);
 
-        // Fetch lead (RLS aware)
+        // Fetch lead via service role
         let lead = null;
         try {
-            const results = await base44.entities.Client.filter({ id: lead_id }, '-created_date', 1);
-            lead = results?.[0] || null;
+            lead = await base44.asServiceRole.entities.Client.get(lead_id);
         } catch (e) {
-            console.warn(`[rescheduleFollowup][${traceId}] user-scoped filter failed: ${e.message}`);
-        }
-
-        if (!lead) {
-            try {
-                const results = await base44.asServiceRole.entities.Client.filter({ id: lead_id }, '-created_date', 1);
-                const found = results?.[0];
-                if (found && (found.owner_email === user.email || found.created_by === user.email)) {
-                    lead = found;
-                } else if (found) {
-                    console.warn(`[rescheduleFollowup][${traceId}] ownership mismatch`);
-                    return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
-                }
-            } catch (e) {
-                console.error(`[rescheduleFollowup][${traceId}] service-role filter failed: ${e.message}`);
-            }
+            console.error(`[rescheduleFollowup][${traceId}] get failed: ${e.message}`);
         }
 
         if (!lead) {
             console.error(`[rescheduleFollowup][${traceId}] LEAD_NOT_FOUND`);
             return Response.json({ ok: false, traceId, errorCode: "LEAD_NOT_FOUND", message: "Lead not found" }, { status: 404 });
+        }
+
+        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
+            return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
         }
 
         const now = new Date().toISOString();

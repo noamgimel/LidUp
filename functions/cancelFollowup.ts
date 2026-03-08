@@ -25,47 +25,23 @@ Deno.serve(async (req) => {
 
         console.log(`[cancelFollowup][${traceId}] ✅ user=${user.email} | lead_id=${lead_id}`);
 
-        // Fetch lead using filter (RLS aware)
+        // Fetch lead via service role
         let lead = null;
-        let fetchMethod = "none";
         try {
-            const results = await base44.entities.Client.filter({ id: lead_id }, '-created_date', 1);
-            lead = results?.[0] || null;
-            if (lead) {
-                fetchMethod = "user-scoped";
-                console.log(`[cancelFollowup][${traceId}] 📌 lead found via user-scoped filter`);
-            }
+            lead = await base44.asServiceRole.entities.Client.get(lead_id);
         } catch (e) {
-            console.warn(`[cancelFollowup][${traceId}] ⚠️ user-scoped filter failed: ${e.message}`);
-        }
-
-        // Fallback: service role + ownership check
-        if (!lead) {
-            try {
-                const results = await base44.asServiceRole.entities.Client.filter({ id: lead_id }, '-created_date', 1);
-                const found = results?.[0];
-                if (found) {
-                    console.log(`[cancelFollowup][${traceId}] 🔍 lead found via service-role | owner_email=${found?.owner_email}`);
-                    if (found.owner_email === user.email || found.created_by === user.email) {
-                        lead = found;
-                        fetchMethod = "service-role";
-                        console.log(`[cancelFollowup][${traceId}] ✅ ownership check PASSED`);
-                    } else {
-                        console.warn(`[cancelFollowup][${traceId}] ❌ ownership check FAILED — user=${user.email}`);
-                        return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
-                    }
-                }
-            } catch (e) {
-                console.error(`[cancelFollowup][${traceId}] 💥 service-role filter failed: ${e.message}`);
-            }
+            console.error(`[cancelFollowup][${traceId}] 💥 get failed: ${e.message}`);
         }
 
         if (!lead) {
-            console.error(`[cancelFollowup][${traceId}] ❌ LEAD_NOT_FOUND — lead_id=${lead_id} fetchMethod=${fetchMethod}`);
+            console.error(`[cancelFollowup][${traceId}] ❌ LEAD_NOT_FOUND — lead_id=${lead_id}`);
             return Response.json({ ok: false, traceId, errorCode: "LEAD_NOT_FOUND", message: "Lead not found" }, { status: 404 });
         }
 
-        console.log(`[cancelFollowup][${traceId}] 📊 BEFORE: next_followup_at=${lead.next_followup_at}`);
+        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
+            console.warn(`[cancelFollowup][${traceId}] ❌ ownership check FAILED — user=${user.email}`);
+            return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
+        }
 
         const now = new Date().toISOString();
         await base44.asServiceRole.entities.Client.update(lead_id, {
