@@ -282,9 +282,13 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   const DEFAULT_WA_TEMPLATE = "אהלן {{lead_name}}, תודה שפנית אלינו 🙂 אשמח לעזור לך. אפשר לשאול במה מדובר?";
   const buildWaUrl = () => {
     if (!phone) return null;
-    const intl = phone.startsWith("972") ? phone : `972${phone.replace(/^0/, "")}`;
-    const tpl = (whatsappTemplate || DEFAULT_WA_TEMPLATE).replace(/\{\{lead_name\}\}/g, client.name || "");
-    return `https://wa.me/${intl}?text=${encodeURIComponent(tpl)}`;
+    const intl = phone.startsWith("972") ? phone : "972" + phone.replace(/^0/, "");
+    // Use template as-is (UTF-8), encode ONCE right before building URL
+    const tpl = typeof whatsappTemplate === "string" && whatsappTemplate.length > 0
+      ? whatsappTemplate
+      : DEFAULT_WA_TEMPLATE;
+    const message = tpl.replace(/\{\{lead_name\}\}/g, client.name || "");
+    return "https://wa.me/" + intl + "?text=" + encodeURIComponent(message);
   };
   const waUrl = buildWaUrl();
 

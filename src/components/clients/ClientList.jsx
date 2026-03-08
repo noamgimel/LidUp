@@ -24,10 +24,11 @@ function cleanPhone(phone) {
 function buildWhatsAppUrl(phone, name, template) {
   const cleaned = cleanPhone(phone);
   if (!cleaned) return null;
-  const tmpl = template || DEFAULT_WHATSAPP_TEMPLATE;
-  const leadName = name && name.trim() ? name.trim() : "אהלן";
+  // Use the template as-is (UTF-8 string), replace placeholder, encode ONCE
+  const tmpl = typeof template === "string" && template.length > 0 ? template : DEFAULT_WHATSAPP_TEMPLATE;
+  const leadName = typeof name === "string" && name.trim() ? name.trim() : "";
   const message = tmpl.replace(/\{\{lead_name\}\}/g, leadName);
-  return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
+  return "https://wa.me/" + cleaned + "?text=" + encodeURIComponent(message);
 }
 
 const ClientList = ({ clients, isLoading, onView, onEdit, onDelete, whatsappTemplate }) => {
