@@ -135,12 +135,17 @@ export default function Clients() {
           created_by_email: (await base44.auth.me())?.email || ""
         });
       } else {
-        const newLead = await base44.entities.Client.create({ ...clientData, work_stage: clientData.work_stage || "new_lead" });
+        const user = await base44.auth.me();
+        const newLead = await base44.entities.Client.create({
+          ...clientData,
+          work_stage: clientData.work_stage || "new_lead",
+          owner_email: user?.email || ""
+        });
         await base44.entities.LeadActivity.create({
           lead_id: newLead.id,
           event_type: "created",
           content: "ליד נקלט ידנית",
-          created_by_email: (await base44.auth.me())?.email || ""
+          created_by_email: user?.email || ""
         });
       }
       setShowForm(false);
