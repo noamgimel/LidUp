@@ -47,42 +47,14 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import ClientStatusSettings from './pages/ClientStatusSettings';
-import Clients from './pages/Clients';
-import Dashboard from './pages/Dashboard';
-import FormConnections from './pages/FormConnections';
-import GoogleAuthSuccess from './pages/GoogleAuthSuccess';
-import Home from './pages/Home';
-import Integrations from './pages/Integrations';
-import Meetings from './pages/Meetings';
 import NotificationSettingsPage from './pages/NotificationSettingsPage';
-import PremiumManagement from './pages/PremiumManagement';
-import Reports from './pages/Reports';
-import Settings from './pages/Settings';
-import WebsiteConnections from './pages/WebsiteConnections';
-import WorkStageSettings from './pages/WorkStageSettings';
-import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "ClientStatusSettings": ClientStatusSettings,
-    "Clients": Clients,
-    "Dashboard": Dashboard,
-    "FormConnections": FormConnections,
-    "GoogleAuthSuccess": GoogleAuthSuccess,
-    "Home": Home,
-    "Integrations": Integrations,
-    "Meetings": Meetings,
     "NotificationSettingsPage": NotificationSettingsPage,
-    "PremiumManagement": PremiumManagement,
-    "Reports": Reports,
-    "Settings": Settings,
-    "WebsiteConnections": WebsiteConnections,
-    "WorkStageSettings": WorkStageSettings,
 }
 
 export const pagesConfig = {
-    mainPage: "Dashboard",
+    mainPage: "NotificationSettingsPage",
     Pages: PAGES,
-    Layout: __Layout,
 };
