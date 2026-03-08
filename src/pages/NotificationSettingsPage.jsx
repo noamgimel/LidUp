@@ -264,8 +264,8 @@ export default function NotificationSettingsPage() {
             )}
             {testResult === 'error' && (
               <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
-                <AlertCircle className="w-4 h-4 text-red-600" />
-                <p className="text-red-700 text-sm">שגיאה בשליחת המייל. נסה שוב.</p>
+                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                <p className="text-red-700 text-sm">{testError || 'שגיאה בשליחת המייל.'}</p>
               </div>
             )}
           </CardContent>
