@@ -1,9 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
-// פונקציה זו נקראת מ-automation entity trigger על יצירת Client
-// ה-automation שולח: { event: { type, entity_name, entity_id }, data: {...}, old_data: null }
-// createClientFromRequest חייב לקבל את req המקורי לפני כל קריאה אחרת ל-req
-
 Deno.serve(async (req) => {
   const traceId = crypto.randomUUID().slice(0, 8);
   const tag = `[notifyNewLead][${traceId}]`;
@@ -11,55 +7,27 @@ Deno.serve(async (req) => {
 
   console.log(`${tag} START`);
 
-  // CRITICAL: ה-SDK צורך את ה-body stream בתוך createClientFromRequest
-  // לא לקרוא req.json() / req.text() לפני או אחרי
   const base44 = createClientFromRequest(req);
 
-  // payload מגיע דרך ה-SDK — ה-automation שולח event.entity_id כ-lead_id
-  // ה-SDK חושף אותו דרך base44.functions.getRequestPayload() אם קיים
-  // אם לא — נקבל אותו כ-argument ישיר שנשלח לפונקציה
-  // גישה אלטרנטיבית: ניצור function שמקבלת lead_id כ-arg ישיר
-
-  // ה-automation entity trigger שולח JSON body אוטומטית:
-  // { "event": { "type": "create", "entity_name": "Client", "entity_id": "xxx" }, "data": {...} }
-  // ה-SDK קורא את זה ומאחסן ב-request context
-
-  let lead_id = null;
-  let leadFromPayload = null;
-
-  // שליפת payload מה-SDK context
-  try {
-    const payload = await base44.getRequestPayload?.();
-    if (payload) {
-      lead_id = payload?.lead_id || payload?.event?.entity_id || payload?.data?.id;
-      leadFromPayload = payload?.data || null;
-      console.log(`${tag} payload via SDK:`, JSON.stringify(payload).slice(0, 500));
-    }
-  } catch (payloadErr) {
-    console.log(`${tag} getRequestPayload not available: ${payloadErr?.message}`);
-  }
-
-  // fallback: URL query param
-  if (!lead_id) {
-    const url = new URL(req.url);
-    lead_id = url.searchParams.get('lead_id');
-    if (lead_id) console.log(`${tag} lead_id from URL param: ${lead_id}`);
-  }
-
-  console.log(`${tag} lead_id resolved: "${lead_id}"`);
+  // ה-SDK מאחסן את ה-body payload לאחר צריכת ה-stream
+  // גישה נכונה: base44.payload מכיל את ה-body שנשלח
+  const payload = base44.payload || {};
+  console.log(`${tag} payload:`, JSON.stringify(payload).slice(0, 500));
 
   try {
+    const lead_id = payload?.lead_id
+      || payload?.event?.entity_id
+      || payload?.data?.id;
+
+    console.log(`${tag} lead_id resolved: "${lead_id}"`);
+
     if (!lead_id) {
-      console.error(`${tag} ERROR: lead_id missing — body not parseable (SDK consumed stream)`);
-      return Response.json({ error: 'lead_id required' }, { status: 400 });
+      console.error(`${tag} ERROR: lead_id missing. payload keys: ${Object.keys(payload).join(',')}`);
+      return Response.json({ error: 'lead_id required', payload_keys: Object.keys(payload) }, { status: 400 });
     }
 
-    // שליפת הליד (data עשוי להגיע כבר מה-automation payload)
-    let lead = leadFromPayload;
-    if (!lead || !lead.id) {
-      const leads = await base44.asServiceRole.entities.Client.filter({ id: lead_id });
-      lead = leads?.[0];
-    }
+    const leads = await base44.asServiceRole.entities.Client.filter({ id: lead_id });
+    const lead = leads?.[0];
 
     if (!lead) {
       console.error(`${tag} ERROR: Lead not found: ${lead_id}`);
