@@ -100,6 +100,22 @@ export default function Integrations() {
   
   const integrations = [
     {
+      id: "notifications",
+      name: "התראות",
+      description: "קבל התראות אוטומטיות במייל על לידים חדשים וחריגות SLA.",
+      icon: "bell",
+      status: "available",
+      features: [
+        "התראה מיידית על ליד חדש",
+        "התראה על ליד ללא מענה (חריגת SLA 30 דקות)",
+        "מייל בדיקה לאימות הגדרות",
+        "מוכן להרחבה לערוצים נוספים"
+      ],
+      color: "blue",
+      hasSettings: true,
+      settingsPage: "NotificationSettingsPage"
+    },
+    {
       id: "website-forms",
       name: "חיבורי האתר",
       description: "חיבור טפסים מהאתר לקליטה אוטומטית של לידים למערכת, בזמן אמת.",
