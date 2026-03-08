@@ -173,6 +173,11 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
   const [isMarkingContacted, setIsMarkingContacted] = useState(false);
   const [isMarkingFollowupDone, setIsMarkingFollowupDone] = useState(false);
+  const [whatsappTemplate, setWhatsappTemplate] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(u => { setWhatsappTemplate(u?.whatsapp_template || ""); });
+  }, []);
 
   const handleFirstResponse = async () => {
      if (isMarkingContacted) return;
@@ -274,6 +279,15 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
 
   const phone = client.phone?.replace(/\D/g, "") || "";
 
+  const DEFAULT_WA_TEMPLATE = "אהלן {{lead_name}}, תודה שפנית אלינו 🙂 אשמח לעזור לך. אפשר לשאול במה מדובר?";
+  const buildWaUrl = () => {
+    if (!phone) return null;
+    const intl = phone.startsWith("972") ? phone : `972${phone.replace(/^0/, "")}`;
+    const tpl = (whatsappTemplate || DEFAULT_WA_TEMPLATE).replace(/\{\{lead_name\}\}/g, client.name || "");
+    return `https://wa.me/${intl}?text=${encodeURIComponent(tpl)}`;
+  };
+  const waUrl = buildWaUrl();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -15 }}
@@ -321,16 +335,16 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
                   <TooltipContent>התקשר — {client.phone}</TooltipContent>
                 </Tooltip>
               )}
-              {phone && (
+              {waUrl && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <a href={`https://wa.me/972${phone.replace(/^0/, "")}`} target="_blank" rel="noreferrer">
+                    <a href={waUrl} target="_blank" rel="noreferrer">
                       <Button size="icon" className="bg-[#25D366] hover:bg-[#1db954] text-white h-9 w-9 shadow-sm rounded-lg">
                         <MessageCircle className="w-4 h-4" />
                       </Button>
                     </a>
                   </TooltipTrigger>
-                  <TooltipContent>וואטסאפ</TooltipContent>
+                  <TooltipContent>שלח הודעת וואטסאפ עם תבנית</TooltipContent>
                 </Tooltip>
               )}
               {client.email && (
