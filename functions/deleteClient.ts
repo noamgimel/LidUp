@@ -1,9 +1,8 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 Deno.serve(async (req) => {
+    const base44 = createClientFromRequest(req);
     try {
-        const base44 = createClientFromRequest(req);
-
         const user = await base44.auth.me();
         if (!user) {
             return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
@@ -14,8 +13,10 @@ Deno.serve(async (req) => {
             return Response.json({ ok: false, error: 'Missing client_id' }, { status: 400 });
         }
 
-        // וידוא שהרשומה שייכת למשתמש לפני מחיקה
-        const client = await base44.asServiceRole.entities.Client.get(client_id);
+        // Verify ownership via service role
+        const results = await base44.asServiceRole.entities.Client.filter({ id: client_id }, '-created_date', 1);
+        const client = results?.[0] || null;
+
         if (!client) {
             return Response.json({ ok: false, error: 'Not found' }, { status: 404 });
         }
