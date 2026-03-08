@@ -94,18 +94,17 @@ export default function NotificationSettingsPage() {
     setIsSendingTest(true);
     setTestResult(null);
     setTestError(null);
-    console.log('[sendTestEmail] START', { email: user?.email, name: user?.full_name });
     try {
       const res = await base44.functions.invoke('sendTestEmail', { email: user?.email, name: user?.full_name || '' });
-      console.log('[sendTestEmail] status: 200, body:', JSON.stringify(res));
-      // השרת מחזיר { ok: true } או { ok: false, message, traceId }
-      if (res?.ok === true) {
+      // base44.functions.invoke עשוי להחזיר את ה-body ישירות, או עטוף ב-{ data: ... }
+      const body = res?.data ?? res;
+      console.log('[sendTestEmail] body:', JSON.stringify(body));
+      if (body?.ok === true) {
         setTestResult('success');
       } else {
-        const msg = res?.message || JSON.stringify(res) || 'שגיאה לא ידועה';
-        const traceId = res?.traceId ? ` (traceId: ${res.traceId})` : '';
-        console.error('[sendTestEmail] FAILED:', msg, res);
-        setTestError(msg + traceId);
+        const msg = body?.message || 'שגיאה לא ידועה';
+        const trace = body?.traceId ? ` (traceId: ${body.traceId})` : '';
+        setTestError(msg + trace);
         setTestResult('error');
       }
     } catch (err) {

@@ -55,12 +55,12 @@ import GoogleAuthSuccess from './pages/GoogleAuthSuccess';
 import Home from './pages/Home';
 import Integrations from './pages/Integrations';
 import Meetings from './pages/Meetings';
-import NotificationSettingsPage from './pages/NotificationSettingsPage';
 import PremiumManagement from './pages/PremiumManagement';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import WebsiteConnections from './pages/WebsiteConnections';
 import WorkStageSettings from './pages/WorkStageSettings';
+import NotificationSettingsPage from './pages/NotificationSettingsPage';
 import __Layout from './Layout.jsx';
 
 
@@ -73,12 +73,12 @@ export const PAGES = {
     "Home": Home,
     "Integrations": Integrations,
     "Meetings": Meetings,
-    "NotificationSettingsPage": NotificationSettingsPage,
     "PremiumManagement": PremiumManagement,
     "Reports": Reports,
     "Settings": Settings,
     "WebsiteConnections": WebsiteConnections,
     "WorkStageSettings": WorkStageSettings,
+    "NotificationSettingsPage": NotificationSettingsPage,
 }
 
 export const pagesConfig = {
