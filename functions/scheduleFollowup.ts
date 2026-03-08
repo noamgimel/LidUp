@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
 
         const now = new Date().toISOString();
         // Use user-scoped update — RLS write rule allows created_by OR owner_email
-        await base44.entities.Client.update(lead_id, {
+        await base44.asServiceRole.entities.Client.update(lead_id, {
             next_followup_at: datetime,
             next_followup_note: note || '',
             last_activity_at: now
