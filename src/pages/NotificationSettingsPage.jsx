@@ -184,13 +184,13 @@ export default function NotificationSettingsPage() {
               </div>
               <div className="flex items-center gap-3">
                 <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">זמין</Badge>
-                <div dir="ltr">
+                <span style={switchStyle}>
                   <Switch
                     checked={settings.email_enabled}
                     onCheckedChange={(val) => update('email_enabled', val)}
                     disabled={isDisabled}
                   />
-                </div>
+                </span>
               </div>
             </div>
           </CardHeader>
