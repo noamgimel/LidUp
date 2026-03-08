@@ -36,7 +36,8 @@ export default function NotificationSettingsPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const currentUser = await base44.auth.me();
+      // parallel fetch — מהיר יותר
+      const [currentUser] = await Promise.all([base44.auth.me()]);
       setUser(currentUser);
 
       const records = await base44.entities.NotificationSettings.filter({ owner_email: currentUser.email });
