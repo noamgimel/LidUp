@@ -96,7 +96,6 @@ export default function NotificationSettingsPage() {
     setTestError(null);
     try {
       const res = await base44.functions.invoke('sendTestEmail', { email: user?.email, name: user?.full_name || '' });
-      // base44.functions.invoke עשוי להחזיר את ה-body ישירות, או עטוף ב-{ data: ... }
       const body = res?.data ?? res;
       console.log('[sendTestEmail] body:', JSON.stringify(body));
       if (body?.ok === true) {
@@ -109,7 +108,9 @@ export default function NotificationSettingsPage() {
       }
     } catch (err) {
       console.error('[sendTestEmail] exception:', err?.message, err);
-      setTestError(err?.message || 'שגיאת רשת');
+      // שגיאת No preview URL מגיעה כ-HTML, לא JSON — טיפול ידידותי
+      const msg = err?.message || String(err) || 'שגיאת רשת';
+      setTestError(msg.includes('preview') ? 'שגיאת תקשורת עם השרת — נסה שוב' : msg);
       setTestResult('error');
     }
     setIsSendingTest(false);
