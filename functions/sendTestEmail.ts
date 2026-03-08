@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
 
     // רישום לוג
     await base44.asServiceRole.entities.NotificationLog.create({
-      owner_email: user.email,
+      owner_email: targetEmail,
       lead_id: null,
       type: 'test_email',
       status,
