@@ -5,16 +5,16 @@ Deno.serve(async (req) => {
   const tag = `[notifyNewLead][${traceId}]`;
   const nowUtc = new Date().toISOString();
 
-  // CRITICAL: createClientFromRequest חייב לבוא לפני req.json() — הוא צורך את ה-stream
-  const base44 = createClientFromRequest(req);
-
+  // קריאת ה-body חייבת לפני createClientFromRequest (stream חד-פעמי)
   let body = {};
   try { body = await req.json(); } catch (_) { body = {}; }
+
+  const base44 = createClientFromRequest(req);
 
   console.log(`${tag} START raw body:`, JSON.stringify(body));
 
   try {
-    // תמיכה בקריאה ישירה וגם מ-automation payload
+    // תמיכה בקריאה ישירה, מ-automation וגם מ-invoke (payload עטוף)
     const lead_id = body?.lead_id
       || body?.payload?.lead_id
       || body?.event?.entity_id
