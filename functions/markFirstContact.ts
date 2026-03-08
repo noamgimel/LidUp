@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
                 priority: newPriority,
                 ...stageUpdate
             };
-            await base44.entities.Client.update(lead_id, updatePayload);
+            await base44.asServiceRole.entities.Client.update(lead_id, updatePayload);
 
             await base44.asServiceRole.entities.LeadActivity.create({
                 lead_id,
