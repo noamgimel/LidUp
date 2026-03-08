@@ -21,25 +21,20 @@ Deno.serve(async (req) => {
 
         console.log(`[markFirstContact][${traceId}] user=${user.email} lead_id=${lead_id}`);
 
-        // Fetch lead
+        // Fetch lead via service role and verify ownership
         let lead = null;
         try {
-            lead = await base44.entities.Client.get(lead_id);
+            lead = await base44.asServiceRole.entities.Client.get(lead_id);
         } catch (e) {
-            console.warn(`[markFirstContact][${traceId}] user-scoped get failed: ${e.message}`);
-        }
-        if (!lead) {
-            try {
-                lead = await base44.asServiceRole.entities.Client.get(lead_id);
-                if (lead && lead.owner_email !== user.email && lead.created_by !== user.email) {
-                    return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
-                }
-            } catch (e) {
-                console.error(`[markFirstContact][${traceId}] service-role get failed: ${e.message}`);
-            }
+            console.error(`[markFirstContact][${traceId}] get failed: ${e.message}`);
         }
         if (!lead) {
             return Response.json({ ok: false, traceId, errorCode: "LEAD_NOT_FOUND", message: "Lead not found" }, { status: 404 });
+        }
+        // בדוק בעלות: המשתמש חייב להיות owner_email או created_by
+        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
+            console.warn(`[markFirstContact][${traceId}] FORBIDDEN: owner=${lead.owner_email} created_by=${lead.created_by} user=${user.email}`);
+            return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
         }
 
         const now = new Date().toISOString();
