@@ -11,6 +11,8 @@ import { Bell, Mail, ArrowRight, Loader2, CheckCircle2, AlertCircle, Send, Info 
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 
+const BUILD_STAMP = 'notifications-email-fix-20260308-1400';
+
 const DEFAULT_SETTINGS = {
   enabled: true,
   email_enabled: true,
