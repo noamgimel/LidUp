@@ -76,7 +76,7 @@ const ClientList = ({ clients, isLoading, onView, onEdit, onDelete, whatsappTemp
         <div className="col-span-2">טלפון</div>
         <div className="col-span-1">מקור</div>
         <div className="col-span-2">שלב מכירה</div>
-        <div className="col-span-2">📅 מועד קליטה</div>
+        <div className="col-span-2">מועד קליטה</div>
         <div className="col-span-1">פולואפ</div>
         <div className="col-span-1 text-center">פעולות</div>
       </div>
