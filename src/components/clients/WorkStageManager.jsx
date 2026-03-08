@@ -81,7 +81,8 @@ export default function WorkStageManager() {
 
   const saveUserWorkStages = async (stages) => {
     try {
-      const existingRecord = await UserCustomWorkStages.filter({ user_email: currentUser.email });
+      const { base44 } = await import("@/api/base44Client");
+      const existingRecord = await base44.entities.UserCustomWorkStages.filter({ user_email: currentUser.email });
       
       const stageData = {
         user_email: currentUser.email,
@@ -89,9 +90,9 @@ export default function WorkStageManager() {
       };
 
       if (existingRecord.length > 0) {
-        await UserCustomWorkStages.update(existingRecord[0].id, stageData);
+        await base44.entities.UserCustomWorkStages.update(existingRecord[0].id, stageData);
       } else {
-        await UserCustomWorkStages.create(stageData);
+        await base44.entities.UserCustomWorkStages.create(stageData);
       }
     } catch (error) {
       console.error("שגיאה בשמירת שלבי עבודה:", error);
