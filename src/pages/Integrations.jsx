@@ -15,7 +15,8 @@ import {
   Copy,
   Info,
   Loader2,
-  Crown
+  Crown,
+  Bell
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -164,7 +165,7 @@ export default function Integrations() {
       case "connected":
         return <Badge className="bg-green-100 text-green-800 border-green-200"><CheckCircle2 className="w-3 h-3 mr-1" />מחובר</Badge>;
       case "available":
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200"><Plug className="w-3 h-3 mr-1" />זמין לחיבור</Badge>;
+        return <Badge className="bg-green-100 text-green-800 border-green-200"><CheckCircle2 className="w-3 h-3 mr-1" />זמין לכולם</Badge>;
       case "premium":
         return <Badge className="bg-purple-100 text-purple-800 border-purple-200"><Zap className="w-3 h-3 mr-1" />פרימיום</Badge>;
       default:
@@ -174,10 +175,24 @@ export default function Integrations() {
 
   const getActionButton = (integration) => {
     const isPremium = currentUser?.plan_type === 'PREMIUM' || currentUser?.email === 'noam.gamliel@gmail.com';
+
+    // כרטיס התראות – זמין לכולם
+    if (integration.status === "available" && integration.hasSettings) {
+      return (
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => window.location.href = createPageUrl(integration.settingsPage)}
+          className="gap-2"
+        >
+          <Settings className="w-3 h-3" />
+          הגדרות
+        </Button>
+      );
+    }
     
     if (integration.status === "premium") {
       if (isPremium && integration.hasSettings) {
-        // Premium user with settings available
         return (
           <Button 
             variant="outline" 
@@ -190,8 +205,6 @@ export default function Integrations() {
           </Button>
         );
       }
-      
-      // Non-premium or no settings
       return (
         <div className="flex flex-col items-end gap-1">
           <Button 
@@ -206,15 +219,9 @@ export default function Integrations() {
             }}
           >
             {isPremium ? (
-              <>
-                <Zap className="w-3 h-3 mr-1" />
-                התחבר
-              </>
+              <><Zap className="w-3 h-3 mr-1" />התחבר</>
             ) : (
-              <>
-                <Crown className="w-3 h-3 mr-1" />
-                שדרג לפרימיום
-              </>
+              <><Crown className="w-3 h-3 mr-1" />שדרג לפרימיום</>
             )}
           </Button>
           {!isPremium && <span className="text-xs text-purple-600">זמין למשתמשי פרימיום</span>}
@@ -222,9 +229,7 @@ export default function Integrations() {
       );
     }
     return (
-      <Button variant="outline" size="sm" disabled>
-        בפיתוח
-      </Button>
+      <Button variant="outline" size="sm" disabled>בפיתוח</Button>
     );
   };
 
