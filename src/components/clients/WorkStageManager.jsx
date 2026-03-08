@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { UserCustomWorkStages } from "@/entities/UserCustomWorkStages";
-import { Client } from "@/entities/Client";
-import { User } from "@/entities/User";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
