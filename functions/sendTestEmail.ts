@@ -3,8 +3,19 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    // ניסיון auth – אם נכשל, נמשיך עם service role (קריאה מ-functions.invoke)
+    let user = null;
+    try { user = await base44.auth.me(); } catch (_) {}
+
+    // אם אין user מה-token, ננסה לקרוא את האימייל מה-body
+    let targetEmail = user?.email;
+    let targetName = user?.full_name || '';
+    if (!targetEmail) {
+      const body = await req.json().catch(() => ({}));
+      targetEmail = body.email;
+      targetName = body.name || '';
+    }
+    if (!targetEmail) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const nowUtc = new Date().toISOString();
 
@@ -12,7 +23,7 @@ Deno.serve(async (req) => {
     let status = 'sent';
     let errorMessage = null;
     try {
-      await base44.integrations.Core.SendEmail({
+      await base44.asServiceRole.integrations.Core.SendEmail({
         to: user.email,
         subject: 'LidUp – בדיקת התראות',
         body: `<div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px;">
