@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { base44 } from "@/api/base44Client";
 import { markFirstContact } from "@/functions/markFirstContact";
 import { markFollowupDone } from "@/functions/markFollowupDone";
+import { updateLeadLifecycle } from "@/functions/updateLeadLifecycle";
 import { useUserWorkStages } from "../hooks/useUserWorkStages";
 import { PRIORITY_CONFIG, LIFECYCLE_CONFIG } from "./LeadPriorityConfig";
 import AgeTimer from "./AgeTimer";
