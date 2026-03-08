@@ -5,25 +5,33 @@ Deno.serve(async (req) => {
   const tag = `[notifyNewLead][${traceId}]`;
   const nowUtc = new Date().toISOString();
 
-  console.log(`${tag} START`);
+  // קריאת body לפני createClientFromRequest — test האם זה גורם ל-timeout
+  let body = {};
+  try {
+    const text = await req.text();
+    console.log(`${tag} raw text (first 300):`, text.slice(0, 300));
+    body = JSON.parse(text);
+  } catch (e) {
+    console.log(`${tag} body parse error: ${e?.message}`);
+    body = {};
+  }
 
+  // הרצת SDK לאחר קריאת ה-body — הוא ישתמש רק ב-headers
   const base44 = createClientFromRequest(req);
 
-  // ה-SDK מאחסן את ה-body payload לאחר צריכת ה-stream
-  // גישה נכונה: base44.payload מכיל את ה-body שנשלח
-  const payload = base44.payload || {};
-  console.log(`${tag} payload:`, JSON.stringify(payload).slice(0, 500));
+  console.log(`${tag} START body keys: ${Object.keys(body).join(',')}`);
 
   try {
-    const lead_id = payload?.lead_id
-      || payload?.event?.entity_id
-      || payload?.data?.id;
+    const lead_id = body?.lead_id
+      || body?.payload?.lead_id
+      || body?.event?.entity_id
+      || body?.data?.id;
 
     console.log(`${tag} lead_id resolved: "${lead_id}"`);
 
     if (!lead_id) {
-      console.error(`${tag} ERROR: lead_id missing. payload keys: ${Object.keys(payload).join(',')}`);
-      return Response.json({ error: 'lead_id required', payload_keys: Object.keys(payload) }, { status: 400 });
+      console.error(`${tag} ERROR: lead_id missing`);
+      return Response.json({ error: 'lead_id required', body_keys: Object.keys(body) }, { status: 400 });
     }
 
     const leads = await base44.asServiceRole.entities.Client.filter({ id: lead_id });
