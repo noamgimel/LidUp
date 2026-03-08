@@ -21,12 +21,14 @@ Deno.serve(async (req) => {
 
         console.log(`[markFollowupDone][${traceId}] user=${user.email} lead_id=${lead_id}`);
 
-        // Verify ownership via service role
-        const lead = await base44.asServiceRole.entities.Client.get(lead_id);
-        if (!lead) return Response.json({ ok: false, traceId, errorCode: "LEAD_NOT_FOUND", message: "Lead not found" }, { status: 404 });
-        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
-            return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
+        // Fetch via user-scoped call — RLS guarantees ownership
+        let lead = null;
+        try {
+            lead = await base44.entities.Client.get(lead_id);
+        } catch (e) {
+            // not found or no permission
         }
+        if (!lead) return Response.json({ ok: false, traceId, errorCode: "LEAD_NOT_FOUND", message: "Lead not found" }, { status: 404 });
 
         const now = new Date().toISOString();
 

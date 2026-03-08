@@ -23,10 +23,10 @@ Deno.serve(async (req) => {
 
         console.log(`[scheduleFollowup][${traceId}] user=${user.email} lead_id=${lead_id} datetime=${datetime}`);
 
-        // Fetch lead via service role
+        // Fetch via user-scoped call — RLS guarantees ownership
         let lead = null;
         try {
-            lead = await base44.asServiceRole.entities.Client.get(lead_id);
+            lead = await base44.entities.Client.get(lead_id);
         } catch (e) {
             console.error(`[scheduleFollowup][${traceId}] get failed: ${e.message}`);
         }
@@ -34,10 +34,6 @@ Deno.serve(async (req) => {
         if (!lead) {
             console.error(`[scheduleFollowup][${traceId}] LEAD_NOT_FOUND — lead_id=${lead_id} user=${user.email}`);
             return Response.json({ ok: false, traceId, errorCode: "LEAD_NOT_FOUND", message: "Lead not found" }, { status: 404 });
-        }
-
-        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
-            return Response.json({ ok: false, traceId, errorCode: "FORBIDDEN", message: "Permission denied" }, { status: 403 });
         }
 
         console.log(`[scheduleFollowup][${traceId}] lead found: name=${lead.name}`);

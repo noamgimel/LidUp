@@ -9,12 +9,14 @@ Deno.serve(async (req) => {
         const { lead_id, stage_id, stage_label } = await req.json();
         if (!lead_id || !stage_id) return Response.json({ error: 'Missing lead_id or stage_id' }, { status: 400 });
 
-        // Fetch lead via service role
-        const lead = await base44.asServiceRole.entities.Client.get(lead_id);
-        if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
-        if (lead.owner_email !== user.email && lead.created_by !== user.email) {
-            return Response.json({ error: 'Permission denied' }, { status: 403 });
+        // Fetch via user-scoped call — RLS guarantees ownership
+        let lead = null;
+        try {
+            lead = await base44.entities.Client.get(lead_id);
+        } catch (e) {
+            // not found or no permission
         }
+        if (!lead) return Response.json({ error: 'Lead not found' }, { status: 404 });
 
         const now = new Date().toISOString();
         // Use service role for the update to bypass RLS (ownership already verified above)
