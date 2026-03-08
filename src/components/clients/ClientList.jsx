@@ -30,7 +30,7 @@ function buildWhatsAppUrl(phone, name, template) {
   return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
 }
 
-const ClientList = ({ clients, isLoading, onView, onEdit, onDelete }) => {
+const ClientList = ({ clients, isLoading, onView, onEdit, onDelete, whatsappTemplate }) => {
   const { userWorkStages } = useUserWorkStages();
 
   const workStageLabels = React.useMemo(() => (
