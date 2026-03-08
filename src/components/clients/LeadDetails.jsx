@@ -258,17 +258,18 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
   };
 
   const handleLifecycleChange = async (newLifecycle) => {
-    const user = await base44.auth.me();
-    const now = new Date().toISOString();
-    await base44.entities.Client.update(client.id, { lifecycle: newLifecycle, last_activity_at: now });
-    await base44.entities.LeadActivity.create({
-      lead_id: client.id,
-      event_type: "lifecycle_changed",
-      content: newLifecycle === "won" ? "ליד נסגר בהצלחה ✅" : "ליד סומן כלא רלוונטי ❌",
-      created_by_email: user?.email || ""
-    });
-    setClient(prev => ({ ...prev, lifecycle: newLifecycle }));
-    onRefresh?.();
+    try {
+      const res = await updateLeadLifecycle({ lead_id: client.id, lifecycle: newLifecycle });
+      const data = res?.data;
+      if (data?.ok) {
+        setClient(prev => ({ ...prev, lifecycle: newLifecycle }));
+        onRefresh?.();
+      } else {
+        alert(`שגיאה: ${data?.message || data?.error || "שגיאת שרת"}`);
+      }
+    } catch (err) {
+      alert(`שגיאה: ${err?.response?.data?.message || err?.message || "שגיאת שרת"}`);
+    }
   };
 
   const phone = client.phone?.replace(/\D/g, "") || "";
