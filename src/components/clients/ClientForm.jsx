@@ -145,6 +145,10 @@ export default function ClientForm({ client, onSubmit, onCancel }) {
                       <SelectItem value="loading" disabled>טוען...</SelectItem>
                     ) : (
                       <>
+                        {/* If current value not in list, show it as-is */}
+                        {formData.work_stage && !userWorkStages.some(s => s.id === formData.work_stage) && (
+                          <SelectItem value={formData.work_stage} className="text-right text-slate-400">{formData.work_stage}</SelectItem>
+                        )}
                         {userWorkStages.map(stage => (
                           <SelectItem key={stage.id} value={stage.id} className="text-right">{stage.label}</SelectItem>
                         ))}
