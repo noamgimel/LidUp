@@ -7,16 +7,31 @@ Deno.serve(async (req) => {
 
   console.log(`${tag} START`);
 
-  // Clone לפני קריאת body — createClientFromRequest ישתמש ב-clone
-  const reqClone = req.clone();
-  let body = {};
-  try { body = await req.json(); } catch (_) { body = {}; }
+  // SDK חייב לקרוא את ה-body stream — לכן הוא צריך את req המקורי
+  // ה-body נקרא על ידי createClientFromRequest פנימית
+  const base44 = createClientFromRequest(req);
 
-  const base44 = createClientFromRequest(reqClone);
-
-  console.log(`${tag} raw body:`, JSON.stringify(body));
+  // body מגיע מה-automation כחלק מה-payload שה-SDK שולח לפונקציה
+  // הוא זמין דרך ה-SDK עצמו ולא דרך req.json()
+  // לכן נשתמש ב-body שה-automation שולח דרך event/data
+  // ה-automation entity trigger שולח: { event: { type, entity_name, entity_id }, data: {...} }
 
   try {
+    // שליפת ה-body מהפלטפורם — ה-SDK מעביר את ה-payload שנשלח לפונקציה
+    // כשמפעילים מ-automation: body.event.entity_id = lead_id
+    // כשמפעילים ידנית: body.lead_id
+    // כשמפעילים ממחלקת functions.invoke: body.payload.lead_id
+    
+    // גישה ישירה ל-Base44 service role ללא body parsing — 
+    // נקרא את ה-lead_id מה-env שמגיע ב-headers/context
+    
+    // WORKAROUND: נשתמש ב-URL params או נקרא body בצורה בטוחה
+    const bodyText = await req.text().catch(() => '{}');
+    let body = {};
+    try { body = JSON.parse(bodyText); } catch (_) { body = {}; }
+
+    console.log(`${tag} raw body:`, JSON.stringify(body));
+
     const lead_id = body?.lead_id
       || body?.payload?.lead_id
       || body?.event?.entity_id
