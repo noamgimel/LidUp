@@ -26,6 +26,7 @@ export default function NotificationSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [testResult, setTestResult] = useState(null); // 'success' | 'error'
+  const [testError, setTestError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
