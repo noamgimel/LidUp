@@ -37,17 +37,11 @@ export function useUserWorkStages() {
   };
 
   const saveUserWorkStages = async (stages) => {
-    if (!currentUser) return;
-    
     try {
-      // Validate and clean stages before saving
-      const validStages = stages.filter(stage => 
-        stage && 
-        stage.id && 
-        stage.label && 
-        typeof stage.id === 'string' && 
-        typeof stage.label === 'string'
-      ).map(stage => ({
+      const user = await base44.auth.me();
+      if (!user?.email) throw new Error("Not authenticated");
+
+      const validStages = stages.filter(s => s?.id && s?.label).map(stage => ({
         id: stage.id,
         label: stage.label,
         description: stage.description || "",
@@ -56,27 +50,16 @@ export function useUserWorkStages() {
         is_active: stage.is_active !== false
       }));
 
-      console.log('Saving work stages:', validStages);
+      const existing = await base44.entities.UserCustomWorkStages.filter({ user_email: user.email });
+      const stageData = { user_email: user.email, custom_work_stages: validStages };
 
-      const existingRecord = await UserCustomWorkStages.filter({ user_email: currentUser.email });
-      
-      const stageData = {
-        user_email: currentUser.email,
-        custom_work_stages: validStages
-      };
-
-      if (existingRecord.length > 0) {
-        await UserCustomWorkStages.update(existingRecord[0].id, stageData);
+      if (existing.length > 0) {
+        await base44.entities.UserCustomWorkStages.update(existing[0].id, stageData);
       } else {
-        await UserCustomWorkStages.create(stageData);
+        await base44.entities.UserCustomWorkStages.create(stageData);
       }
-      
-      // The calling function (addUserWorkStage) will update the state locally,
-      // but if saveUserWorkStages is called directly, we should update state here.
-      // For consistency with the requested change, `addUserWorkStage` will explicitly set state.
-      // setUserWorkStages(validStages); // This line is not needed here if addUserWorkStage sets the state.
     } catch (error) {
-      console.error("Error saving user work stages:", error);
+      console.error("[useUserWorkStages] save error:", error);
       throw error;
     }
   };
