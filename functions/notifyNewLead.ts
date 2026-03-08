@@ -5,16 +5,18 @@ Deno.serve(async (req) => {
   const tag = `[notifyNewLead][${traceId}]`;
   const nowUtc = new Date().toISOString();
 
-  // קריאת ה-body חייבת לפני createClientFromRequest (stream חד-פעמי)
+  console.log(`${tag} START`);
+
+  // Clone לפני קריאת body — createClientFromRequest ישתמש ב-clone
+  const reqClone = req.clone();
   let body = {};
   try { body = await req.json(); } catch (_) { body = {}; }
 
-  const base44 = createClientFromRequest(req);
+  const base44 = createClientFromRequest(reqClone);
 
-  console.log(`${tag} START raw body:`, JSON.stringify(body));
+  console.log(`${tag} raw body:`, JSON.stringify(body));
 
   try {
-    // תמיכה בקריאה ישירה, מ-automation וגם מ-invoke (payload עטוף)
     const lead_id = body?.lead_id
       || body?.payload?.lead_id
       || body?.event?.entity_id
@@ -27,12 +29,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'lead_id required' }, { status: 400 });
     }
 
-    // שליפת הליד
     const leads = await base44.asServiceRole.entities.Client.filter({ id: lead_id });
     const lead = leads?.[0];
 
     if (!lead) {
-      console.error(`${tag} ERROR: Lead not found for id: ${lead_id}`);
+      console.error(`${tag} ERROR: Lead not found: ${lead_id}`);
       return Response.json({ error: 'Lead not found' }, { status: 404 });
     }
 
@@ -40,36 +41,20 @@ Deno.serve(async (req) => {
 
     const ownerEmail = lead.owner_email || lead.created_by;
 
-    // בדיקה שלא נשלחה כבר התראה
     if (lead.new_lead_notified_at) {
       const reason = 'ALREADY_NOTIFIED';
       console.log(`${tag} SKIP: ${reason}`);
-      await base44.asServiceRole.entities.NotificationLog.create({
-        owner_email: ownerEmail || 'unknown',
-        lead_id: lead.id,
-        type: 'new_lead',
-        status: 'skipped',
-        sent_at: nowUtc,
-        error_message: reason
-      });
+      await base44.asServiceRole.entities.NotificationLog.create({ owner_email: ownerEmail || 'unknown', lead_id: lead.id, type: 'new_lead', status: 'skipped', sent_at: nowUtc, error_message: reason });
       return Response.json({ skipped: true, reason });
     }
 
     if (!ownerEmail) {
       const reason = 'OWNER_EMAIL_MISSING';
       console.error(`${tag} SKIP: ${reason}`);
-      await base44.asServiceRole.entities.NotificationLog.create({
-        owner_email: 'unknown',
-        lead_id: lead.id,
-        type: 'new_lead',
-        status: 'skipped',
-        sent_at: nowUtc,
-        error_message: reason
-      });
+      await base44.asServiceRole.entities.NotificationLog.create({ owner_email: 'unknown', lead_id: lead.id, type: 'new_lead', status: 'skipped', sent_at: nowUtc, error_message: reason });
       return Response.json({ skipped: true, reason });
     }
 
-    // שליפת הגדרות התראות
     const settings = await base44.asServiceRole.entities.NotificationSettings.filter({ owner_email: ownerEmail });
     const s = settings?.[0];
     console.log(`${tag} NotificationSettings for "${ownerEmail}": found=${!!s} enabled=${s?.enabled} email_enabled=${s?.email_enabled} notify_new_lead=${s?.notify_new_lead}`);
@@ -82,26 +67,25 @@ Deno.serve(async (req) => {
     }
     if (s.enabled === false) {
       const reason = 'SETTINGS_DISABLED';
-      console.log(`${tag} SKIP: ${reason} (enabled=false)`);
+      console.log(`${tag} SKIP: ${reason}`);
       await base44.asServiceRole.entities.NotificationLog.create({ owner_email: ownerEmail, lead_id: lead.id, type: 'new_lead', status: 'skipped', sent_at: nowUtc, error_message: reason });
       return Response.json({ skipped: true, reason });
     }
     if (s.email_enabled === false) {
       const reason = 'EMAIL_DISABLED';
-      console.log(`${tag} SKIP: ${reason} (email_enabled=false)`);
+      console.log(`${tag} SKIP: ${reason}`);
       await base44.asServiceRole.entities.NotificationLog.create({ owner_email: ownerEmail, lead_id: lead.id, type: 'new_lead', status: 'skipped', sent_at: nowUtc, error_message: reason });
       return Response.json({ skipped: true, reason });
     }
     if (s.notify_new_lead === false) {
       const reason = 'NOTIFY_NEW_LEAD_DISABLED';
-      console.log(`${tag} SKIP: ${reason} (notify_new_lead=false)`);
+      console.log(`${tag} SKIP: ${reason}`);
       await base44.asServiceRole.entities.NotificationLog.create({ owner_email: ownerEmail, lead_id: lead.id, type: 'new_lead', status: 'skipped', sent_at: nowUtc, error_message: reason });
       return Response.json({ skipped: true, reason });
     }
 
     console.log(`${tag} ALL CHECKS PASSED → SENDING email to ${ownerEmail}`);
 
-    // שליחת מייל
     let status = 'sent';
     let errorMessage = null;
 
@@ -122,9 +106,8 @@ Deno.serve(async (req) => {
           <p style="color: #64748b; font-size: 13px;">הודעה אוטומטית מ-LidUp | traceId: ${traceId}</p>
         </div>`
       });
-
       await base44.asServiceRole.entities.Client.update(lead.id, { new_lead_notified_at: nowUtc });
-      console.log(`${tag} SEND OK → email sent to ${ownerEmail}`);
+      console.log(`${tag} SEND OK`);
     } catch (emailErr) {
       status = 'failed';
       errorMessage = emailErr?.message || String(emailErr);
