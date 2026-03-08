@@ -281,6 +281,18 @@ export default function NotificationSettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Debug: Admin settings dump */}
+        {settingsId && (
+          <details className="mb-4 border border-slate-200 rounded-lg overflow-hidden">
+            <summary className="px-4 py-2 bg-slate-50 text-xs text-slate-500 cursor-pointer select-none">
+              🔍 Debug – ערכים בפועל מה-DB
+            </summary>
+            <pre className="p-4 text-xs bg-white text-slate-700 overflow-auto whitespace-pre-wrap">
+              {JSON.stringify({ settingsId, ...settings, owner_email: user?.email }, null, 2)}
+            </pre>
+          </details>
+        )}
+
         {/* Build stamp */}
         <p className="text-xs text-slate-300 text-center mb-2">Build: {BUILD_STAMP}</p>
 
