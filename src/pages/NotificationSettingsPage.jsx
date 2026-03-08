@@ -34,13 +34,20 @@ export default function NotificationSettingsPage() {
   }, []);
 
   const loadData = async () => {
+    const t0 = performance.now();
     setIsLoading(true);
     try {
-      // parallel fetch — מהיר יותר
-      const [currentUser] = await Promise.all([base44.auth.me()]);
+      // שלב 1: auth.me
+      const t1 = performance.now();
+      const currentUser = await base44.auth.me();
+      console.log(`[Notifications] auth.me took ${(performance.now() - t1).toFixed(0)} ms`);
       setUser(currentUser);
 
+      // שלב 2: טעינת הגדרות בלבד (ללא לוגים — לא נחוץ ל-MVP)
+      const t2 = performance.now();
       const records = await base44.entities.NotificationSettings.filter({ owner_email: currentUser.email });
+      console.log(`[Notifications] load settings took ${(performance.now() - t2).toFixed(0)} ms`);
+
       if (records?.length > 0) {
         const rec = records[0];
         setSettingsId(rec.id);
@@ -51,7 +58,6 @@ export default function NotificationSettingsPage() {
           notify_sla_breach: rec.notify_sla_breach !== false
         });
       } else {
-        // יצירת הגדרות ברירת מחדל
         const created = await base44.entities.NotificationSettings.create({
           owner_email: currentUser.email,
           ...DEFAULT_SETTINGS
@@ -60,8 +66,9 @@ export default function NotificationSettingsPage() {
         setSettings(DEFAULT_SETTINGS);
       }
     } catch (err) {
-      console.error("שגיאה בטעינת הגדרות התראות:", err);
+      console.error("[Notifications] loadData error:", err);
     }
+    console.log(`[Notifications] total load took ${(performance.now() - t0).toFixed(0)} ms`);
     setIsLoading(false);
   };
 
