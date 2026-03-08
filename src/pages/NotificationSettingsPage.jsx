@@ -11,7 +11,7 @@ import { Bell, Mail, ArrowRight, Loader2, CheckCircle2, AlertCircle, Send, Info 
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 
-const BUILD_STAMP = 'notifications-email-fix-20260308-1430';
+const BUILD_STAMP = 'notifications-email-fix-20260308-1400';
 
 const DEFAULT_SETTINGS = {
   enabled: true,
@@ -19,8 +19,6 @@ const DEFAULT_SETTINGS = {
   notify_new_lead: true,
   notify_sla_breach: true
 };
-
-const switchStyle = { direction: 'ltr', flexShrink: 0 };
 
 export default function NotificationSettingsPage() {
   const [user, setUser] = useState(null);
@@ -33,17 +31,21 @@ export default function NotificationSettingsPage() {
   const [testError, setTestError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const loadData = async () => {
     const t0 = performance.now();
     setIsLoading(true);
     try {
+      // שלב 1: auth.me
       const t1 = performance.now();
       const currentUser = await base44.auth.me();
       console.log(`[Notifications] auth.me took ${(performance.now() - t1).toFixed(0)} ms`);
       setUser(currentUser);
 
+      // שלב 2: טעינת הגדרות בלבד (ללא לוגים — לא נחוץ ל-MVP)
       const t2 = performance.now();
       const records = await base44.entities.NotificationSettings.filter({ owner_email: currentUser.email });
       console.log(`[Notifications] load settings took ${(performance.now() - t2).toFixed(0)} ms`);
@@ -94,21 +96,16 @@ export default function NotificationSettingsPage() {
     setTestError(null);
     console.log('[sendTestEmail] START', { email: user?.email, name: user?.full_name });
     try {
-      // base44.functions.invoke מחזיר axios response — הנתון ב-.data
-      const axiosRes = await base44.functions.invoke('sendTestEmail', {
-        email: user?.email,
-        name: user?.full_name || ''
-      });
-      const res = axiosRes?.data ?? axiosRes;
-      console.log('[sendTestEmail] status:', axiosRes?.status, '| body:', JSON.stringify(res));
-
+      const res = await base44.functions.invoke('sendTestEmail', { email: user?.email, name: user?.full_name || '' });
+      console.log('[sendTestEmail] status: 200, body:', JSON.stringify(res));
+      // השרת מחזיר { ok: true } או { ok: false, message, traceId }
       if (res?.ok === true) {
         setTestResult('success');
       } else {
         const msg = res?.message || JSON.stringify(res) || 'שגיאה לא ידועה';
-        const traceInfo = res?.traceId ? ` (traceId: ${res.traceId})` : '';
-        console.error('[sendTestEmail] FAILED:', msg);
-        setTestError(msg + traceInfo);
+        const traceId = res?.traceId ? ` (traceId: ${res.traceId})` : '';
+        console.error('[sendTestEmail] FAILED:', msg, res);
+        setTestError(msg + traceId);
         setTestResult('error');
       }
     } catch (err) {
@@ -120,7 +117,10 @@ export default function NotificationSettingsPage() {
     setTimeout(() => { setTestResult(null); setTestError(null); }, 10000);
   };
 
-  const update = (field, value) => setSettings(prev => ({ ...prev, [field]: value }));
+  const update = (field, value) => {
+    setSettings(prev => ({ ...prev, [field]: value }));
+  };
+
   const isDisabled = !settings.enabled;
 
   if (isLoading) {
@@ -131,15 +131,23 @@ export default function NotificationSettingsPage() {
     );
   }
 
+  // RTL Switch fix — הסגנון הזה מתקן את translateX של Radix Switch ב-RTL
+  const switchStyle = {
+    direction: 'ltr',
+    flexShrink: 0
+  };
+
   return (
     <div className="px-4 pt-20 pb-8 sm:px-6 md:p-8 min-h-screen rtl-text" dir="rtl">
       <div className="max-w-2xl mx-auto">
 
+        {/* Back */}
         <Link to={createPageUrl("Integrations")} className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 mb-6 transition-colors">
           <ArrowRight className="w-4 h-4" />
           <span>חזרה לאינטגרציות</span>
         </Link>
 
+        {/* Header */}
         <div className="flex items-center gap-3 mb-8">
           <div className="p-3 bg-blue-100 rounded-xl">
             <Bell className="w-7 h-7 text-blue-600" />
@@ -159,7 +167,10 @@ export default function NotificationSettingsPage() {
                 <p className="text-sm text-slate-500 mt-0.5">הפעל או כבה את כל ההתראות</p>
               </div>
               <span style={switchStyle}>
-                <Switch checked={settings.enabled} onCheckedChange={(val) => update('enabled', val)} />
+                <Switch
+                  checked={settings.enabled}
+                  onCheckedChange={(val) => update('enabled', val)}
+                />
               </span>
             </div>
             {isDisabled && (
@@ -198,6 +209,7 @@ export default function NotificationSettingsPage() {
           </CardHeader>
 
           <CardContent className="p-5 space-y-5">
+            {/* Recipient */}
             <div className="bg-slate-50 rounded-lg p-3 flex items-center gap-2">
               <Mail className="w-4 h-4 text-slate-400 flex-shrink-0" />
               <p className="text-sm text-slate-600">
@@ -207,6 +219,7 @@ export default function NotificationSettingsPage() {
 
             <Separator />
 
+            {/* Notification types */}
             <div className={settings.email_enabled ? '' : 'opacity-50 pointer-events-none'}>
               <p className="text-sm font-semibold text-slate-700 mb-3">סוגי התראות:</p>
               <div className="space-y-4">
@@ -222,6 +235,7 @@ export default function NotificationSettingsPage() {
                     <p className="text-xs text-slate-500 mt-0.5">קבל מייל מיד כאשר ליד חדש נכנס למערכת</p>
                   </div>
                 </div>
+
                 <div className="flex items-start gap-3">
                   <Checkbox
                     id="sla_breach"
@@ -239,6 +253,7 @@ export default function NotificationSettingsPage() {
 
             <Separator />
 
+            {/* Test button */}
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <p className="text-sm font-medium text-slate-700">שלח מייל בדיקה</p>
@@ -251,7 +266,11 @@ export default function NotificationSettingsPage() {
                 disabled={isSendingTest || isDisabled || !settings.email_enabled}
                 className="gap-2"
               >
-                {isSendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {isSendingTest ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
                 {isSendingTest ? 'שולח...' : 'שלח מייל בדיקה'}
               </Button>
             </div>
@@ -271,12 +290,17 @@ export default function NotificationSettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Build stamp */}
+        <p className="text-xs text-slate-300 text-center mb-2">Build: {BUILD_STAMP}</p>
+
+        {/* Future channels hint */}
         <Card className="mb-8 border-dashed border-slate-300 bg-slate-50">
           <CardContent className="p-4 text-center">
             <p className="text-slate-400 text-sm">ערוצי התראות נוספים (SMS, WhatsApp) יתווספו בקרוב</p>
           </CardContent>
         </Card>
 
+        {/* Save */}
         <div className="flex items-center justify-between">
           <div>
             {saveSuccess && (
@@ -291,8 +315,6 @@ export default function NotificationSettingsPage() {
             {isSaving ? 'שומר...' : 'שמור הגדרות'}
           </Button>
         </div>
-
-        <p className="text-xs text-slate-300 text-center mt-4">Build: {BUILD_STAMP}</p>
       </div>
     </div>
   );
