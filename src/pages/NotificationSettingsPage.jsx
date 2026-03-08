@@ -290,6 +290,9 @@ export default function NotificationSettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Build stamp */}
+        <p className="text-xs text-slate-300 text-center mb-2">Build: {BUILD_STAMP}</p>
+
         {/* Future channels hint */}
         <Card className="mb-8 border-dashed border-slate-300 bg-slate-50">
           <CardContent className="p-4 text-center">
