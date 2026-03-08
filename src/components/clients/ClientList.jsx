@@ -3,13 +3,32 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { Edit, Trash2, Eye, Users, Bell } from "lucide-react";
+import { Edit, Trash2, Eye, Users, Bell, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUserWorkStages } from "../hooks/useUserWorkStages";
 import { getWorkStageColorClass } from "../utils/workStagesUtils";
 import { PRIORITY_CONFIG } from "./LeadPriorityConfig";
 import AgeTimer from "./AgeTimer";
 import { isPast, formatIsraeliDateTimeShort } from "@/components/utils/timeUtils";
+import { base44 } from "@/api/base44Client";
+
+const DEFAULT_WHATSAPP_TEMPLATE = "אהלן {{lead_name}}, תודה שפנית אלינו 🙂 אשמח לעזור לך. אפשר לשאול במה מדובר?";
+
+function cleanPhone(phone) {
+  if (!phone) return null;
+  let p = phone.replace(/\D/g, "");
+  if (p.startsWith("0")) p = "972" + p.slice(1);
+  return p.length >= 7 ? p : null;
+}
+
+function buildWhatsAppUrl(phone, name, template) {
+  const cleaned = cleanPhone(phone);
+  if (!cleaned) return null;
+  const tmpl = template || DEFAULT_WHATSAPP_TEMPLATE;
+  const leadName = name && name.trim() ? name.trim() : "אהלן";
+  const message = tmpl.replace(/\{\{lead_name\}\}/g, leadName);
+  return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
+}
 
 const ClientList = ({ clients, isLoading, onView, onEdit, onDelete }) => {
   const { userWorkStages } = useUserWorkStages();
