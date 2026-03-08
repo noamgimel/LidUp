@@ -37,8 +37,7 @@ export default function AgeTimer({ client, createdAt, firstResponseAt, compact =
         ? 'bg-red-50 text-red-700 border-red-300'
         : 'bg-slate-50 text-slate-600 border-slate-200'
     }`}>
-      {overSLA ? <AlertTriangle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-      <span>מועד קליטה: {age.text} לפני</span>
+      <span>{age.text}</span>
     </div>
   );
 }
