@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
         }
 
         const now = new Date().toISOString();
-        await base44.asServiceRole.entities.Client.update(lead_id, {
+        await base44.entities.Client.update(lead_id, {
             next_followup_at: null,
             next_followup_note: null,
             last_activity_at: now

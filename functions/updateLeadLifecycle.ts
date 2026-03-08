@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
         if (!lead) return Response.json({ ok: false, errorCode: "LEAD_NOT_FOUND" }, { status: 404 });
 
         const now = new Date().toISOString();
-        await base44.asServiceRole.entities.Client.update(lead_id, {
+        await base44.entities.Client.update(lead_id, {
             lifecycle,
             last_activity_at: now
         });

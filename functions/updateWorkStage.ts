@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
         const now = new Date().toISOString();
         // Use service role for the update to bypass RLS (ownership already verified above)
         // Use user-scoped update — RLS write rule allows created_by OR owner_email
-        await base44.asServiceRole.entities.Client.update(lead_id, {
+        await base44.entities.Client.update(lead_id, {
             work_stage: stage_id,
             last_activity_at: now
         });

@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
             return Response.json({ ok: false, error: 'Not found' }, { status: 404 });
         }
 
-        await base44.asServiceRole.entities.Client.delete(client_id);
+        await base44.entities.Client.delete(client_id);
 
         return Response.json({ ok: true });
 
