@@ -37,14 +37,6 @@ export default function ClientForm({ client, onSubmit, onCancel }) {
   });
 
   useEffect(() => {
-    const getWorkStage = (clientStage) => {
-      if (userWorkStages.length > 0) {
-        const exists = userWorkStages.some(s => s.id === clientStage);
-        return exists ? clientStage : (userWorkStages[0]?.id || 'new_lead');
-      }
-      return clientStage || 'new_lead';
-    };
-
     if (client) {
       setFormData({
         name: client.name || "",
@@ -54,14 +46,19 @@ export default function ClientForm({ client, onSubmit, onCancel }) {
         address: client.address || "",
         priority: client.priority || "warm",
         lifecycle: client.lifecycle || "open",
-        work_stage: getWorkStage(client.work_stage),
+        work_stage: client.work_stage || "",
         notes: client.notes || "",
         source: client.source || ""
       });
-    } else if (userWorkStages.length > 0) {
-      setFormData(prev => ({ ...prev, work_stage: userWorkStages[0]?.id || 'new_lead' }));
     }
-  }, [client, userWorkStages]);
+  }, [client]);
+
+  // Set default work_stage for new leads only (when userWorkStages loads)
+  useEffect(() => {
+    if (!client && userWorkStages.length > 0 && !formData.work_stage) {
+      setFormData(prev => ({ ...prev, work_stage: userWorkStages[0]?.id || '' }));
+    }
+  }, [userWorkStages]);
 
   const handleChange = (field, value) => {
     setFormData(prev => {
