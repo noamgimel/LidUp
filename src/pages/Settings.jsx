@@ -1,10 +1,72 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import WorkStageManager from "../components/clients/WorkStageManager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Info, Settings as SettingsIcon, ClipboardList } from "lucide-react";
+import { Info, ClipboardList, MessageCircle, Save, RotateCcw } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+
+const DEFAULT_TEMPLATE = "אהלן {{lead_name}}, תודה שפנית אלינו 🙂 אשמח לעזור לך. אפשר לשאול במה מדובר?";
+
+function WhatsAppTemplateSettings() {
+  const [template, setTemplate] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then(u => {
+      setTemplate(u?.whatsapp_template || "");
+    });
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    await base44.auth.updateMe({ whatsapp_template: template });
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleReset = () => setTemplate("");
+
+  const preview = (template || DEFAULT_TEMPLATE).replace(/\{\{lead_name\}\}/g, "ישראל ישראלי");
+
+  return (
+    <Card>
+      <CardContent className="p-4 md:p-6 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">תבנית ההודעה</label>
+          <Textarea
+            value={template}
+            onChange={e => setTemplate(e.target.value)}
+            placeholder={DEFAULT_TEMPLATE}
+            className="min-h-[90px] text-right"
+            dir="rtl"
+          />
+          <p className="text-xs text-slate-400 mt-1">השתמש ב-<code className="bg-slate-100 px-1 rounded">{"{{lead_name}}"}</code> כדי להכניס את שם הליד אוטומטית. אם השדה ריק — תשמש תבנית ברירת מחדל.</p>
+        </div>
+
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <p className="text-xs font-semibold text-green-700 mb-1">תצוגה מקדימה:</p>
+          <p className="text-sm text-green-900">{preview}</p>
+        </div>
+
+        <div className="flex gap-2">
+          <Button onClick={handleSave} disabled={saving} className="bg-green-600 hover:bg-green-700 gap-2">
+            <Save className="w-4 h-4" />
+            {saving ? "שומר..." : saved ? "נשמר ✓" : "שמור תבנית"}
+          </Button>
+          <Button variant="outline" onClick={handleReset} className="gap-2 text-slate-500">
+            <RotateCcw className="w-4 h-4" />
+            איפוס לברירת מחדל
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Settings() {
   return (
@@ -39,10 +101,24 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Settings Grid - Only Work Stages now */}
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* WhatsApp Template */}
           <div className="space-y-3 md:space-y-4">
-            <div className="flex items-center gap-3 mb-3 md:mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 md:p-2 bg-green-100 rounded-lg">
+                <MessageCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+              </div>
+              <div>
+                <h2 className="text-lg md:text-xl font-bold text-slate-900">תבנית הודעת וואטסאפ</h2>
+                <p className="text-xs md:text-sm text-slate-600">הודעה שתישלח אוטומטית לליד בלחיצה על כפתור וואטסאפ</p>
+              </div>
+            </div>
+            <WhatsAppTemplateSettings />
+          </div>
+
+          {/* Work Stages */}
+          <div className="space-y-3 md:space-y-4">
+            <div className="flex items-center gap-3">
               <div className="p-1.5 md:p-2 bg-purple-100 rounded-lg">
                 <ClipboardList className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
               </div>
