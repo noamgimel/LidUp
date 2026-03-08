@@ -1,15 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 Deno.serve(async (req) => {
-  // קריאת ה-body לפני כל דבר אחר (stream חד-פעמי)
+  const traceId = crypto.randomUUID().slice(0, 8);
+  console.log(`[sendTestEmail][${traceId}] === START ===`);
+
+  // קריאת ה-body — חייבת לפני createClientFromRequest (stream חד-פעמי)
   let body = {};
   try { body = await req.json(); } catch (_) {}
 
   // base44.functions.invoke שולח { payload: {...} }
   const payload = body?.payload ?? body ?? {};
 
-  console.log('[sendTestEmail] body received:', JSON.stringify(body));
-  console.log('[sendTestEmail] payload resolved:', JSON.stringify(payload));
+  console.log(`[sendTestEmail][${traceId}] body:`, JSON.stringify(body));
+  console.log(`[sendTestEmail][${traceId}] payload:`, JSON.stringify(payload));
 
   try {
     const base44 = createClientFromRequest(req);
@@ -17,24 +20,26 @@ Deno.serve(async (req) => {
     // ניסיון auth
     let user = null;
     try { user = await base44.auth.me(); } catch (authErr) {
-      console.log('[sendTestEmail] auth.me failed (ok for invoke):', authErr.message);
+      console.log(`[sendTestEmail][${traceId}] auth.me skipped: ${authErr.message}`);
     }
+    console.log(`[sendTestEmail][${traceId}] user from auth:`, user?.email ?? 'none');
 
     const targetEmail = user?.email || payload.email;
-    const targetName = user?.full_name || payload.name || '';
+    const targetName  = user?.full_name || payload.name || '';
 
-    console.log('[sendTestEmail] targetEmail:', targetEmail, '| targetName:', targetName);
+    console.log(`[sendTestEmail][${traceId}] targetEmail: ${targetEmail} | targetName: ${targetName}`);
 
     if (!targetEmail) {
-      return Response.json({ success: false, error: 'No email found - unauthorized' }, { status: 401 });
+      console.error(`[sendTestEmail][${traceId}] ERROR: no email`);
+      return Response.json({ ok: false, errorCode: 'NO_EMAIL', message: 'לא נמצאה כתובת מייל — נא להתחבר מחדש', traceId }, { status: 401 });
     }
 
     const nowUtc = new Date().toISOString();
-    let status = 'sent';
-    let errorMessage = null;
+    let emailStatus = 'sent';
+    let emailErrorMessage = null;
 
     try {
-      console.log('[sendTestEmail] Calling SendEmail to:', targetEmail);
+      console.log(`[sendTestEmail][${traceId}] Calling SendEmail → ${targetEmail}`);
       await base44.integrations.Core.SendEmail({
         to: targetEmail,
         subject: 'LidUp – בדיקת התראות',
@@ -43,37 +48,50 @@ Deno.serve(async (req) => {
           <p>שלום ${targetName},</p>
           <p>אם קיבלת את המייל הזה – ההתראות פעילות ועובדות כראוי.</p>
           <hr style="border: 1px solid #e2e8f0; margin: 20px 0;" />
-          <p style="color: #64748b; font-size: 13px;">הודעה זו נשלחה מ-LidUp בבקשתך.</p>
+          <p style="color: #64748b; font-size: 13px;">הודעה זו נשלחה מ-LidUp בבקשתך. traceId: ${traceId}</p>
         </div>`
       });
-      console.log('[sendTestEmail] SendEmail SUCCESS');
+      console.log(`[sendTestEmail][${traceId}] SendEmail SUCCESS`);
     } catch (emailErr) {
-      status = 'failed';
-      errorMessage = emailErr.message;
-      console.error('[sendTestEmail] SendEmail FAILED:', emailErr.message, emailErr.stack);
+      emailStatus = 'failed';
+      emailErrorMessage = emailErr?.message || String(emailErr);
+      console.error(`[sendTestEmail][${traceId}] SendEmail FAILED name=${emailErr?.name} msg=${emailErr?.message}`);
+      console.error(`[sendTestEmail][${traceId}] stack:`, emailErr?.stack);
     }
 
-    // רישום לוג
+    // רישום לוג — non-blocking
     try {
       await base44.asServiceRole.entities.NotificationLog.create({
         owner_email: targetEmail,
         lead_id: null,
         type: 'test_email',
-        status,
+        status: emailStatus,
         sent_at: nowUtc,
-        error_message: errorMessage
+        error_message: emailErrorMessage
       });
     } catch (logErr) {
-      console.error('[sendTestEmail] Log creation failed:', logErr.message);
+      console.error(`[sendTestEmail][${traceId}] Log write failed: ${logErr.message}`);
     }
 
-    if (status === 'failed') {
-      return Response.json({ success: false, error: errorMessage }, { status: 200 });
+    if (emailStatus === 'failed') {
+      return Response.json({
+        ok: false,
+        errorCode: 'SEND_FAILED',
+        message: `שליחת המייל נכשלה: ${emailErrorMessage}`,
+        traceId
+      }, { status: 200 });
     }
 
-    return Response.json({ success: true });
+    console.log(`[sendTestEmail][${traceId}] === DONE OK ===`);
+    return Response.json({ ok: true, traceId });
+
   } catch (error) {
-    console.error('[sendTestEmail] Unexpected error:', error.message, error.stack);
-    return Response.json({ success: false, error: error.message }, { status: 500 });
+    console.error(`[sendTestEmail][${traceId}] Unexpected:`, error?.message, error?.stack);
+    return Response.json({
+      ok: false,
+      errorCode: 'UNEXPECTED',
+      message: error?.message || 'שגיאה לא צפויה',
+      traceId
+    }, { status: 500 });
   }
 });
