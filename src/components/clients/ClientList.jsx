@@ -172,6 +172,21 @@ const ClientList = ({ clients, isLoading, onView, onEdit, onDelete, whatsappTemp
                     <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onEdit(client); }} className="h-7 w-7 text-slate-500 hover:bg-slate-100">
                       <Edit className="w-3.5 h-3.5" />
                     </Button>
+                    {(() => {
+                      const waUrl = buildWhatsAppUrl(client.phone, client.name, whatsappTemplate);
+                      return (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={!waUrl}
+                          title={waUrl ? "שליחת וואטסאפ" : "אין מספר טלפון לליד"}
+                          onClick={e => { e.stopPropagation(); window.open(waUrl, "_blank"); }}
+                          className="h-7 w-7 text-green-600 hover:bg-green-50 disabled:opacity-30"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                        </Button>
+                      );
+                    })()}
                     <Button variant="ghost" size="icon" onClick={e => { e.stopPropagation(); onDelete(client.id); }} className="h-7 w-7 text-red-500 hover:bg-red-50">
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
