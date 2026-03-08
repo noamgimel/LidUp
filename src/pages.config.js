@@ -60,6 +60,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import WebsiteConnections from './pages/WebsiteConnections';
 import WorkStageSettings from './pages/WorkStageSettings';
+import NotificationSettingsPage from './pages/NotificationSettingsPage';
 import __Layout from './Layout.jsx';
 
 
@@ -77,6 +78,7 @@ export const PAGES = {
     "Settings": Settings,
     "WebsiteConnections": WebsiteConnections,
     "WorkStageSettings": WorkStageSettings,
+    "NotificationSettingsPage": NotificationSettingsPage,
 }
 
 export const pagesConfig = {
