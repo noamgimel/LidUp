@@ -10,7 +10,6 @@ import { Separator } from "@/components/ui/separator";
 import { Bell, Mail, ArrowRight, Loader2, CheckCircle2, AlertCircle, Send, Info } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
-import { sendTestEmail } from "@/functions/sendTestEmail";
 
 const DEFAULT_SETTINGS = {
   enabled: true,
