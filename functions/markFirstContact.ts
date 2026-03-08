@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
 
         } else {
             // ── קשר נוסף: רק last_contact_at מתעדכן, first_response_at נשאר קבוע ──
-            await base44.entities.Client.update(lead_id, {
+            await base44.asServiceRole.entities.Client.update(lead_id, {
                 last_contact_at: now,
                 last_activity_at: now
             });
