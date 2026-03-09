@@ -103,10 +103,10 @@ Deno.serve(async (req) => {
       try {
         const leadSource = lead.source || 'לא ידוע';
         await base44.asServiceRole.integrations.Core.SendEmail({
-          from_name: 'LidUp Alerts',
+          from_name: 'LidUp',
           to: ownerEmail,
           subject: 'LidUp: חריגת SLA – ליד ללא מענה',
-          body: `<strong>חריגת SLA</strong><br>עברו 30 דקות מאז קליטת ליד ועדיין לא סומן "נוצר קשר".<br><br>מקור: ${leadSource}<br><br>כנסו למערכת כדי לטפל בליד בהקדם.`
+          body: `<div dir="rtl" style="text-align:right"><strong>חריגת SLA</strong><br>עברו 30 דקות מאז קליטת ליד ועדיין לא סומן "נוצר קשר".<br><br>מקור: ${leadSource}<br><br>כנסו למערכת כדי לטפל בליד בהקדם.</div>`
         });
 
         await base44.asServiceRole.entities.Client.update(lead.id, {
