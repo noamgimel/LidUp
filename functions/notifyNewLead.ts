@@ -107,14 +107,19 @@ Deno.serve(async (req) => {
         </div>`
       });
 
-      // עדכון הליד רק אם השליחה הצליחה
-      await base44.asServiceRole.entities.Client.update(client.id, { new_lead_notified_at: nowUtc });
-      console.log(`${tag} SEND OK → new_lead email sent, Client updated`);
+      console.log(`${tag} SEND OK → new_lead email sent`);
+
+      // ניסיון עדכון new_lead_notified_at — אם נכשל בגלל RLS זה בסדר, ה-NotificationLog הוא ה-idempotency
+      try {
+        await base44.asServiceRole.entities.Client.update(client.id, { new_lead_notified_at: nowUtc });
+        console.log(`${tag} Client.new_lead_notified_at updated OK`);
+      } catch (updateErr) {
+        console.warn(`${tag} WARNING: could not update new_lead_notified_at (RLS?) — ${updateErr?.message}. NotificationLog will serve as idempotency.`);
+      }
     } catch (emailErr) {
       status = 'failed';
       errorMessage = emailErr?.message || String(emailErr);
       console.error(`${tag} SEND_FAILED: ${errorMessage}`);
-      // לא מעדכנים new_lead_notified_at כדי לאפשר ניסיון חוזר
     }
 
     await base44.asServiceRole.entities.NotificationLog.create({
