@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
         from_name: 'LidUp Alerts',
         to: ownerEmail,
         subject: 'LidUp: ליד חדש נקלט',
-        body: `ליד חדש נקלט במערכת LidUp.\n\nמקור: ${source}\n\nכנסו למערכת כדי לטפל בליד בהקדם.`
+        body: `<strong>ליד חדש נקלט במערכת LidUp</strong><br><br>מקור: ${source}<br><br>כנסו למערכת כדי לטפל בליד בהקדם.`
       });
 
       console.log(`${tag} SEND OK → new_lead email sent`);

@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
         from_name: 'LidUp Alerts',
         to: targetEmail,
         subject: 'LidUp: בדיקת התראות',
-        body: "שלום,\n\nזהו מייל בדיקה ממערכת LidUp.\nאם קיבלת אותו – ההתראות פעילות.\n\nתודה,\nLidUp"
+        body: `שלום,<br><br>זהו מייל בדיקה ממערכת <strong>LidUp</strong>.<br>אם קיבלת אותו – ההתראות פעילות.<br><br>תודה,<br>LidUp`
       });
       console.log(`[sendTestEmail][${traceId}] SendEmail SUCCESS`);
     } catch (emailErr) {

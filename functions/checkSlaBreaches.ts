@@ -101,11 +101,12 @@ Deno.serve(async (req) => {
       console.log(`${tag} SENDING sla_breach for lead "${lead.name}" (${lead.id}), ${minutesOld} min old, owner=${ownerEmail}`);
 
       try {
+        const leadSource = lead.source || 'לא ידוע';
         await base44.asServiceRole.integrations.Core.SendEmail({
           from_name: 'LidUp Alerts',
           to: ownerEmail,
           subject: 'LidUp: חריגת SLA – ליד ללא מענה',
-          body: `עברו 30 דקות מאז קליטת ליד ועדיין לא סומן "נוצר קשר".\n\nכנסו למערכת כדי לטפל בליד בהקדם.`
+          body: `<strong>חריגת SLA</strong><br>עברו 30 דקות מאז קליטת ליד ועדיין לא סומן "נוצר קשר".<br><br>מקור: ${leadSource}<br><br>כנסו למערכת כדי לטפל בליד בהקדם.`
         });
 
         await base44.asServiceRole.entities.Client.update(lead.id, {
