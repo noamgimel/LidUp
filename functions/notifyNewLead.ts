@@ -57,9 +57,21 @@ Deno.serve(async (req) => {
     const nowUtc = new Date().toISOString();
 
     // ── התראת ליד חדש ──────────────────────────────────────────
+    // idempotency: בדוק גם client.new_lead_notified_at וגם NotificationLog
     if (client.new_lead_notified_at) {
       console.log(`${tag} SKIP new_lead: already notified at ${client.new_lead_notified_at}`);
       return Response.json({ success: true, traceId, skipped: 'already_notified' });
+    }
+
+    // בדיקת NotificationLog כ-fallback idempotency (למקרה שעדכון Client נכשל בעבר)
+    const existingLog = await base44.asServiceRole.entities.NotificationLog.filter({
+      lead_id: client.id,
+      type: 'new_lead',
+      status: 'sent'
+    });
+    if (existingLog.length > 0) {
+      console.log(`${tag} SKIP new_lead: found existing sent log — already notified`);
+      return Response.json({ success: true, traceId, skipped: 'already_notified_via_log' });
     }
 
     const settings = await base44.asServiceRole.entities.NotificationSettings.filter({
