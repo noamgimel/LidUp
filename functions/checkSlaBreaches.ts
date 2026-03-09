@@ -102,14 +102,15 @@ Deno.serve(async (req) => {
 
       try {
         await base44.asServiceRole.integrations.Core.SendEmail({
+          from_name: 'LidUp Alerts',
           to: ownerEmail,
-          subject: `ליד ללא מענה: ${lead.name}`,
-          body: `ליד לא ענית עליו כבר ${minutesOld} דקות:
+          subject: 'LidUp: חריגה מ-SLA – ליד ללא מענה',
+          body: `עברו ${minutesOld} דקות מאז שנקלט ליד ועדיין לא סומן "נוצר קשר".
 
 שם: ${lead.name || '-'}
-אימייל: ${lead.email || '-'}
 טלפון: ${lead.phone || '-'}
 
+היכנס למערכת כדי לטפל בליד בהקדם.
 https://app.lidup.co.il`
         });
 
