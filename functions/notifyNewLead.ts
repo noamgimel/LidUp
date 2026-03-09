@@ -103,16 +103,15 @@ Deno.serve(async (req) => {
 
     try {
       await base44.asServiceRole.integrations.Core.SendEmail({
+        from_name: 'LidUp Alerts',
         to: ownerEmail,
-        subject: `ליד חדש: ${client.name}`,
-        body: `ליד חדש נכנס:
+        subject: 'LidUp: ליד חדש נקלט',
+        body: `ליד חדש נקלט עכשיו במערכת LidUp.
 
 שם: ${client.name || '-'}
-אימייל: ${client.email || '-'}
 טלפון: ${client.phone || '-'}
-חברה: ${client.company || '-'}
-מקור: ${client.source || '-'}
 
+היכנס למערכת כדי לטפל בליד בהקדם.
 https://app.lidup.co.il`
       });
 

@@ -41,15 +41,14 @@ Deno.serve(async (req) => {
     try {
       console.log(`[sendTestEmail][${traceId}] Calling SendEmail → ${targetEmail}`);
       await base44.integrations.Core.SendEmail({
+        from_name: 'LidUp Alerts',
         to: targetEmail,
-        subject: 'LidUp – בדיקת התראות',
-        body: `שלום${targetName ? ' ' + targetName : ''},
+        subject: 'LidUp: בדיקת התראות',
+        body: `שלום,
 
-קיבלת מייל זה כי ביקשת לבדוק שההתראות עובדות.
+זהו מייל בדיקה ממערכת LidUp.
 
-הכל תקין.
-
-— LidUp`
+אם קיבלת אותו – ההתראות פעילות.`
       });
       console.log(`[sendTestEmail][${traceId}] SendEmail SUCCESS`);
     } catch (emailErr) {
