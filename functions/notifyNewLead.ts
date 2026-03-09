@@ -104,19 +104,16 @@ Deno.serve(async (req) => {
     try {
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: ownerEmail,
-        subject: `🎯 ליד חדש נכנס למערכת: ${client.name}`,
-        body: `<div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2 style="color: #1e40af;">🎯 ליד חדש נכנס!</h2>
-          <table style="border-collapse: collapse; width: 100%; border: 1px solid #e2e8f0;">
-            <tr><td style="padding: 8px; font-weight: bold; border: 1px solid #e2e8f0;">שם:</td><td style="padding: 8px; border: 1px solid #e2e8f0;">${client.name || '-'}</td></tr>
-            <tr style="background:#f8fafc"><td style="padding: 8px; font-weight: bold; border: 1px solid #e2e8f0;">אימייל:</td><td style="padding: 8px; border: 1px solid #e2e8f0;">${client.email || '-'}</td></tr>
-            <tr><td style="padding: 8px; font-weight: bold; border: 1px solid #e2e8f0;">טלפון:</td><td style="padding: 8px; border: 1px solid #e2e8f0;">${client.phone || '-'}</td></tr>
-            <tr style="background:#f8fafc"><td style="padding: 8px; font-weight: bold; border: 1px solid #e2e8f0;">חברה:</td><td style="padding: 8px; border: 1px solid #e2e8f0;">${client.company || '-'}</td></tr>
-            <tr><td style="padding: 8px; font-weight: bold; border: 1px solid #e2e8f0;">מקור:</td><td style="padding: 8px; border: 1px solid #e2e8f0;">${client.source || '-'}</td></tr>
-          </table>
-          <hr style="border: 1px solid #e2e8f0; margin: 20px 0;" />
-          <p style="color: #64748b; font-size: 13px;">הודעה אוטומטית מ-LidUp | traceId: ${traceId}</p>
-        </div>`
+        subject: `ליד חדש: ${client.name}`,
+        body: `ליד חדש נכנס:
+
+שם: ${client.name || '-'}
+אימייל: ${client.email || '-'}
+טלפון: ${client.phone || '-'}
+חברה: ${client.company || '-'}
+מקור: ${client.source || '-'}
+
+https://app.lidup.co.il`
       });
 
       console.log(`${tag} SEND OK → new_lead email sent`);

@@ -43,13 +43,13 @@ Deno.serve(async (req) => {
       await base44.integrations.Core.SendEmail({
         to: targetEmail,
         subject: 'LidUp – בדיקת התראות',
-        body: `<div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2 style="color: #1e40af;">✅ בדיקת התראות LidUp</h2>
-          <p>שלום ${targetName},</p>
-          <p>אם קיבלת את המייל הזה – ההתראות פעילות ועובדות כראוי.</p>
-          <hr style="border: 1px solid #e2e8f0; margin: 20px 0;" />
-          <p style="color: #64748b; font-size: 13px;">הודעה זו נשלחה מ-LidUp בבקשתך. traceId: ${traceId}</p>
-        </div>`
+        body: `שלום${targetName ? ' ' + targetName : ''},
+
+קיבלת מייל זה כי ביקשת לבדוק שההתראות עובדות.
+
+הכל תקין.
+
+— LidUp`
       });
       console.log(`[sendTestEmail][${traceId}] SendEmail SUCCESS`);
     } catch (emailErr) {
