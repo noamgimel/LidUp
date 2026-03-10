@@ -576,13 +576,13 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
                     )}
                   </div>
                 )}
-                <p className="text-xs text-slate-400 font-mono">ID: {client.id}</p>
+                <p className="text-xs text-slate-400 font-mono">Lead ID: {client.id}</p>
                 {client.ip_address && (
                   <p className="text-xs text-slate-400">IP: {client.ip_address}</p>
                 )}
                 <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
-                  <div><span className="font-medium">נקלט: </span>{formatIsraeliDate(client.created_date) || "—"}</div>
-                  <div><span className="font-medium">עדכון: </span>{formatIsraeliDate(client.updated_date) || "—"}</div>
+                  <div><span className="font-medium">נקלט: </span>{formatIsraeliDate(client.created_date ? (client.created_date.endsWith('Z') ? client.created_date : client.created_date + 'Z') : null) || "—"}</div>
+                  <div><span className="font-medium">עדכון: </span>{formatIsraeliDate(client.updated_date ? (client.updated_date.endsWith('Z') ? client.updated_date : client.updated_date + 'Z') : null) || "—"}</div>
                   {client.first_response_at && <div><span className="font-medium">קשר ראשון: </span>{formatIsraeliDate(client.first_response_at)}</div>}
                   {client.last_activity_at && <div><span className="font-medium">פעילות אחרונה: </span>{formatIsraeliDate(client.last_activity_at)}</div>}
                 </div>
