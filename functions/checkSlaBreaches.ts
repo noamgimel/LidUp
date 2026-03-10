@@ -20,8 +20,27 @@ Deno.serve(async (req) => {
 
     console.log(`${tag} started. nowUtc=${nowUtc.toISOString()} | slaThreshold=${slaThreshold.toISOString()} | lookback=${lookbackStart.toISOString()}`);
 
-    // שליפת כל הלידים הפתוחים ללא sla_breached_notified_at
-    const allLeads = await base44.asServiceRole.entities.Client.filter({ lifecycle: 'open' });
+    // שליפת כל ה-owners שיש להם NotificationSettings פעיל
+    const allSettings = await base44.asServiceRole.entities.NotificationSettings.filter({});
+    const activeOwners = allSettings
+      .filter(s => s.enabled && s.email_enabled && s.notify_sla_breach)
+      .map(s => s.owner_email)
+      .filter(Boolean);
+
+    console.log(`${tag} active owners with SLA notifications: ${activeOwners.length} → ${activeOwners.join(', ')}`);
+
+    if (activeOwners.length === 0) {
+      console.log(`${tag} no active owners — done`);
+      return Response.json({ success: true, traceId, nowUtc: nowUtc.toISOString(), scannedCandidates: 0, sent: 0, failed: 0, skipped: 0, reasonsCount: {} });
+    }
+
+    // שליפת לידים per owner — עוקף RLS דרך owner_email filter
+    const allLeadsArrays = await Promise.all(
+      activeOwners.map(ownerEmail =>
+        base44.asServiceRole.entities.Client.filter({ lifecycle: 'open', owner_email: ownerEmail })
+      )
+    );
+    const allLeads = allLeadsArrays.flat();
 
     console.log(`${tag} total open leads fetched: ${allLeads.length}`);
 
