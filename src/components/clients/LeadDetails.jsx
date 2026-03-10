@@ -576,6 +576,7 @@ export default function LeadDetails({ client: initialClient, meetings, onClose, 
                     )}
                   </div>
                 )}
+                <p className="text-xs text-slate-400 font-mono">ID: {client.id}</p>
                 {client.ip_address && (
                   <p className="text-xs text-slate-400">IP: {client.ip_address}</p>
                 )}
