@@ -85,33 +85,6 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // שליפת הגדרות התראה לפי owner
-      const settings = await base44.asServiceRole.entities.NotificationSettings.filter({ owner_email: ownerEmail });
-
-      if (!settings || settings.length === 0) {
-        console.log(`${tag} SKIP lead "${lead.name}" (${lead.id}): SETTINGS_NOT_FOUND for ${ownerEmail}`);
-        bump('SETTINGS_NOT_FOUND');
-        continue;
-      }
-
-      const s = settings[0];
-
-      if (!s.enabled) {
-        console.log(`${tag} SKIP lead "${lead.name}" (${lead.id}): SETTINGS_DISABLED`);
-        bump('SETTINGS_DISABLED');
-        continue;
-      }
-      if (!s.email_enabled) {
-        console.log(`${tag} SKIP lead "${lead.name}" (${lead.id}): EMAIL_DISABLED`);
-        bump('EMAIL_DISABLED');
-        continue;
-      }
-      if (!s.notify_sla_breach) {
-        console.log(`${tag} SKIP lead "${lead.name}" (${lead.id}): NOTIFY_DISABLED`);
-        bump('NOTIFY_DISABLED');
-        continue;
-      }
-
       // שליחת מייל
       const nowIso = new Date().toISOString();
       let status = 'sent';
