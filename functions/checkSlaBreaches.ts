@@ -22,10 +22,12 @@ Deno.serve(async (req) => {
 
     // שליפת כל ה-owners שיש להם NotificationSettings פעיל
     const allSettings = await base44.asServiceRole.entities.NotificationSettings.filter({});
-    const activeOwners = allSettings
-      .filter(s => s.enabled && s.email_enabled && s.notify_sla_breach)
-      .map(s => s.owner_email)
-      .filter(Boolean);
+    const activeOwners = [...new Set(
+      allSettings
+        .filter(s => s.enabled && s.email_enabled && s.notify_sla_breach)
+        .map(s => s.owner_email)
+        .filter(Boolean)
+    )];
 
     console.log(`${tag} active owners with SLA notifications: ${activeOwners.length} → ${activeOwners.join(', ')}`);
 
