@@ -22,7 +22,7 @@ import WorkQueueTabs, { classifyLead } from "../components/clients/WorkQueueTabs
 import { computeLeadPriority } from "@/components/utils/timeUtils";
 import DebugTimePanel from "@/components/clients/DebugTimePanel";
 import { useServerTime } from "@/components/utils/ServerTimeContext";
-import { useRealtimePolling } from "@/components/hooks/useRealtimePolling";
+import { useClientRealtimeSubscription } from "@/components/hooks/useClientRealtimeSubscription";
 
 
 export default function Clients() {
