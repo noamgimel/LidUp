@@ -22,6 +22,8 @@ import WorkQueueTabs, { classifyLead } from "../components/clients/WorkQueueTabs
 import { computeLeadPriority } from "@/components/utils/timeUtils";
 import DebugTimePanel from "@/components/clients/DebugTimePanel";
 import { useServerTime } from "@/components/utils/ServerTimeContext";
+import { useRealtimePolling } from "@/components/hooks/useRealtimePolling";
+import { classifyLead as classifyLeadFn } from "../components/clients/WorkQueueTabs";
 
 export default function Clients() {
   const { getNowMs, serverOffsetMs } = useServerTime();
