@@ -18,16 +18,17 @@ Deno.serve(async (req) => {
     console.log('[getMyClients] user.email =', user.email);
 
     try {
-        // שלב 1: שליפה רגילה כמשתמש המחובר — ה-RLS מאפשר created_by ו-owner_email
-        // limit גדול כדי לא לפספס רשומות
-        const userClients = await base44.entities.Client.list('-created_date', 5000);
-        console.log('[getMyClients] userClients (via user token, RLS applied) count =', userClients.length);
+        // שלב 1: שליפה לפי created_by (לידים שנוצרו ידנית על ידי המשתמש)
+        const userClients = await base44.asServiceRole.entities.Client.filter(
+            { created_by: user.email }, '-created_date', 5000
+        );
+        console.log('[getMyClients] userClients (by created_by) count =', userClients.length);
 
-        // שלב 2: גם שליפה ישירה לפי owner_email דרך service role (ל-webhook leads)
+        // שלב 2: שליפה לפי owner_email (לידים שהגיעו מטפסים חיצוניים)
         const byOwner = await base44.asServiceRole.entities.Client.filter(
             { owner_email: user.email }, '-created_date', 5000
         );
-        console.log('[getMyClients] byOwner (service role) count =', byOwner.length);
+        console.log('[getMyClients] byOwner (by owner_email) count =', byOwner.length);
 
         // מיזוג ללא כפילויות
         const allMap = new Map();
