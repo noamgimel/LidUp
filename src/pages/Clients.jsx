@@ -54,53 +54,39 @@ export default function Clients() {
     });
   }, []);
 
-  // Realtime polling — merges new/updated leads into state without full reload
-  useRealtimePolling({
-    userEmail: currentUserEmail,
-    lastSyncAtRef,
-    onNewLeads: (newLeads) => {
-      setClients(prev => {
-        const existingIds = new Set(prev.map(c => c.id));
-        const brandNew = newLeads.filter(l => !existingIds.has(l.id));
-        if (brandNew.length === 0) return prev;
-        const count = brandNew.length;
-        toast({
-          title: count === 1 ? "נקלט ליד חדש 🎉" : `נקלטו ${count} לידים חדשים 🎉`,
-          className: "bg-blue-50 text-blue-900 border-blue-200"
-        });
-        return [...brandNew, ...prev];
-      });
-    },
-    onUpdatedLeads: (updatedLeads) => {
-      setClients(prev => {
-        const now = getNowMs();
-        let slaBreachCount = 0;
-        const prevMap = new Map(prev.map(c => [c.id, c]));
+  // Realtime subscriptions — merges new/updated leads into state without polling
+  const newLeadsBatchRef = useRef([]);
+  const toastTimerRef = useRef(null);
 
-        updatedLeads.forEach(updated => {
-          const old = prevMap.get(updated.id);
-          if (!old) return;
-          // Detect SLA transition: was NOT breached, now IS breached
-          const wasBreached = !old.first_response_at &&
-            (now - new Date(old.created_date).getTime()) > 30 * 60 * 1000;
-          const nowBreached = !updated.first_response_at &&
-            (now - new Date(updated.created_date).getTime()) > 30 * 60 * 1000;
-          if (!wasBreached && nowBreached) slaBreachCount++;
-          prevMap.set(updated.id, { ...old, ...updated });
-        });
-
-        if (slaBreachCount > 0) {
+  const handleClientEvent = useCallback(({ type, id, data }) => {
+    if (type === "create") {
+      setClients(prev => {
+        if (prev.some(c => c.id === id)) return prev; // already exists
+        // Debounced toast for batch new leads
+        newLeadsBatchRef.current.push(id);
+        clearTimeout(toastTimerRef.current);
+        toastTimerRef.current = setTimeout(() => {
+          const count = newLeadsBatchRef.current.length;
           toast({
-            title: slaBreachCount === 1
-              ? "ליד חרג מ-SLA ⚠️"
-              : `${slaBreachCount} לידים חרגו מ-SLA ⚠️`,
-            className: "bg-red-50 text-red-900 border-red-200"
+            title: count === 1 ? "נקלט ליד חדש 🎉" : `נקלטו ${count} לידים חדשים 🎉`,
+            className: "bg-blue-50 text-blue-900 border-blue-200"
           });
-        }
-
-        return Array.from(prevMap.values());
+          newLeadsBatchRef.current = [];
+        }, 800);
+        return [data, ...prev];
       });
+    } else if (type === "update") {
+      setClients(prev =>
+        prev.map(c => c.id === id ? { ...c, ...data } : c)
+      );
+    } else if (type === "delete") {
+      setClients(prev => prev.filter(c => c.id !== id));
     }
+  }, [toast]);
+
+  useClientRealtimeSubscription({
+    currentUserEmail,
+    onClientEvent: handleClientEvent,
   });
 
   useEffect(() => {
