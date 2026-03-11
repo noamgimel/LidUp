@@ -1,15 +1,13 @@
 import { useEffect, useRef, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 
-const POLL_INTERVAL_MS = 10_000;
+// Poll every 60 seconds to avoid rate limiting
+const POLL_INTERVAL_MS = 60_000;
 
 /**
  * Polls for new/updated leads every POLL_INTERVAL_MS.
- * - Fetches only leads created or updated after lastSyncAt (delta).
- * - Calls onNewLeads(newLeads) when brand-new leads arrive.
- * - Calls onUpdatedLeads(updatedLeads) when existing leads were updated.
- * - Never runs two polls in parallel.
- * - Stops cleanly on unmount.
+ * Uses only 2 API calls per poll (by owner_email, covers both manual & form leads).
+ * Never runs two polls in parallel. Stops cleanly on unmount.
  */
 export function useRealtimePolling({ userEmail, lastSyncAtRef, onNewLeads, onUpdatedLeads }) {
   const isPollingRef = useRef(false);
@@ -23,48 +21,23 @@ export function useRealtimePolling({ userEmail, lastSyncAtRef, onNewLeads, onUpd
     const nowIso = new Date().toISOString();
 
     try {
-      // Fetch leads created after lastSyncAt
+      // 2 calls only: new leads & updated leads (filtered by owner_email which covers all lead types)
       const [created, updated] = await Promise.all([
-        base44.asServiceRole.entities.Client.filter(
+        base44.entities.Client.filter(
           { owner_email: userEmail, "created_date__gt": since },
           "-created_date",
           50
         ).catch(() => []),
-        base44.asServiceRole.entities.Client.filter(
+        base44.entities.Client.filter(
           { owner_email: userEmail, "updated_date__gt": since },
           "-updated_date",
           100
         ).catch(() => []),
       ]);
 
-      // Also check created_by for manually created leads
-      const [createdByMe, updatedByMe] = await Promise.all([
-        base44.asServiceRole.entities.Client.filter(
-          { created_by: userEmail, "created_date__gt": since },
-          "-created_date",
-          50
-        ).catch(() => []),
-        base44.asServiceRole.entities.Client.filter(
-          { created_by: userEmail, "updated_date__gt": since },
-          "-updated_date",
-          100
-        ).catch(() => []),
-      ]);
+      if (created.length > 0) onNewLeads(created);
+      if (updated.length > 0) onUpdatedLeads(updated);
 
-      // Merge & deduplicate
-      const mergeById = (...arrays) => {
-        const map = new Map();
-        arrays.flat().forEach(item => map.set(item.id, item));
-        return Array.from(map.values());
-      };
-
-      const allCreated = mergeById(created, createdByMe);
-      const allUpdated = mergeById(updated, updatedByMe);
-
-      if (allCreated.length > 0) onNewLeads(allCreated);
-      if (allUpdated.length > 0) onUpdatedLeads(allUpdated);
-
-      // Advance sync cursor
       lastSyncAtRef.current = nowIso;
     } catch (err) {
       console.warn("[useRealtimePolling] poll error:", err?.message);
@@ -76,8 +49,6 @@ export function useRealtimePolling({ userEmail, lastSyncAtRef, onNewLeads, onUpd
   useEffect(() => {
     if (!userEmail) return;
     timerRef.current = setInterval(poll, POLL_INTERVAL_MS);
-    return () => {
-      clearInterval(timerRef.current);
-    };
+    return () => clearInterval(timerRef.current);
   }, [poll, userEmail]);
 }
