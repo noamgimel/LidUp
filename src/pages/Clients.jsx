@@ -44,7 +44,6 @@ export default function Clients() {
   const [isExporting, setIsExporting] = useState(false);
   const [whatsappTemplate, setWhatsappTemplate] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
-  const lastSyncAtRef = useRef(new Date().toISOString());
   const { toast } = useToast();
 
   useEffect(() => {
