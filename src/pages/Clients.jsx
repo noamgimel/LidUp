@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Meeting } from "@/entities/Meeting";
 import { User } from "@/entities/User";
 import { base44 } from "@/api/base44Client";
