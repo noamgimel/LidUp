@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
                 priority: newPriority,
                 ...stageUpdate
             };
-            await base44.entities.Client.update(lead_id, updatePayload);
+            await base44.asServiceRole.entities.Client.update(lead_id, updatePayload);
             await base44.asServiceRole.entities.LeadActivity.create({
                 lead_id,
                 event_type: 'first_response',
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
             });
 
         } else {
-            await base44.entities.Client.update(lead_id, {
+            await base44.asServiceRole.entities.Client.update(lead_id, {
                 last_contact_at: now,
                 last_activity_at: now
             });
