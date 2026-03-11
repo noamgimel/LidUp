@@ -133,10 +133,17 @@ export default function Clients() {
     setIsLoading(false);
   };
 
+  // Tick every 10s to recompute SLA status locally without fetching
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 10_000);
+    return () => clearInterval(t);
+  }, []);
+
   // Enrich with computed priority
   const enrichedClients = useMemo(() =>
     clients.map(c => ({ ...c, priority: computePriority(c) })),
-    [clients]
+    [clients, tick]
   );
 
   // Tab counts
