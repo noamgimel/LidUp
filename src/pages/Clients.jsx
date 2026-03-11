@@ -43,12 +43,66 @@ export default function Clients() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [whatsappTemplate, setWhatsappTemplate] = useState(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState(null);
+  const lastSyncAtRef = useRef(new Date().toISOString());
   const { toast } = useToast();
 
   useEffect(() => {
     loadData();
-    base44.auth.me().then(u => { if (u?.whatsapp_template) setWhatsappTemplate(u.whatsapp_template); });
+    base44.auth.me().then(u => {
+      if (u?.whatsapp_template) setWhatsappTemplate(u.whatsapp_template);
+      if (u?.email) setCurrentUserEmail(u.email);
+    });
   }, []);
+
+  // Realtime polling — merges new/updated leads into state without full reload
+  useRealtimePolling({
+    userEmail: currentUserEmail,
+    lastSyncAtRef,
+    onNewLeads: (newLeads) => {
+      setClients(prev => {
+        const existingIds = new Set(prev.map(c => c.id));
+        const brandNew = newLeads.filter(l => !existingIds.has(l.id));
+        if (brandNew.length === 0) return prev;
+        const count = brandNew.length;
+        toast({
+          title: count === 1 ? "נקלט ליד חדש 🎉" : `נקלטו ${count} לידים חדשים 🎉`,
+          className: "bg-blue-50 text-blue-900 border-blue-200"
+        });
+        return [...brandNew, ...prev];
+      });
+    },
+    onUpdatedLeads: (updatedLeads) => {
+      setClients(prev => {
+        const now = getNowMs();
+        let slaBreachCount = 0;
+        const prevMap = new Map(prev.map(c => [c.id, c]));
+
+        updatedLeads.forEach(updated => {
+          const old = prevMap.get(updated.id);
+          if (!old) return;
+          // Detect SLA transition: was NOT breached, now IS breached
+          const wasBreached = !old.first_response_at &&
+            (now - new Date(old.created_date).getTime()) > 30 * 60 * 1000;
+          const nowBreached = !updated.first_response_at &&
+            (now - new Date(updated.created_date).getTime()) > 30 * 60 * 1000;
+          if (!wasBreached && nowBreached) slaBreachCount++;
+          prevMap.set(updated.id, { ...old, ...updated });
+        });
+
+        if (slaBreachCount > 0) {
+          toast({
+            title: slaBreachCount === 1
+              ? "ליד חרג מ-SLA ⚠️"
+              : `${slaBreachCount} לידים חרגו מ-SLA ⚠️`,
+            className: "bg-red-50 text-red-900 border-red-200"
+          });
+        }
+
+        return Array.from(prevMap.values());
+      });
+    }
+  });
 
   useEffect(() => {
     if (clients.length > 0) {
